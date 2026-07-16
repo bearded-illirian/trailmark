@@ -8,22 +8,19 @@
 #   - Change `sync_rules` → re-run full sync + review diff
 
 meta:
-  version: 0.3.0
+  version: 0.3.1
   description: |
-    v0.3.0 — go-fast now consumes commands/go-fast.public.md (architectural
-    symmetry with 12 skill directories). All 13 items now expose 3 contract
-    sections in the body (## Input / ## Output / ## Hands off to per
-    SKILL_CONTRACT.md), enabling verify-contract.sh body checks 4-6 to pass.
+    v0.3.1 — dev-auto-first added as 14th skill (autonomous per-block
+    orchestrator). SKILL.public.md v1.0 PASS 100/100 via skill-public-check v2.0.
+    Prior v0.3.0 shipped 13 items with contract sections + go-fast.public.md.
 
-    Prior v0.2.0 established consumption of SKILL.public.md as source (per
-    task aihub--548 pipeline). Public exports produced by skill-public-make
-    and validated by skill-public-check v2.0 (10 boolean checks + 8-dimension
-    scoring). Framework consumers get sanitized versions with zero leaks
-    (D1-D6 critical dims). Sync-script renames *.public.md → canonical name
-    on destination.
+    Public exports produced by skill-public-make and validated by
+    skill-public-check v2.0 (10 boolean checks + 8-dimension scoring).
+    Framework consumers get sanitized versions with zero leaks (D1-D6 critical
+    dims). Sync-script renames *.public.md → canonical name on destination.
 
-    MVP release — 13 items (2 commands + 4 protocol skills + 7 core skills).
-  updated_at: 2026-07-16
+    MVP release — 14 items (2 commands + 4 protocol skills + 8 core skills).
+  updated_at: 2026-07-17
 
 source:
   repo: aihub
@@ -131,4 +128,10 @@ entries:
     tier: core
     source_path: skills/note-first/
     destination_path: core/note-first/
+    last_synced_commit: null
+
+  - id: dev-auto-first
+    tier: core
+    source_path: skills/dev-auto-first/
+    destination_path: core/dev-auto-first/
     last_synced_commit: null

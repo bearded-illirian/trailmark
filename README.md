@@ -110,6 +110,8 @@ No other runtime dependencies. No services. No package installers.
 
 Released under the MIT License — see [LICENSE](./LICENSE).
 
+Public mirror: [github.com/bearded-illirian/framework](https://github.com/bearded-illirian/framework)
+
 ## Status
 
 MVP. The 13 shipped skills are functional and used daily; the surrounding
