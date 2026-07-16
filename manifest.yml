@@ -1,0 +1,134 @@
+# Public release manifest for the VSCHK Framework.
+# Whitelist of skills and commands to sync from aihub → framework-public.
+# Consumed by bin/sync-from-aihub.sh (Block 3 of task aihub--498-vschk-framework).
+#
+# Editing policy:
+#   - Add/remove entries → bump `meta.version` (semver)
+#   - Update `last_synced_commit` — only via sync-from-aihub.sh, not by hand
+#   - Change `sync_rules` → re-run full sync + review diff
+
+meta:
+  version: 0.3.0
+  description: |
+    v0.3.0 — go-fast now consumes commands/go-fast.public.md (architectural
+    symmetry with 12 skill directories). All 13 items now expose 3 contract
+    sections in the body (## Input / ## Output / ## Hands off to per
+    SKILL_CONTRACT.md), enabling verify-contract.sh body checks 4-6 to pass.
+
+    Prior v0.2.0 established consumption of SKILL.public.md as source (per
+    task aihub--548 pipeline). Public exports produced by skill-public-make
+    and validated by skill-public-check v2.0 (10 boolean checks + 8-dimension
+    scoring). Framework consumers get sanitized versions with zero leaks
+    (D1-D6 critical dims). Sync-script renames *.public.md → canonical name
+    on destination.
+
+    MVP release — 13 items (2 commands + 4 protocol skills + 7 core skills).
+  updated_at: 2026-07-16
+
+source:
+  repo: aihub
+  base_path: /Users/viktor/Projects/aihub/.claude
+
+destination:
+  base_path: /Users/viktor/Projects/vschk-platform/framework-public
+
+sync_rules:
+  # When source_path is a directory, these patterns are excluded from the copy.
+  # v0.2.0: skip internal variants — only public exports pass through.
+  exclude_patterns:
+    - "SKILL.md"         # Internal working version — often RU or with project refs
+    - "SKILL.eng.md"     # EN staging translation — pre-public
+    - "SKILL.ru.md"      # Russian language variants
+    - "*.next.md"        # WIP staging drafts (SKILL.next.md)
+    - "*.bak-*"          # Backup files from task blocks
+    - "domains/"         # Per-domain configs — vschk-specific
+    - ".DS_Store"
+
+  # Explicit include hints for the sync-script (documentation of intent).
+  # v0.2.0: SKILL.public.md is the sanitized public export; sync-script renames it to SKILL.md on destination.
+  include_patterns:
+    - "SKILL.public.md"  # Primary source — v2.0 checker-validated public export
+    - "INFO.md"          # Optional metadata (frontmatter-only file, when present)
+
+entries:
+
+  # ── Commands (2 — user-facing entry points invoked as /xxx) ────────────
+  - id: go-start
+    tier: command
+    source_path: skills/go-start/
+    destination_path: commands/go-start/
+    last_synced_commit: null
+
+  - id: go-fast
+    tier: command
+    source_path: commands/go-fast.public.md
+    destination_path: commands/go-fast.md
+    last_synced_commit: null
+
+  # ── Protocol skills (4 — opinionated methodology) ───────────────────────
+  - id: idea-first
+    tier: protocol
+    source_path: skills/idea-first/
+    destination_path: protocols/idea-first/
+    last_synced_commit: null
+
+  - id: arch-first
+    tier: protocol
+    source_path: skills/arch-first/
+    destination_path: protocols/arch-first/
+    last_synced_commit: null
+
+  - id: audit-first
+    tier: protocol
+    source_path: skills/audit-first/
+    destination_path: protocols/audit-first/
+    last_synced_commit: null
+
+  - id: ui-ai-first
+    tier: protocol
+    source_path: skills/ui-ai-first/
+    destination_path: protocols/ui-ai-first/
+    last_synced_commit: null
+
+  # ── Core skills (7 — universal per-block cycle + recording) ────────────
+  - id: human-first
+    tier: core
+    source_path: skills/human-first/
+    destination_path: core/human-first/
+    last_synced_commit: null
+
+  - id: flow-first
+    tier: core
+    source_path: skills/flow-first/
+    destination_path: core/flow-first/
+    last_synced_commit: null
+
+  - id: library-first
+    tier: core
+    source_path: skills/library-first/
+    destination_path: core/library-first/
+    last_synced_commit: null
+
+  - id: plan-first
+    tier: core
+    source_path: skills/plan-first/
+    destination_path: core/plan-first/
+    last_synced_commit: null
+
+  - id: ship-first
+    tier: core
+    source_path: skills/ship-first/
+    destination_path: core/ship-first/
+    last_synced_commit: null
+
+  - id: decision-first
+    tier: core
+    source_path: skills/decision-first/
+    destination_path: core/decision-first/
+    last_synced_commit: null
+
+  - id: note-first
+    tier: core
+    source_path: skills/note-first/
+    destination_path: core/note-first/
+    last_synced_commit: null

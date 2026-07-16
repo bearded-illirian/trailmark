@@ -1,0 +1,20 @@
+# Sync-script logs (per-run audit trail, not for public repo)
+.sync-log/
+
+# OS artifacts
+.DS_Store
+
+# Isolation guard: if git init is done inside this workspace,
+# its .git/ must not leak into the parent repo.
+.git/
+
+# Per-user config.
+# Reference schema lives in framework.yml.example — checked in.
+# Actual framework.yml holds local paths and hosts — never commit.
+framework.yml
+
+# Internal pre-release audit doc (references internal task IDs — not for public mirror)
+AUDIT.md
+
+# Task-generated backup files during internal blocks (not for public)
+*.bak-*

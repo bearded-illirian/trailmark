@@ -1,0 +1,86 @@
+# framework.yml — per-user config for the framework
+#
+# This is the canonical schema reference. Copy it to `framework.yml` (which is
+# git-ignored) and fill in your local values. `bin/init` will do this
+# interactively for you.
+#
+# Consumed by:
+#   - bin/init                 — writes framework.yml from Q&A wizard
+#   - bin/sync-from-aihub.sh   — sync-time inject: substitutes {{ config.paths.X }}
+#                                tokens in synced skill files (block 10)
+#   - (indirectly) skill files — the tokens are the target of substitution;
+#                                 skills carry {{ config.paths.X }} literals in
+#                                 aihub source (blocks 12-16 tokenize them)
+#
+# Editing policy:
+#   - Bump `meta.schema_version` on breaking shape changes (semver)
+#   - Never commit `framework.yml` (it holds your local paths and hosts)
+#   - `framework.yml.example` is the committed reference — keep in sync with
+#     what bin/init writes
+#
+
+meta:
+  # Bump on breaking shape changes. Consumers gate against known versions.
+  schema_version: 0.1.0
+
+# ── Paths ──────────────────────────────────────────────────────────────────
+# Filesystem anchors. Values below are placeholders — replace with your
+# own layout via bin/init or by hand.
+paths:
+
+  # Where your aihub-style skill master lives on your machine.
+  # Skills read: source-of-truth for sync-from-aihub.sh.
+  aihub_root: <your-path>/aihub
+
+  # Where the public framework workspace lives — the folder you'll push to
+  # GitHub. sync-from-aihub.sh writes here.
+  framework_public_root: <your-path>/framework-public
+
+  # Root folder for tasks: log/, flow/, backlog/, routing.db.
+  # Skills read: task log destination, routing.db lookups.
+  tasks_root: <your-path>/framework-public/tasks
+
+  # Central routing database — one file that indexes every artifact of every
+  # task across every project.
+  # Skills read: SELECT / INSERT / UPDATE via sqlite3.
+  routing_db: <your-path>/framework-public/tasks/routing.db
+
+  # Parent folder for per-task log dirs (task.md + report-NN.md + notes).
+  # Each task creates a subfolder here named `{date}-{slug}`.
+  log_dir_base: <your-path>/framework-public/tasks/log
+
+# ── Environment ────────────────────────────────────────────────────────────
+# Remote hosts referenced by skills (deploy, SSH, telegram relay, etc.).
+# Placeholders below are illustrative — replace with your own hosts.
+env:
+
+  # Primary application server — where products get deployed via `git push`.
+  # Skills read: SSH targets, curl endpoints, log tail commands.
+  # Example: root@203.0.113.10 or root@myserver.example
+  server_primary: root@<your-primary-server>
+
+  # Telegram-relay server (optional). Bots and long-lived polling live here
+  # because Telegram API is blocked from some regions.
+  # Skills read: SSH targets for radar-relay / tg-bot-proxy management.
+  # Set to `null` if you don't run a relay.
+  # Example: root@198.51.100.20
+  server_telegram_relay: root@<your-telegram-relay>
+
+# ── Projects ──────────────────────────────────────────────────────────────
+# Registry of your products/projects. `go-start` uses this to build its
+# "Which project are we working on?" menu (commands/go-start/SKILL.md lines
+# 81-93 in aihub source will iterate over this list at init-time resolve).
+#
+# Shape mirrors the top-level entries of a projects.yml file. Add one row per
+# project; keep id short and stable — routing.db `project` column stores it.
+#
+# Leave the list empty on first init and edit later, or seed with your own.
+projects:
+  # - id: my-product
+  #   name: My Product
+  #   domain: my-product.example.com
+  #
+  # - id: internal-tool
+  #   name: Internal Tool
+  #   domain: tool.example.com
+  []

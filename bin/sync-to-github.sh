@@ -1,0 +1,87 @@
+#!/bin/bash
+# sync-to-github.sh
+# Syncs framework-public/ → github.com/bearded-illirian/framework (public mirror).
+# Idempotent: safe to re-run any time. Uses temp clone → rsync → commit → push.
+#
+# v0.1.0 (block 20 of task aihub--594): initial script.
+# Consumes: framework-public/.gitignore (exclude rules — plus explicit --exclude below).
+# Auth: GH_TOKEN loaded from ~/.gh-token (mode 600).
+#
+# Usage:
+#   bash bin/sync-to-github.sh                                  # default commit message with timestamp
+#   bash bin/sync-to-github.sh --message "custom message"       # custom commit message
+
+set -e
+
+# ── Auth ─────────────────────────────────────────────────────────────────
+[ -f "$HOME/.gh-token" ] || { echo "❌ ~/.gh-token missing (mode 600 expected)"; exit 1; }
+export GH_TOKEN=$(cat "$HOME/.gh-token")
+
+# ── Paths ────────────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_SLUG="bearded-illirian/framework"
+REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO_SLUG}.git"
+
+TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+TEMP_DIR="/tmp/framework-mirror-${TS//[:]/}"
+
+# ── Commit message ───────────────────────────────────────────────────────
+MSG="sync $TS"
+if [ "$1" = "--message" ] && [ -n "$2" ]; then
+  MSG="$2"
+fi
+
+echo "════════════════════════════════════════════"
+echo "Sync-to-github started at $TS"
+echo "Source: $SOURCE_DIR"
+echo "Target: github.com/$REPO_SLUG (branch: main)"
+echo "Message: $MSG"
+echo "════════════════════════════════════════════"
+
+# ── Clone target repo ────────────────────────────────────────────────────
+echo "→ Cloning target..."
+git clone --depth 1 "$REPO_URL" "$TEMP_DIR" 2>&1 | tail -3
+
+# ── Rsync source → temp clone ────────────────────────────────────────────
+# Belt+suspenders exclude: .gitignore alone via rsync has quirky pattern semantics.
+echo "→ Rsync..."
+rsync -a --delete \
+  --exclude=".git" \
+  --exclude=".git/" \
+  --exclude=".gitignore" \
+  --exclude="AUDIT.md" \
+  --exclude="framework.yml" \
+  --exclude=".DS_Store" \
+  --exclude=".sync-log/" \
+  --exclude="*.bak-*" \
+  "$SOURCE_DIR/" "$TEMP_DIR/"
+
+# ── Copy .gitignore separately (we want it in public but not to be a source pattern) ─
+cp "$SOURCE_DIR/.gitignore" "$TEMP_DIR/.gitignore"
+
+# ── Commit + push ────────────────────────────────────────────────────────
+cd "$TEMP_DIR"
+
+# Ensure git identity is set for the commit
+git config user.email "sync@bearded-illirian.local"
+git config user.name "sync-to-github"
+
+git add -A
+if git diff --staged --quiet; then
+  echo "✅ No changes to sync (public mirror already up to date)."
+else
+  git commit -m "$MSG" 2>&1 | tail -3
+  echo "→ Pushing..."
+  git push origin main 2>&1 | tail -3
+  echo "✅ Push complete."
+fi
+
+# ── Cleanup ──────────────────────────────────────────────────────────────
+cd /
+rm -rf "$TEMP_DIR"
+
+echo "════════════════════════════════════════════"
+echo "Sync-to-github completed."
+echo "Public: https://github.com/$REPO_SLUG"
+echo "════════════════════════════════════════════"

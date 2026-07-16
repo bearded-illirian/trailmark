@@ -1,0 +1,111 @@
+#!/bin/bash
+# init — interactive Q&A wizard that populates `framework.yml` from
+# `framework.yml.example` on end-user's first run.
+#
+# Reads:  framework.yml.example (schema + placeholders as defaults)
+# Writes: framework.yml (per-user config, gitignored)
+#
+# Portable: works with macOS bash 3.2 (no `read -e -i`). Empty input keeps
+# the suggested default. Existing framework.yml prompts overwrite confirm.
+#
+# Related task: aihub--498-vschk-framework, Block 8.
+
+set -e
+
+# ── Paths (relative to script location) ──────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FRAMEWORK_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+EXAMPLE="$FRAMEWORK_ROOT/framework.yml.example"
+TARGET="$FRAMEWORK_ROOT/framework.yml"
+
+# ── Sanity checks ────────────────────────────────────────────────────────
+[ -f "$EXAMPLE" ] || { echo "❌ Schema reference missing: $EXAMPLE"; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "❌ python3 not found — required for YAML parsing"; exit 1; }
+
+echo "════════════════════════════════════════════"
+echo "  framework init — set up your framework.yml"
+echo "════════════════════════════════════════════"
+echo ""
+
+# ── Overwrite guard ──────────────────────────────────────────────────────
+if [ -f "$TARGET" ]; then
+  echo "⚠️  $TARGET already exists."
+  printf "Overwrite? [y/N]: "
+  read -r OVERWRITE
+  case "$OVERWRITE" in
+    y|Y|yes|YES) echo "Continuing — existing values will be replaced.";;
+    *) echo "Aborted. Existing framework.yml preserved."; exit 0;;
+  esac
+  echo ""
+fi
+
+# ── Load schema (paths + env sections + defaults) ────────────────────────
+# Emit tab-separated lines: section \t key \t default_value
+DEFAULTS=$(EXAMPLE="$EXAMPLE" python3 <<'PYEOF'
+import yaml, os
+d = yaml.safe_load(open(os.environ["EXAMPLE"]))
+for section in ("paths", "env"):
+    for k, v in (d.get(section) or {}).items():
+        print(f"{section}\t{k}\t{v}")
+PYEOF
+)
+
+# ── Interactive prompts ──────────────────────────────────────────────────
+echo "Enter values or press Enter to accept the shown default."
+echo ""
+
+# Temp file collects user answers as tab-separated: section \t key \t value
+ANSWERS=$(mktemp)
+trap "rm -f $ANSWERS" EXIT
+
+# Route DEFAULTS via fd 3 so inner `read` still consumes stdin (user input).
+exec 3<<< "$DEFAULTS"
+CURRENT_SECTION=""
+while IFS=$'\t' read -r SECTION KEY DEFAULT <&3; do
+  if [ "$SECTION" != "$CURRENT_SECTION" ]; then
+    echo "── $SECTION ──"
+    CURRENT_SECTION="$SECTION"
+  fi
+  printf "  %s [%s]: " "$KEY" "$DEFAULT"
+  read -r VALUE
+  [ -z "$VALUE" ] && VALUE="$DEFAULT"
+  printf "%s\t%s\t%s\n" "$SECTION" "$KEY" "$VALUE" >> "$ANSWERS"
+done
+exec 3<&-
+
+echo ""
+
+# ── Summary + confirm ────────────────────────────────────────────────────
+echo "── Summary ──"
+while IFS=$'\t' read -r SECTION KEY VALUE; do
+  printf "  %s.%s = %s\n" "$SECTION" "$KEY" "$VALUE"
+done < "$ANSWERS"
+echo ""
+
+printf "Write to %s? [Y/n]: " "$TARGET"
+read -r CONFIRM
+case "$CONFIRM" in
+  n|N|no|NO) echo "Aborted. No file written."; exit 0;;
+esac
+
+# ── Compose and dump framework.yml ───────────────────────────────────────
+# Preserve meta.schema_version from example; keep projects as empty list
+# for MVP (user edits by hand later).
+EXAMPLE="$EXAMPLE" ANSWERS="$ANSWERS" TARGET="$TARGET" python3 <<'PYEOF'
+import yaml, os
+example = yaml.safe_load(open(os.environ["EXAMPLE"]))
+result = {"meta": example.get("meta", {}), "paths": {}, "env": {}, "projects": []}
+with open(os.environ["ANSWERS"]) as f:
+    for line in f:
+        section, key, value = line.rstrip("\n").split("\t", 2)
+        result[section][key] = value
+with open(os.environ["TARGET"], "w") as f:
+    yaml.safe_dump(result, f, sort_keys=False, default_flow_style=False)
+PYEOF
+
+echo ""
+echo "✅ Wrote $TARGET"
+echo ""
+echo "Next steps:"
+echo "  1. Edit projects list in framework.yml by hand (add id/name/domain rows)"
+echo "  2. Run ./bin/sync-from-aihub.sh to sync skills with your config applied"
