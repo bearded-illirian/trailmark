@@ -208,3 +208,42 @@ overwrites it thinking it's uncommitted junk.
 
 **Rule:** Step 6 is mandatory in all three modes. If push fails —
 report it, don't retry silently, but leave the file.
+
+### ❌ Guide as an open todo
+
+Agent uses go-guide to save "what still needs doing" — a running
+todo list. The knowledge folder fills up with never-actioned items
+that decay into noise. Future readers can't tell durable concepts
+from stale plans.
+
+**Rule:** guides are durable concepts (why we chose X, how the domain
+works, what a term means). Open work items belong in `tasks/`, not
+`project-knowledge/guides/`. If it starts with a verb and has no
+answer yet, it's a task, not a guide.
+
+---
+
+## Related skills
+
+- **ship-first** — invokes go-guide in from-task mode after a
+  fast-track closes; the guide captures the durable concept from
+  the just-completed work
+- **plan-first** — precedes execution; a guide often derives from
+  a plan-first decision worth preserving beyond the current task
+- **decision-first** — decisions and guides are siblings: decisions
+  record *why* a choice was made in context; guides record *what*
+  the resulting concept is, standalone
+
+---
+
+## Step 99 — Log invocation
+
+Before exiting, log this skill invocation to routing.db:
+
+```bash
+sqlite3 {routing_db} \
+  "INSERT INTO skill_invocations (task_id, block_num, skill_name, invoked_at)
+   VALUES ('{slug}', '{N}', 'go-guide', datetime('now'))" 2>/dev/null || true
+```
+
+If `{slug}` / `{N}` unknown → hook writes empty; `|| true` guards failure.

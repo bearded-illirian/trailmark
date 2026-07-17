@@ -88,3 +88,69 @@ list and continue.
 - Extract requirements from the source text, don't invent them
 - The point of the protocol is a paper trail: even a "no gaps" result
   is a first-class artifact — future readers see what was checked
+
+---
+
+## Anti-patterns
+
+### ❌ Skipping when decomposition looks obvious
+
+The decomposition seems to fully cover the requirements — skip the
+check. Later a requirement surfaces in production, and nobody can
+reconstruct whether it was considered or missed.
+
+**Rule:** always run coverage check, even for "obvious" decomposition.
+Even a "no gaps" result is a first-class artifact.
+
+### ❌ Inventing requirements
+
+The agent invents a requirement to make unit N fit — user approves.
+The actual source document never contained that requirement, and the
+decomposition now includes phantom work.
+
+**Rule:** extract from source text only. If a unit doesn't map to any
+extracted requirement, that's a signal the unit itself is scope creep,
+not that a requirement is "implicit".
+
+### ❌ Silent gap dismissal
+
+Agent finds a gap → decides «it's minor, skip» → doesn't surface to
+user. Later the gap becomes a bug or missed feature, and there's no
+record of the decision to skip.
+
+**Rule:** every gap requires an explicit user decision (add / new unit
+/ backlog). Never dismiss silently. Recording "we chose to defer this"
+is itself the audit trail.
+
+### ❌ Inlining instead of Skill()
+
+The agent read the protocol from memory and executed it inline — no
+coverage-table artifact, no logged decision, no paper trail.
+
+**Rule:** always launch via `Skill('check-first')` tool. The whole
+value of the protocol is the artifact it produces.
+
+---
+
+## Related skills
+
+- **plan-first** — invokes check-first after outputting the plan
+  decomposition table, before executing
+- **arch-first** — decomposition source for larger multi-block tasks;
+  check-first validates coverage against the original brief/spec
+- **ship-first** — closes work; check-first ensures nothing missed
+  before the block or task is marked done
+
+---
+
+## Step 99 — Log invocation
+
+Before exiting, log this skill invocation to routing.db:
+
+```bash
+sqlite3 {routing_db} \
+  "INSERT INTO skill_invocations (task_id, block_num, skill_name, invoked_at)
+   VALUES ('{slug}', '{N}', 'check-first', datetime('now'))" 2>/dev/null || true
+```
+
+If `{slug}` / `{N}` unknown → hook writes empty; `|| true` guards failure.
