@@ -1,0 +1,37 @@
+# projects.yml — registry of consumer projects sharing this aihub's skill library.
+#
+# Each entry describes a project that consumes framework skills. A project's
+# `.claude/skills` folder should symlink to `../../aihub/.claude/skills/` (see
+# docs/PROJECTS_GUIDE.md and future bin/new-project script).
+#
+# Editing policy:
+#   - Add/remove entries when spinning up new projects
+#   - `id` = unique slug (used as folder name under projects/)
+#   - `name` = human-friendly label
+#   - `path` = relative path from workspace root
+#   - `status` = active / paused / archived
+#
+# Example projects below (replace with your own):
+
+meta:
+  schema_version: 0.1.0
+  updated_at: 2026-07-17
+
+projects:
+  - id: radar-app
+    name: Radar (web app)
+    path: projects/radar-app
+    status: active
+
+  - id: radar-landing
+    name: Radar (marketing site)
+    path: projects/radar-landing
+    status: active
+
+  - id: radar-api
+    name: Radar (backend API)
+    path: projects/radar-api
+    status: active
+
+  - id: sample-app
+    path: ./projects/sample-app

@@ -2,21 +2,27 @@
 # init — interactive Q&A wizard that populates `framework.yml` from
 # `framework.yml.example` on end-user's first run.
 #
-# Reads:  framework.yml.example (schema + placeholders as defaults)
+# v0.2.0 (Block 24): simplified for workspace layout. Only 3 real prompts —
+# aihub_root, server_primary (optional), server_telegram_relay (optional).
+# All derived paths (tasks_root, routing_db, log_dir_base) are computed by
+# scripts at runtime from workspace root ($SCRIPT_DIR/..).
+#
+# Also seeds aihub/projects.yml from the example if it doesn't exist yet.
+#
+# Reads:  framework.yml.example (schema + defaults)
 # Writes: framework.yml (per-user config, gitignored)
+#         aihub/projects.yml (project registry, if missing)
 #
-# Portable: works with macOS bash 3.2 (no `read -e -i`). Empty input keeps
-# the suggested default. Existing framework.yml prompts overwrite confirm.
-#
-# Related task: aihub--498-vschk-framework, Block 8.
+# Portable: works with macOS bash 3.2 (no `read -e -i`).
 
 set -e
 
 # ── Paths (relative to script location) ──────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FRAMEWORK_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-EXAMPLE="$FRAMEWORK_ROOT/framework.yml.example"
-TARGET="$FRAMEWORK_ROOT/framework.yml"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+EXAMPLE="$WORKSPACE_ROOT/framework.yml.example"
+TARGET="$WORKSPACE_ROOT/framework.yml"
+PROJECTS_YML="$WORKSPACE_ROOT/aihub/projects.yml"
 
 # ── Sanity checks ────────────────────────────────────────────────────────
 [ -f "$EXAMPLE" ] || { echo "❌ Schema reference missing: $EXAMPLE"; exit 1; }
@@ -25,6 +31,8 @@ command -v python3 >/dev/null 2>&1 || { echo "❌ python3 not found — required
 echo "════════════════════════════════════════════"
 echo "  framework init — set up your framework.yml"
 echo "════════════════════════════════════════════"
+echo ""
+echo "Workspace root: $WORKSPACE_ROOT"
 echo ""
 
 # ── Overwrite guard ──────────────────────────────────────────────────────
@@ -39,47 +47,42 @@ if [ -f "$TARGET" ]; then
   echo ""
 fi
 
-# ── Load schema (paths + env sections + defaults) ────────────────────────
-# Emit tab-separated lines: section \t key \t default_value
-DEFAULTS=$(EXAMPLE="$EXAMPLE" python3 <<'PYEOF'
-import yaml, os
-d = yaml.safe_load(open(os.environ["EXAMPLE"]))
-for section in ("paths", "env"):
-    for k, v in (d.get(section) or {}).items():
-        print(f"{section}\t{k}\t{v}")
-PYEOF
-)
-
-# ── Interactive prompts ──────────────────────────────────────────────────
+# ── 3 real prompts ───────────────────────────────────────────────────────
 echo "Enter values or press Enter to accept the shown default."
 echo ""
 
-# Temp file collects user answers as tab-separated: section \t key \t value
-ANSWERS=$(mktemp)
-trap "rm -f $ANSWERS" EXIT
-
-# Route DEFAULTS via fd 3 so inner `read` still consumes stdin (user input).
-exec 3<<< "$DEFAULTS"
-CURRENT_SECTION=""
-while IFS=$'\t' read -r SECTION KEY DEFAULT <&3; do
-  if [ "$SECTION" != "$CURRENT_SECTION" ]; then
-    echo "── $SECTION ──"
-    CURRENT_SECTION="$SECTION"
-  fi
-  printf "  %s [%s]: " "$KEY" "$DEFAULT"
-  read -r VALUE
-  [ -z "$VALUE" ] && VALUE="$DEFAULT"
-  printf "%s\t%s\t%s\n" "$SECTION" "$KEY" "$VALUE" >> "$ANSWERS"
-done
-exec 3<&-
-
+# 1. aihub_root
+echo "── aihub location ──"
+echo "  Where does your aihub-style skill master live?"
+echo "  Default: ./aihub (inside this workspace, works out-of-the-box)"
+printf "  aihub_root [./aihub]: "
+read -r AIHUB_ROOT
+[ -z "$AIHUB_ROOT" ] && AIHUB_ROOT="./aihub"
 echo ""
 
-# ── Summary + confirm ────────────────────────────────────────────────────
+# 2. server_primary (optional)
+echo "── deploy server (optional) ──"
+echo "  Primary application server for git-push auto-deploy."
+echo "  Example: root@203.0.113.10"
+echo "  Leave empty to skip (no remote deploy)."
+printf "  server_primary []: "
+read -r SERVER_PRIMARY
+echo ""
+
+# 3. server_telegram_relay (optional)
+echo "── telegram relay (optional) ──"
+echo "  Relay server for TG bots (if Telegram API blocked in your region)."
+echo "  Example: root@198.51.100.20"
+echo "  Leave empty to skip."
+printf "  server_telegram_relay []: "
+read -r SERVER_TG_RELAY
+echo ""
+
+# ── Summary ──────────────────────────────────────────────────────────────
 echo "── Summary ──"
-while IFS=$'\t' read -r SECTION KEY VALUE; do
-  printf "  %s.%s = %s\n" "$SECTION" "$KEY" "$VALUE"
-done < "$ANSWERS"
+echo "  paths.aihub_root         = $AIHUB_ROOT"
+echo "  env.server_primary       = ${SERVER_PRIMARY:-null}"
+echo "  env.server_telegram_relay = ${SERVER_TG_RELAY:-null}"
 echo ""
 
 printf "Write to %s? [Y/n]: " "$TARGET"
@@ -89,23 +92,45 @@ case "$CONFIRM" in
 esac
 
 # ── Compose and dump framework.yml ───────────────────────────────────────
-# Preserve meta.schema_version from example; keep projects as empty list
-# for MVP (user edits by hand later).
-EXAMPLE="$EXAMPLE" ANSWERS="$ANSWERS" TARGET="$TARGET" python3 <<'PYEOF'
+AIHUB_ROOT_ENV="$AIHUB_ROOT" SERVER_PRIMARY_ENV="$SERVER_PRIMARY" \
+SERVER_TG_RELAY_ENV="$SERVER_TG_RELAY" EXAMPLE_ENV="$EXAMPLE" \
+TARGET_ENV="$TARGET" python3 <<'PYEOF'
 import yaml, os
-example = yaml.safe_load(open(os.environ["EXAMPLE"]))
-result = {"meta": example.get("meta", {}), "paths": {}, "env": {}, "projects": []}
-with open(os.environ["ANSWERS"]) as f:
-    for line in f:
-        section, key, value = line.rstrip("\n").split("\t", 2)
-        result[section][key] = value
-with open(os.environ["TARGET"], "w") as f:
+
+example = yaml.safe_load(open(os.environ["EXAMPLE_ENV"]))
+result = {
+    "meta": example.get("meta", {}),
+    "paths": {"aihub_root": os.environ["AIHUB_ROOT_ENV"]},
+    "env": {
+        "server_primary": os.environ["SERVER_PRIMARY_ENV"] or None,
+        "server_telegram_relay": os.environ["SERVER_TG_RELAY_ENV"] or None,
+    },
+}
+with open(os.environ["TARGET_ENV"], "w") as f:
     yaml.safe_dump(result, f, sort_keys=False, default_flow_style=False)
 PYEOF
 
 echo ""
 echo "✅ Wrote $TARGET"
+
+# ── Seed aihub/projects.yml if missing ───────────────────────────────────
+if [ ! -f "$PROJECTS_YML" ]; then
+  mkdir -p "$(dirname "$PROJECTS_YML")"
+  cat > "$PROJECTS_YML" <<'YAMLEOF'
+# projects.yml — registry of consumer projects sharing this aihub's skill library.
+# Edit this file directly, or use `bin/new-project my-app` to add entries.
+
+meta:
+  schema_version: 0.1.0
+
+projects: []
+YAMLEOF
+  echo "✅ Seeded $PROJECTS_YML"
+fi
+
 echo ""
 echo "Next steps:"
-echo "  1. Edit projects list in framework.yml by hand (add id/name/domain rows)"
-echo "  2. Run ./bin/sync-from-aihub.sh to sync skills with your config applied"
+echo "  1. Add your first project:  bash bin/new-project my-first-app"
+echo "  2. Sync framework skills:   bash bin/sync-from-aihub.sh"
+echo "  3. Optional demo tour:      bash bin/init-sample     # seeds a populated sample project"
+echo "  4. Browse tasks + files:    bash bin/flow-ui/serve   # then open http://127.0.0.1:8765/"

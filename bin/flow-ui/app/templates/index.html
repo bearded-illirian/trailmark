@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vschk-flow-ui</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">flow<span class="dot">·</span>ui</div>
+    <select id="project-selector" aria-label="Project"></select>
+    <div class="stats-badge" title="Habit tracker">
+      <span class="streak">🔥 {{ stats.streak_days }}d</span>
+      <span class="today">· {{ stats.today_count }} today</span>
+    </div>
+  </header>
+
+  <main class="split">
+    <aside class="left-panel">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="files" role="tab">Files</button>
+        <button class="tab" data-tab="tasks" role="tab">Tasks</button>
+        <button class="tab" data-tab="deploys" role="tab">Deploys</button>
+        <button class="tab" data-tab="skills" role="tab">Skills</button>
+      </div>
+      <div class="crumbs" id="crumbs"></div>
+      <div id="tree" class="tree">
+        <div class="muted">Loading…</div>
+      </div>
+    </aside>
+
+    <section class="right-panel">
+      <div id="content" class="content">
+        <div class="muted center">Select a file or artifact on the left.</div>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>

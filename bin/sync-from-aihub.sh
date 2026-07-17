@@ -31,8 +31,22 @@
 set -e
 
 # ── Paths ────────────────────────────────────────────────────────────────
-AIHUB_ROOT="/Users/viktor/Projects/aihub"
-FRAMEWORK_PUBLIC="/Users/viktor/Projects/vschk-platform/framework-public"
+# FRAMEWORK_PUBLIC: script's parent directory (workspace root or framework-public root)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FRAMEWORK_PUBLIC="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# AIHUB_ROOT auto-detect priority:
+#   1. ENV variable AIHUB_ROOT (explicit override)
+#   2. Workspace mode: $FRAMEWORK_PUBLIC/aihub (aihub inside workspace with source skills)
+#   3. Fallback: $HOME/Projects/aihub (local development mode)
+if [ -n "$AIHUB_ROOT" ]; then
+  : # respect explicit override
+elif [ -d "$FRAMEWORK_PUBLIC/aihub/.claude/skills" ] && [ -n "$(ls -A "$FRAMEWORK_PUBLIC/aihub/.claude/skills" 2>/dev/null | head -1)" ] && [ -f "$FRAMEWORK_PUBLIC/aihub/.claude/skills-catalog.yml" ]; then
+  # Workspace mode requires actual source skills (with catalog) inside workspace/aihub — NOT the rendered destinations
+  AIHUB_ROOT="$FRAMEWORK_PUBLIC/aihub"
+else
+  AIHUB_ROOT="$HOME/Projects/aihub"
+fi
 MANIFEST="$FRAMEWORK_PUBLIC/manifest.yml"
 LOG_DIR="$FRAMEWORK_PUBLIC/.sync-log"
 
@@ -57,16 +71,24 @@ echo ""
 
 # ── Parse manifest (python3 helper) ──────────────────────────────────────
 # Emits tab-separated per entry:
-#   id \t tier \t source_path \t destination_path \t exclude_flags
+#   id \t tier \t source_path \t destination_path \t exclude_flags \t source_root
 # where exclude_flags = space-separated "--exclude=PATTERN" tokens ready for rsync.
-# The python3 script receives MANIFEST via env var — no in-heredoc substitution needed.
+# Per-tier exclude selection: tier=tool uses sync_rules.tool_exclude_patterns,
+# everything else uses sync_rules.exclude_patterns (skills/commands scope).
+# source_root defaults to "aihub" — resolved as $AIHUB_ROOT/.claude/$SRC.
+# When "external", source_path is treated as an absolute/tilde path.
 PARSED=$(MANIFEST="$MANIFEST" python3 <<'PYEOF'
 import yaml, os
 d = yaml.safe_load(open(os.environ["MANIFEST"]))
-excl = d.get("sync_rules", {}).get("exclude_patterns", [])
-flags = " ".join([f'--exclude={p}' for p in excl])
+skill_excl = d.get("sync_rules", {}).get("exclude_patterns", [])
+tool_excl = d.get("sync_rules", {}).get("tool_exclude_patterns", [])
+skill_flags = " ".join([f'--exclude={p}' for p in skill_excl])
+tool_flags = " ".join([f'--exclude={p}' for p in tool_excl])
 for e in d["entries"]:
-    print("\t".join([e["id"], e["tier"], e["source_path"], e["destination_path"], flags]))
+    tier = e["tier"]
+    flags = tool_flags if tier == "tool" else skill_flags
+    source_root = e.get("source_root", "aihub")
+    print("\t".join([e["id"], tier, e["source_path"], e["destination_path"], flags, source_root]))
 PYEOF
 )
 
@@ -78,11 +100,17 @@ PYEOF
 ENTRIES_COUNT=0
 WARNINGS_COUNT=0
 
-while IFS=$'\t' read -r ID TIER SRC DST EXCL_FLAGS; do
+while IFS=$'\t' read -r ID TIER SRC DST EXCL_FLAGS SRC_ROOT; do
   [ -z "$ID" ] && continue
   ENTRIES_COUNT=$((ENTRIES_COUNT + 1))
 
-  SRC_FULL="$AIHUB_ROOT/.claude/$SRC"
+  # Resolve source based on source_root marker (default: aihub → under $AIHUB_ROOT/.claude/)
+  if [ "$SRC_ROOT" = "external" ]; then
+    # tilde-expand for external paths like ~/Projects/vschk-flow-ui/
+    SRC_FULL="${SRC/#\~/$HOME}"
+  else
+    SRC_FULL="$AIHUB_ROOT/.claude/$SRC"
+  fi
   DST_FULL="$FRAMEWORK_PUBLIC/$DST"
 
   if [ ! -e "$SRC_FULL" ]; then
@@ -113,7 +141,7 @@ echo "" | tee -a "$LOG_FILE"
 echo "── Post-rsync rename (SKILL.public.md → SKILL.md) ──" | tee -a "$LOG_FILE"
 RENAMED_COUNT=0
 
-for scope in "$FRAMEWORK_PUBLIC/core" "$FRAMEWORK_PUBLIC/protocols" "$FRAMEWORK_PUBLIC/commands"; do
+for scope in "$FRAMEWORK_PUBLIC/aihub/.claude/skills" "$FRAMEWORK_PUBLIC/aihub/.claude/commands"; do
   [ -d "$scope" ] || continue
   find "$scope" -name "SKILL.public.md" -type f | while read -r pub_file; do
     dst_file="$(dirname "$pub_file")/SKILL.md"
@@ -150,7 +178,7 @@ LITERAL_TO_TOKEN = {
 ordered = sorted(LITERAL_TO_TOKEN.items(), key=lambda kv: -len(kv[0]))
 
 root = os.environ["FRAMEWORK_PUBLIC"]
-scope_dirs = [os.path.join(root, d) for d in ("core", "protocols", "commands")]
+scope_dirs = [os.path.join(root, d) for d in ("aihub/.claude/skills", "aihub/.claude/commands")]
 counts = {lit: 0 for lit, _ in ordered}
 files_touched = 0
 
@@ -203,9 +231,9 @@ HARDCODE_HITS=0
 
 for pattern in "${HARDCODE_PATTERNS[@]}"; do
   HITS=$(grep -rInE "$pattern" \
-    "$FRAMEWORK_PUBLIC/core" \
-    "$FRAMEWORK_PUBLIC/protocols" \
-    "$FRAMEWORK_PUBLIC/commands" \
+    "$FRAMEWORK_PUBLIC/aihub/.claude/skills" \
+    "$FRAMEWORK_PUBLIC/aihub/.claude/commands" \
+    "$FRAMEWORK_PUBLIC/bin/flow-ui" \
     2>/dev/null || true)
   if [ -n "$HITS" ]; then
     COUNT=$(echo "$HITS" | wc -l | tr -d ' ')
@@ -256,7 +284,7 @@ echo "✅ State updated: $STATE_FILE" | tee -a "$LOG_FILE"
 echo "" | tee -a "$LOG_FILE"
 echo "════════════════════════════════════════════" | tee -a "$LOG_FILE"
 echo "Sync completed at $TS"                          | tee -a "$LOG_FILE"
-echo "Entries synced: $ENTRIES_COUNT / 13"            | tee -a "$LOG_FILE"
+echo "Entries synced: $ENTRIES_COUNT"                 | tee -a "$LOG_FILE"
 echo "Warnings:       $WARNINGS_COUNT"                | tee -a "$LOG_FILE"
 echo "Hardcode hits:  $HARDCODE_HITS"                 | tee -a "$LOG_FILE"
 echo "Audit log:      $LOG_FILE"                      | tee -a "$LOG_FILE"

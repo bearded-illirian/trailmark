@@ -1,0 +1,41 @@
+title: "[Show & tell] "
+labels: ["show-and-tell"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Show us what you built with the framework. Doesn't need to be
+        polished — even in-progress projects welcome. Screenshots and
+        links very welcome.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What did you build
+      description: A short description of the project or skill.
+    validations:
+      required: true
+
+  - type: input
+    id: repo
+    attributes:
+      label: Repository (if public)
+      description: URL of the repo, or a fork you're proud of.
+    validations:
+      required: false
+
+  - type: textarea
+    id: learnings
+    attributes:
+      label: What did you learn
+      description: Anything that surprised you? Patterns that worked? Anti-patterns to avoid?
+    validations:
+      required: false
+
+  - type: textarea
+    id: request
+    attributes:
+      label: Would you like feedback on anything specific
+      description: Optional — steer the conversation if you want particular input.
+    validations:
+      required: false

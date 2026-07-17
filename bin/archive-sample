@@ -1,0 +1,66 @@
+#!/bin/bash
+# archive-sample — Undoes bin/init-sample.
+#
+# Usage: bash bin/archive-sample
+#
+# What it does:
+#   1. Deletes routing.db rows for the sample task
+#   2. Removes projects/sample-app/ directory (symlink + parent)
+#   3. Removes `sample-app` entry from aihub/projects.yml
+#   4. Moves fixture task folder to tasks/log/archive/ (opt keep for reference)
+#
+# Safe: only touches sample-* data. Fails cleanly if nothing to archive.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$WORKSPACE_ROOT/projects/sample-app"
+PROJECTS_YML="$WORKSPACE_ROOT/aihub/projects.yml"
+ROUTING_DB="$WORKSPACE_ROOT/tasks/routing.db"
+SAMPLE_LOG_DIR="$WORKSPACE_ROOT/tasks/log/2026-01-15-sample--tls-enforcement"
+ARCHIVE_DIR="$WORKSPACE_ROOT/tasks/log/archive"
+
+# ── 1. DB rows ────────────────────────────────────────────────────────
+if [ -f "$ROUTING_DB" ] && [ -s "$ROUTING_DB" ]; then
+  sqlite3 "$ROUTING_DB" <<'SQLEOF'
+DELETE FROM skill_invocations WHERE task_id='sample--tls-enforcement';
+DELETE FROM task_artifacts    WHERE task_id='sample--tls-enforcement';
+DELETE FROM task_blocks       WHERE task_id='sample--tls-enforcement';
+DELETE FROM artifacts         WHERE id='sample--tls-enforcement';
+SQLEOF
+  echo "✅ Removed sample rows from routing.db"
+else
+  echo "ℹ️  routing.db empty or missing — no DB rows to remove"
+fi
+
+# ── 2. Project dir ────────────────────────────────────────────────────
+if [ -d "$PROJECT_DIR" ]; then
+  rm -rf "$PROJECT_DIR"
+  echo "✅ Removed $PROJECT_DIR"
+else
+  echo "ℹ️  $PROJECT_DIR already absent"
+fi
+
+# ── 3. projects.yml entry ─────────────────────────────────────────────
+if grep -q "id: sample-app" "$PROJECTS_YML" 2>/dev/null; then
+  python3 - <<PYEOF
+import re
+p = open("$PROJECTS_YML").read()
+p = re.sub(r"\n?\s*- id: sample-app\n\s*path: \./projects/sample-app\n?", "\n", p)
+open("$PROJECTS_YML", "w").write(p)
+PYEOF
+  echo "✅ Removed sample-app entry from $PROJECTS_YML"
+else
+  echo "ℹ️  sample-app not in $PROJECTS_YML"
+fi
+
+# ── 4. Move fixture log to archive/ (opt) ─────────────────────────────
+if [ -d "$SAMPLE_LOG_DIR" ]; then
+  mkdir -p "$ARCHIVE_DIR"
+  mv "$SAMPLE_LOG_DIR" "$ARCHIVE_DIR/"
+  echo "✅ Moved fixture log → $ARCHIVE_DIR/$(basename $SAMPLE_LOG_DIR)"
+fi
+
+echo ""
+echo "Sample archived. To re-add: bash bin/init-sample"

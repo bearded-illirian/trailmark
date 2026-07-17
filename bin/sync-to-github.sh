@@ -4,12 +4,17 @@
 # Idempotent: safe to re-run any time. Uses temp clone → rsync → commit → push.
 #
 # v0.1.0 (block 20 of task aihub--594): initial script.
+# v0.2.0 (block 22): REPO_SLUG configurable via GH_REPO_SLUG env var
+# (default: bearded-illirian/framework). git user.email derived from local
+# hostname instead of hardcoded personal value.
+#
 # Consumes: framework-public/.gitignore (exclude rules — plus explicit --exclude below).
 # Auth: GH_TOKEN loaded from ~/.gh-token (mode 600).
 #
 # Usage:
 #   bash bin/sync-to-github.sh                                  # default commit message with timestamp
 #   bash bin/sync-to-github.sh --message "custom message"       # custom commit message
+#   GH_REPO_SLUG="user/repo" bash bin/sync-to-github.sh          # override target repo
 
 set -e
 
@@ -20,7 +25,7 @@ export GH_TOKEN=$(cat "$HOME/.gh-token")
 # ── Paths ────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-REPO_SLUG="bearded-illirian/framework"
+REPO_SLUG="${GH_REPO_SLUG:-bearded-illirian/framework}"
 REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO_SLUG}.git"
 
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -64,7 +69,7 @@ cp "$SOURCE_DIR/.gitignore" "$TEMP_DIR/.gitignore"
 cd "$TEMP_DIR"
 
 # Ensure git identity is set for the commit
-git config user.email "sync@bearded-illirian.local"
+git config user.email "sync@$(hostname -s).local"
 git config user.name "sync-to-github"
 
 git add -A

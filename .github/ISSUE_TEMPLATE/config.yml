@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or how-do-I
+    url: https://github.com/bearded-illirian/framework/discussions/categories/q-a
+    about: Ask in Discussions. Faster than an issue for open-ended questions.
+
+  - name: Share what you built
+    url: https://github.com/bearded-illirian/framework/discussions/categories/show-and-tell
+    about: Post in the Show and tell category — we'd love to see it.
+
+  - name: Idea or proposal (open-ended)
+    url: https://github.com/bearded-illirian/framework/discussions/categories/ideas
+    about: Not ready to become an actionable feature request yet? Start a Discussion.
+
+  - name: Security vulnerability
+    url: https://github.com/bearded-illirian/framework/blob/main/SECURITY.md
+    about: Please use the private channel described in SECURITY.md, not a public issue.

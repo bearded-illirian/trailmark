@@ -1,0 +1,36 @@
+#!/bin/bash
+# status — Report Flow Web UI current state.
+
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PORT="${FLOW_UI_SERVER_PORT:-8765}"
+HOST="${FLOW_UI_SERVER_HOST:-127.0.0.1}"
+PID_FILE="$ROOT/logs/.pid"
+
+RUNNING_PID=$(lsof -ti :"$PORT" 2>/dev/null || true)
+
+if [ -z "$RUNNING_PID" ]; then
+  echo "Status: not running (port $PORT free)"
+  if [ -f "$PID_FILE" ]; then
+    echo "⚠️  Stale PID file: $PID_FILE (contains $(cat "$PID_FILE"))"
+  fi
+  exit 0
+fi
+
+echo "Status: running (PID $RUNNING_PID) on http://$HOST:$PORT/"
+
+if [ -f "$PID_FILE" ]; then
+  STORED_PID=$(cat "$PID_FILE")
+  if [ "$STORED_PID" != "$RUNNING_PID" ]; then
+    echo "⚠️  PID file mismatch: $PID_FILE says $STORED_PID, actual $RUNNING_PID"
+  fi
+fi
+
+if curl -sf "http://$HOST:$PORT/health" >/dev/null 2>&1; then
+  echo "Health: /health OK"
+else
+  echo "Health: ❌ /health not responding"
+fi
+
+echo "Log: $ROOT/logs/serve.log"

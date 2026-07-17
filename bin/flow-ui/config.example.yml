@@ -1,0 +1,90 @@
+# vschk-flow-ui — configuration example
+#
+# Copy to config.yml and edit for your machine.
+# All values can be overridden via env vars with FLOW_UI_ prefix using UPPER_SNAKE:
+#   paths.routing_db     → FLOW_UI_PATHS_ROUTING_DB
+#   server.port          → FLOW_UI_SERVER_PORT
+#   ui.brand.primary     → FLOW_UI_UI_BRAND_PRIMARY
+#
+# ~ (home) is auto-expanded via Path.expanduser().
+
+# local | vds — swaps project.path → project.deploy_dir_vds for filesystem endpoints.
+# Set to "vds" only on the production instance where /srv/... paths are reachable.
+mode: local
+
+paths:
+  # SQLite with tasks, artifacts, blocks. Auto-populated by hooks from tasks/log/**.
+  # Default assumes Flow UI runs from `workspace-root/bin/flow-ui/` (framework
+  # layout): the workspace's tasks/ dir lives at `../../tasks/`.
+  routing_db: ../../tasks/routing.db
+
+  # Canonical projects registry (source of truth for the project selector).
+  projects_yml: ../../aihub/projects.yml
+
+  # Root under which project directories live (used to browse project filesystem).
+  projects_root: ../../projects/
+
+  # Access log SQLite (habit tracking — created on first write, per-user).
+  access_log: ~/.flow-ui/access.db
+
+  # Platform SSO DB (auth_sessions + platform_users). Optional. Left null,
+  # the SSO middleware in app/auth.py does not activate. Middleware activates
+  # only when both AUTH_MODE=platform env AND this path is set. See AUTH.md.
+  platform_db: null
+
+  # Aihub-compatible catalog endpoint (Skills tab). Optional. Null → Skills
+  # tab renders empty, no outbound HTTP. Point at any endpoint that returns
+  # {"items": [...]} matching the catalog schema (name, category_slug, etc.).
+  aihub_api_url: null
+
+server:
+  # Bind to loopback only in v1. v2 (VDS) flips to 0.0.0.0 behind nginx + auth.
+  host: 127.0.0.1
+  port: 8765
+
+ui:
+  # Design token bundle. Only "vschk-ai" supported in v1.
+  theme: vschk-ai
+  brand:
+    primary: "#F4A300"   # saffron accent
+    bg: "#FAFAF9"        # off-white
+    fg: "#1A1A19"        # off-black core
+
+filesystem:
+  # Directories/files skipped by the tree walker
+  ignore:
+    - node_modules
+    - .git
+    - venv
+    - .venv
+    - __pycache__
+    - .DS_Store
+    - .pytest_cache
+    - dist
+    - build
+
+  # Cap for file reads. Larger files return truncated preview.
+  max_file_size_kb: 500
+
+  # Extensions treated as readable text (rendered in right pane).
+  # Anything else is marked binary in tree responses.
+  text_extensions:
+    - md
+    - py
+    - js
+    - ts
+    - tsx
+    - jsx
+    - sh
+    - yml
+    - yaml
+    - json
+    - toml
+    - txt
+    - sql
+    - css
+    - html
+    - xml
+    - conf
+    - ini
+    - env

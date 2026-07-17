@@ -1,0 +1,91 @@
+#!/bin/bash
+# new-project — register a new consumer project in the workspace.
+#
+# Usage: bash bin/new-project <project-id>
+#
+# Steps:
+#   1. Validate ID (lowercase, alphanumeric, hyphens; ≤ 30 chars)
+#   2. Check projects/<id> doesn't exist
+#   3. Create projects/<id>/.claude/
+#   4. Symlink projects/<id>/.claude/skills → ../../../aihub/.claude/skills
+#   5. Append entry to aihub/projects.yml
+#   6. Print success + next-step hint
+#
+# Windows/WSL note: symlinks may need `git config core.symlinks true` or
+# an rsync-based fallback. This script uses symlinks — replace with `cp -r`
+# in step 4 if your environment doesn't support symlinks.
+
+set -e
+
+# ── Args ─────────────────────────────────────────────────────────────────
+if [ -z "$1" ]; then
+  echo "Usage: bash bin/new-project <project-id>"
+  echo "Example: bash bin/new-project my-first-app"
+  exit 1
+fi
+
+PROJECT_ID="$1"
+
+# ── Validate ID ──────────────────────────────────────────────────────────
+if ! echo "$PROJECT_ID" | grep -qE '^[a-z][a-z0-9-]{0,30}$'; then
+  echo "❌ Invalid project id: '$PROJECT_ID'"
+  echo "   Rules: lowercase letters/digits/hyphens; start with letter; ≤ 31 chars"
+  exit 1
+fi
+
+# ── Paths ────────────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$WORKSPACE_ROOT/projects/$PROJECT_ID"
+PROJECTS_YML="$WORKSPACE_ROOT/aihub/projects.yml"
+
+# ── Existence check ─────────────────────────────────────────────────────
+if [ -d "$PROJECT_DIR" ]; then
+  echo "❌ Project already exists: $PROJECT_DIR"
+  exit 1
+fi
+
+# ── Create folder + symlink ─────────────────────────────────────────────
+mkdir -p "$PROJECT_DIR/.claude"
+ln -s "../../../aihub/.claude/skills" "$PROJECT_DIR/.claude/skills"
+
+# ── Verify symlink resolves ─────────────────────────────────────────────
+if [ ! -e "$PROJECT_DIR/.claude/skills" ]; then
+  echo "⚠️  Symlink created but target unreachable — check aihub/.claude/skills exists"
+fi
+
+# ── Append entry to aihub/projects.yml ──────────────────────────────────
+# Detect if projects list is empty (has `[]` marker) — needs different append.
+if grep -qE '^projects:\s*\[\]' "$PROJECTS_YML"; then
+  # Empty list — replace `projects: []` with block form.
+  python3 <<PYEOF
+import re, sys
+p = "$PROJECTS_YML"
+content = open(p).read()
+entry = """projects:
+  - id: $PROJECT_ID
+    name: $PROJECT_ID
+    path: projects/$PROJECT_ID
+    status: active
+"""
+content = re.sub(r'^projects:\s*\[\]\s*$', entry.rstrip(), content, flags=re.M)
+open(p, 'w').write(content)
+PYEOF
+else
+  # Non-empty list — append at end.
+  cat >> "$PROJECTS_YML" <<YAMLEOF
+
+  - id: $PROJECT_ID
+    name: $PROJECT_ID
+    path: projects/$PROJECT_ID
+    status: active
+YAMLEOF
+fi
+
+# ── Success + next step ─────────────────────────────────────────────────
+echo "✅ Project registered: $PROJECT_ID"
+echo "   Folder:   $PROJECT_DIR"
+echo "   Symlink:  $PROJECT_DIR/.claude/skills → aihub/.claude/skills"
+echo "   Registry: entry appended to aihub/projects.yml"
+echo ""
+echo "Next: bash bin/sync-from-aihub.sh   # distribute skills to your projects"

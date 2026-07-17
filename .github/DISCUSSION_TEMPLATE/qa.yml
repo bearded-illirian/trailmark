@@ -1,0 +1,32 @@
+title: "[Q&A] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask any question about using the framework. Before posting, please
+        check [FAQ.md](../blob/main/FAQ.md) — the answer might already be there.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What are you trying to do, and what's blocking you?
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried
+      description: Commands, docs you consulted, errors you saw. Helps us skip suggestions you already ruled out.
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Framework version
+      description: Release tag or short commit hash.
+    validations:
+      required: false

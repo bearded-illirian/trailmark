@@ -1,0 +1,34 @@
+#!/bin/bash
+# stop — Kill running Flow Web UI uvicorn instance.
+# Safe to call when nothing is running.
+
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PORT="${FLOW_UI_SERVER_PORT:-8765}"
+PID_FILE="$ROOT/logs/.pid"
+
+PID=$(lsof -ti :"$PORT" 2>/dev/null || true)
+
+if [ -z "$PID" ]; then
+  echo "Flow UI not running (port $PORT free)"
+  rm -f "$PID_FILE"
+  exit 0
+fi
+
+kill "$PID" 2>/dev/null || true
+sleep 1
+
+# Force if still alive.
+if kill -0 "$PID" 2>/dev/null; then
+  kill -9 "$PID" 2>/dev/null || true
+  sleep 1
+fi
+
+if lsof -ti :"$PORT" >/dev/null 2>&1; then
+  echo "❌ Failed to stop PID $PID on port $PORT"
+  exit 1
+fi
+
+rm -f "$PID_FILE"
+echo "✅ Stopped Flow UI (was PID $PID)"

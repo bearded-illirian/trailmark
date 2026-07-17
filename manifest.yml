@@ -1,6 +1,6 @@
 # Public release manifest for the VSCHK Framework.
 # Whitelist of skills and commands to sync from aihub → framework-public.
-# Consumed by bin/sync-from-aihub.sh (Block 3 of task aihub--498-vschk-framework).
+# Consumed by bin/sync-from-aihub.sh.
 #
 # Editing policy:
 #   - Add/remove entries → bump `meta.version` (semver)
@@ -8,18 +8,30 @@
 #   - Change `sync_rules` → re-run full sync + review diff
 
 meta:
-  version: 0.3.1
+  version: 0.5.0
   description: |
-    v0.3.1 — dev-auto-first added as 14th skill (autonomous per-block
-    orchestrator). SKILL.public.md v1.0 PASS 100/100 via skill-public-check v2.0.
-    Prior v0.3.0 shipped 13 items with contract sections + go-fast.public.md.
+    v0.5.0 — added `tool` tier for executable code trees synced from external
+    repos (first consumer: Flow UI). Tools bypass the SKILL.public.md rename
+    loop and use per-tool exclude_patterns (see sync_rules.tool_exclude_patterns).
+    Entry may set `source_root: external` to resolve source_path outside
+    `$AIHUB_ROOT/.claude/` — the sync script then uses expanduser() on
+    source_path directly. Backward-compatible with v0.4.0 entries (no source_root
+    field → defaults to aihub).
+
+    v0.4.0 — BREAKING layout change: restructured to vasechka-workspace layout.
+    All skills now live under `aihub/.claude/skills/{name}/` (flat, no tier
+    subdirs). Commands under `aihub/.claude/commands/`. Top-level:
+    aihub/ (central skill registry), projects/ (user's projects), tasks/
+    (unified routing.db + logs), bin/ (workspace tooling), docs/.
+
+    Prior v0.3.1 shipped 14 items with flat top-level core/protocols/commands
+    layout — now consolidated under aihub/.claude/ for consumer symlink pattern.
 
     Public exports produced by skill-public-make and validated by
-    skill-public-check v2.0 (10 boolean checks + 8-dimension scoring).
-    Framework consumers get sanitized versions with zero leaks (D1-D6 critical
-    dims). Sync-script renames *.public.md → canonical name on destination.
+    skill-public-check v2.0. Framework consumers get sanitized versions with
+    zero leaks. Sync-script renames *.public.md → canonical name on destination.
 
-    MVP release — 14 items (2 commands + 4 protocol skills + 8 core skills).
+    v0.5.0 release — 15 items (2 commands + 4 protocol skills + 8 core skills + 1 tool).
   updated_at: 2026-07-17
 
 source:
@@ -31,7 +43,6 @@ destination:
 
 sync_rules:
   # When source_path is a directory, these patterns are excluded from the copy.
-  # v0.2.0: skip internal variants — only public exports pass through.
   exclude_patterns:
     - "SKILL.md"         # Internal working version — often RU or with project refs
     - "SKILL.eng.md"     # EN staging translation — pre-public
@@ -42,10 +53,28 @@ sync_rules:
     - ".DS_Store"
 
   # Explicit include hints for the sync-script (documentation of intent).
-  # v0.2.0: SKILL.public.md is the sanitized public export; sync-script renames it to SKILL.md on destination.
   include_patterns:
     - "SKILL.public.md"  # Primary source — v2.0 checker-validated public export
     - "INFO.md"          # Optional metadata (frontmatter-only file, when present)
+
+  # Per-tool exclude patterns applied ONLY to entries with `tier: tool`.
+  # Skills/commands use the exclude_patterns block above; tools use these.
+  # Rationale: tool source trees have different noise (venv, logs, __pycache__,
+  # local config) than skill markdown trees.
+  tool_exclude_patterns:
+    - "app/auth.py"      # VSCHK-specific SSO reference; contract in AUTH.md
+    - "config.yml"       # per-user local config (gitignored upstream)
+    - "config.vds.yml"   # upstream-specific VDS deploy config
+    - ".git"
+    - "venv"
+    - ".venv"
+    - "logs"
+    - "__pycache__"
+    - "*.pyc"
+    - ".env"
+    - "*.key"
+    - "*.bak-*"
+    - ".DS_Store"
 
 entries:
 
@@ -53,85 +82,93 @@ entries:
   - id: go-start
     tier: command
     source_path: skills/go-start/
-    destination_path: commands/go-start/
+    destination_path: aihub/.claude/commands/go-start/
     last_synced_commit: null
 
   - id: go-fast
     tier: command
     source_path: commands/go-fast.public.md
-    destination_path: commands/go-fast.md
+    destination_path: aihub/.claude/commands/go-fast.md
     last_synced_commit: null
 
   # ── Protocol skills (4 — opinionated methodology) ───────────────────────
   - id: idea-first
     tier: protocol
     source_path: skills/idea-first/
-    destination_path: protocols/idea-first/
+    destination_path: aihub/.claude/skills/idea-first/
     last_synced_commit: null
 
   - id: arch-first
     tier: protocol
     source_path: skills/arch-first/
-    destination_path: protocols/arch-first/
+    destination_path: aihub/.claude/skills/arch-first/
     last_synced_commit: null
 
   - id: audit-first
     tier: protocol
     source_path: skills/audit-first/
-    destination_path: protocols/audit-first/
+    destination_path: aihub/.claude/skills/audit-first/
     last_synced_commit: null
 
   - id: ui-ai-first
     tier: protocol
     source_path: skills/ui-ai-first/
-    destination_path: protocols/ui-ai-first/
+    destination_path: aihub/.claude/skills/ui-ai-first/
     last_synced_commit: null
 
-  # ── Core skills (7 — universal per-block cycle + recording) ────────────
+  # ── Core skills (8 — universal per-block cycle + recording + autopilot) ───
   - id: human-first
     tier: core
     source_path: skills/human-first/
-    destination_path: core/human-first/
+    destination_path: aihub/.claude/skills/human-first/
     last_synced_commit: null
 
   - id: flow-first
     tier: core
     source_path: skills/flow-first/
-    destination_path: core/flow-first/
+    destination_path: aihub/.claude/skills/flow-first/
     last_synced_commit: null
 
   - id: library-first
     tier: core
     source_path: skills/library-first/
-    destination_path: core/library-first/
+    destination_path: aihub/.claude/skills/library-first/
     last_synced_commit: null
 
   - id: plan-first
     tier: core
     source_path: skills/plan-first/
-    destination_path: core/plan-first/
+    destination_path: aihub/.claude/skills/plan-first/
     last_synced_commit: null
 
   - id: ship-first
     tier: core
     source_path: skills/ship-first/
-    destination_path: core/ship-first/
+    destination_path: aihub/.claude/skills/ship-first/
     last_synced_commit: null
 
   - id: decision-first
     tier: core
     source_path: skills/decision-first/
-    destination_path: core/decision-first/
+    destination_path: aihub/.claude/skills/decision-first/
     last_synced_commit: null
 
   - id: note-first
     tier: core
     source_path: skills/note-first/
-    destination_path: core/note-first/
+    destination_path: aihub/.claude/skills/note-first/
     last_synced_commit: null
 
   - id: dev-auto-first
     tier: core
     source_path: skills/dev-auto-first/
-    destination_path: core/dev-auto-first/
+    destination_path: aihub/.claude/skills/dev-auto-first/
+    last_synced_commit: null
+
+  # ── Tools (1 — executable code trees, synced as-is with per-tool excludes) ─
+  - id: flow-ui
+    tier: tool
+    source_root: external          # resolve source_path via expanduser(), not $AIHUB_ROOT
+    source_path: ~/Projects/vschk-flow-ui/
+    destination_path: bin/flow-ui/
     last_synced_commit: null

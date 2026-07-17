@@ -1,0 +1,168 @@
+#!/bin/bash
+# init-sample — Seeds a demo project and one populated task into the workspace.
+#
+# Usage: bash bin/init-sample
+#
+# What it does:
+#   1. Creates projects/sample-app/ with .claude/skills symlink
+#   2. Appends `sample-app` entry to aihub/projects.yml (if not present)
+#   3. Initializes tasks/routing.db schema (CREATE TABLE IF NOT EXISTS)
+#   4. Inserts fixture rows: 1 artifact + 2 blocks + 10 artifact rows + 6 skill invocations
+#      pointing at framework-public/tasks/log/2026-01-15-sample--tls-enforcement/
+#
+# After running, `bash bin/flow-ui/serve` will show a populated Flow UI —
+# real task with 2 completed blocks and full artifact chain — so you see
+# what the framework produces in normal use.
+#
+# Idempotent: safe to re-run. If sample-app already exists, exits with a hint.
+# To remove: `bash bin/archive-sample` (deletes DB rows + symlink + registry entry;
+# optionally moves the fixture task folder to tasks/log/archive/).
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$WORKSPACE_ROOT/projects/sample-app"
+PROJECTS_YML="$WORKSPACE_ROOT/aihub/projects.yml"
+ROUTING_DB="$WORKSPACE_ROOT/tasks/routing.db"
+SAMPLE_LOG_DIR="$WORKSPACE_ROOT/tasks/log/2026-01-15-sample--tls-enforcement"
+TASK_ID="sample--tls-enforcement"
+
+# ── Sanity ──────────────────────────────────────────────────────────────
+command -v sqlite3 >/dev/null 2>&1 || { echo "❌ sqlite3 not found"; exit 1; }
+
+# Restore fixture from archive/ if a previous archive-sample moved it there.
+ARCHIVE_DIR="$WORKSPACE_ROOT/tasks/log/archive"
+if [ ! -d "$SAMPLE_LOG_DIR" ] && [ -d "$ARCHIVE_DIR/$(basename $SAMPLE_LOG_DIR)" ]; then
+  mv "$ARCHIVE_DIR/$(basename $SAMPLE_LOG_DIR)" "$SAMPLE_LOG_DIR"
+  echo "ℹ️  Restored fixture from archive/"
+fi
+
+[ -d "$SAMPLE_LOG_DIR" ] || { echo "❌ Fixture dir missing: $SAMPLE_LOG_DIR"; exit 1; }
+
+# ── Idempotency guard ──────────────────────────────────────────────────
+if [ -d "$PROJECT_DIR" ]; then
+  echo "ℹ️  sample-app already initialized at $PROJECT_DIR"
+  echo "    To remove: bash bin/archive-sample"
+  exit 0
+fi
+
+echo "════════════════════════════════════════════"
+echo "  init-sample — seed populated demo project"
+echo "════════════════════════════════════════════"
+
+# ── 1. Create sample-app project + symlink ─────────────────────────────
+mkdir -p "$PROJECT_DIR/.claude"
+ln -s "../../../aihub/.claude/skills" "$PROJECT_DIR/.claude/skills"
+echo "✅ Created $PROJECT_DIR + skills symlink"
+
+# ── 2. Append to aihub/projects.yml ────────────────────────────────────
+if ! grep -q "id: sample-app" "$PROJECTS_YML" 2>/dev/null; then
+  if grep -q "^projects: \[\]" "$PROJECTS_YML" 2>/dev/null; then
+    # Empty projects list — replace with structured list
+    python3 - <<PYEOF
+import re
+p = open("$PROJECTS_YML").read()
+p = re.sub(r"^projects: \[\]", "projects:\n  - id: sample-app\n    path: ./projects/sample-app", p, flags=re.MULTILINE)
+open("$PROJECTS_YML", "w").write(p)
+PYEOF
+  else
+    # Non-empty — append entry
+    printf "\n  - id: sample-app\n    path: ./projects/sample-app\n" >> "$PROJECTS_YML"
+  fi
+  echo "✅ Registered sample-app in $PROJECTS_YML"
+else
+  echo "ℹ️  sample-app already in $PROJECTS_YML"
+fi
+
+# ── 3. Schema DDL + fixture rows ────────────────────────────────────────
+sqlite3 "$ROUTING_DB" <<'SQLEOF'
+CREATE TABLE IF NOT EXISTS artifacts (
+    id          TEXT PRIMARY KEY,
+    type        TEXT NOT NULL,
+    project     TEXT,
+    title       TEXT,
+    file_path   TEXT,
+    status      TEXT DEFAULT 'open',
+    created_at  TEXT,
+    closed_at   TEXT,
+    number      INTEGER,
+    domain      TEXT NOT NULL DEFAULT 'development'
+);
+
+CREATE TABLE IF NOT EXISTS task_blocks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id     TEXT NOT NULL,
+    block_num   INTEGER,
+    title       TEXT,
+    status      TEXT DEFAULT 'pending',
+    source      TEXT,
+    commit_hash TEXT,
+    created_at  TEXT,
+    closed_at   TEXT,
+    type        TEXT DEFAULT 'block',
+    sort_order  INTEGER,
+    atom_type   TEXT,
+    recommended_cadence TEXT
+);
+
+CREATE TABLE IF NOT EXISTS task_artifacts (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id      TEXT NOT NULL,
+    block_num    TEXT,
+    round_num    INTEGER,
+    artifact_type TEXT,
+    file_name    TEXT,
+    file_path    TEXT,
+    created_by   TEXT,
+    created_at   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS skill_invocations (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id     TEXT,
+    block_num   TEXT,
+    skill_name  TEXT,
+    invoked_at  TEXT
+);
+
+INSERT OR IGNORE INTO artifacts (id, type, project, title, file_path, status, created_at, closed_at, number)
+VALUES ('sample--tls-enforcement', 'fast-track', 'sample-app',
+        'Add TLS enforcement to email service',
+        'tasks/log/2026-01-15-sample--tls-enforcement/task.md',
+        'done', '2026-01-15', '2026-01-15', 1);
+
+INSERT OR IGNORE INTO task_blocks (task_id, block_num, title, status, source, commit_hash, created_at, closed_at, type, sort_order, atom_type, recommended_cadence)
+VALUES
+ ('sample--tls-enforcement', 1, 'Audit email_service.py — find encryption branches and callers', 'done', 'plan-first', 'a3f8c1d', '2026-01-15', '2026-01-15', 'block', 100, 'backend', 'flow+lib+plan'),
+ ('sample--tls-enforcement', 2, 'Add ValueError on invalid encryption config (load + send)', 'done', 'plan-first', 'e7b4d92', '2026-01-15', '2026-01-15', 'block', 200, 'backend', 'flow+lib+plan');
+
+INSERT INTO task_artifacts (task_id, block_num, round_num, artifact_type, file_name, file_path, created_by, created_at)
+VALUES
+ ('sample--tls-enforcement', 1, 1, 'flow-first', 'flow-first-1.1.md',    'tasks/log/2026-01-15-sample--tls-enforcement/flow-first-1.1.md',    'flow-first',    '2026-01-15'),
+ ('sample--tls-enforcement', 1, 1, 'library-first', 'library-first-1.1.md', 'tasks/log/2026-01-15-sample--tls-enforcement/library-first-1.1.md', 'library-first', '2026-01-15'),
+ ('sample--tls-enforcement', 1, 1, 'plan-first', 'plan-first-1.1.md',    'tasks/log/2026-01-15-sample--tls-enforcement/plan-first-1.1.md',    'plan-first',    '2026-01-15'),
+ ('sample--tls-enforcement', 1, 1, 'report', 'report-1.1.md',            'tasks/log/2026-01-15-sample--tls-enforcement/report-1.1.md',        'plan-first',    '2026-01-15'),
+ ('sample--tls-enforcement', 1, 1, 'user-note', 'user-note-1.1.md',      'tasks/log/2026-01-15-sample--tls-enforcement/user-note-1.1.md',     'plan-first',    '2026-01-15'),
+ ('sample--tls-enforcement', 2, 1, 'flow-first', 'flow-first-2.1.md',    'tasks/log/2026-01-15-sample--tls-enforcement/flow-first-2.1.md',    'flow-first',    '2026-01-15'),
+ ('sample--tls-enforcement', 2, 1, 'library-first', 'library-first-2.1.md', 'tasks/log/2026-01-15-sample--tls-enforcement/library-first-2.1.md', 'library-first', '2026-01-15'),
+ ('sample--tls-enforcement', 2, 1, 'plan-first', 'plan-first-2.1.md',    'tasks/log/2026-01-15-sample--tls-enforcement/plan-first-2.1.md',    'plan-first',    '2026-01-15'),
+ ('sample--tls-enforcement', 2, 1, 'report', 'report-2.1.md',            'tasks/log/2026-01-15-sample--tls-enforcement/report-2.1.md',        'plan-first',    '2026-01-15'),
+ ('sample--tls-enforcement', 2, 1, 'user-note', 'user-note-2.1.md',      'tasks/log/2026-01-15-sample--tls-enforcement/user-note-2.1.md',     'plan-first',    '2026-01-15');
+
+INSERT INTO skill_invocations (task_id, block_num, skill_name, invoked_at)
+VALUES
+ ('sample--tls-enforcement', 1, 'flow-first',    '2026-01-15 10:00:00'),
+ ('sample--tls-enforcement', 1, 'library-first', '2026-01-15 10:05:00'),
+ ('sample--tls-enforcement', 1, 'plan-first',    '2026-01-15 10:10:00'),
+ ('sample--tls-enforcement', 2, 'flow-first',    '2026-01-15 11:00:00'),
+ ('sample--tls-enforcement', 2, 'library-first', '2026-01-15 11:05:00'),
+ ('sample--tls-enforcement', 2, 'plan-first',    '2026-01-15 11:10:00');
+SQLEOF
+
+echo "✅ Seeded routing.db: 1 artifact + 2 blocks + 10 artifact rows + 6 skill invocations"
+echo ""
+echo "Next: bash bin/flow-ui/serve  # then open http://127.0.0.1:8765/"
+echo "      → Projects → sample-app → task → 2 blocks with full artifact chain"
+echo ""
+echo "To remove sample: bash bin/archive-sample"

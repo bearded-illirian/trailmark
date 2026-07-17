@@ -1,0 +1,45 @@
+#!/bin/bash
+# serve — Idempotent launcher for the Flow Web UI (uvicorn + FastAPI).
+# Runs in background, safe to close terminal. Repeated calls are no-ops.
+#
+# Usage: bash ~/Projects/vschk-flow-ui/bin/serve
+# Stop:  bash ~/Projects/vschk-flow-ui/bin/stop
+# Check: bash ~/Projects/vschk-flow-ui/bin/status
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PORT="${FLOW_UI_SERVER_PORT:-8765}"
+HOST="${FLOW_UI_SERVER_HOST:-127.0.0.1}"
+LOG_DIR="$ROOT/logs"
+LOG_FILE="$LOG_DIR/serve.log"
+PID_FILE="$LOG_DIR/.pid"
+
+mkdir -p "$LOG_DIR"
+
+# Idempotency: if port already listening, exit 0 with info.
+EXISTING_PID=$(lsof -ti :"$PORT" 2>/dev/null || true)
+if [ -n "$EXISTING_PID" ]; then
+  echo "✅ Flow UI already running (PID $EXISTING_PID) on http://$HOST:$PORT/"
+  exit 0
+fi
+
+# Start in background, detach from terminal.
+cd "$ROOT"
+nohup python3 -m uvicorn app.main:app --host "$HOST" --port "$PORT" --log-level warning \
+  >> "$LOG_FILE" 2>&1 &
+NEW_PID=$!
+disown "$NEW_PID" 2>/dev/null || true
+echo "$NEW_PID" > "$PID_FILE"
+
+# Wait a moment, then verify /health.
+sleep 1
+if curl -sf "http://$HOST:$PORT/health" >/dev/null 2>&1; then
+  echo "✅ Flow UI started (PID $NEW_PID) on http://$HOST:$PORT/"
+  echo "   Docs: http://$HOST:$PORT/docs"
+  echo "   Log:  $LOG_FILE"
+else
+  echo "❌ Flow UI failed to become healthy after 1s. Check log: $LOG_FILE"
+  tail -10 "$LOG_FILE" 2>/dev/null || true
+  exit 1
+fi

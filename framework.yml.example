@@ -7,10 +7,10 @@
 # Consumed by:
 #   - bin/init                 — writes framework.yml from Q&A wizard
 #   - bin/sync-from-aihub.sh   — sync-time inject: substitutes {{ config.paths.X }}
-#                                tokens in synced skill files (block 10)
+#                                tokens in synced skill files
 #   - (indirectly) skill files — the tokens are the target of substitution;
 #                                 skills carry {{ config.paths.X }} literals in
-#                                 aihub source (blocks 12-16 tokenize them)
+#                                 aihub source
 #
 # Editing policy:
 #   - Bump `meta.schema_version` on breaking shape changes (semver)
@@ -21,66 +21,50 @@
 
 meta:
   # Bump on breaking shape changes. Consumers gate against known versions.
-  schema_version: 0.1.0
+  schema_version: 0.2.0
 
 # ── Paths ──────────────────────────────────────────────────────────────────
-# Filesystem anchors. Values below are placeholders — replace with your
-# own layout via bin/init or by hand.
+# In workspace mode (post-v0.4.0 layout), only `aihub_root` is prompted.
+# Everything else is DERIVED from workspace root (script location) — see
+# "Derived paths" comment below.
 paths:
 
-  # Where your aihub-style skill master lives on your machine.
-  # Skills read: source-of-truth for sync-from-aihub.sh.
-  aihub_root: <your-path>/aihub
+  # Where your aihub-style skill master lives.
+  # Default: `./aihub` inside the workspace (works out-of-the-box for MVP).
+  # Override with an absolute path if aihub lives outside this workspace.
+  aihub_root: ./aihub
 
-  # Where the public framework workspace lives — the folder you'll push to
-  # GitHub. sync-from-aihub.sh writes here.
-  framework_public_root: <your-path>/framework-public
-
-  # Root folder for tasks: log/, flow/, backlog/, routing.db.
-  # Skills read: task log destination, routing.db lookups.
-  tasks_root: <your-path>/framework-public/tasks
-
-  # Central routing database — one file that indexes every artifact of every
-  # task across every project.
-  # Skills read: SELECT / INSERT / UPDATE via sqlite3.
-  routing_db: <your-path>/framework-public/tasks/routing.db
-
-  # Parent folder for per-task log dirs (task.md + report-NN.md + notes).
-  # Each task creates a subfolder here named `{date}-{slug}`.
-  log_dir_base: <your-path>/framework-public/tasks/log
+  # ── Derived paths (auto-computed by scripts) ────────────────────────────
+  # The following values are NOT prompted by bin/init — scripts compute them
+  # from the workspace root (bin/*.sh scripts detect it via $SCRIPT_DIR/..).
+  # Listed here for documentation only; not written to framework.yml.
+  #
+  # workspace_root      = $SCRIPT_DIR/..  (workspace containing aihub/, projects/, tasks/)
+  # tasks_root          = $workspace_root/tasks
+  # routing_db          = $workspace_root/tasks/routing.db
+  # log_dir_base        = $workspace_root/tasks/log
+  # projects_yml        = $workspace_root/aihub/projects.yml
 
 # ── Environment ────────────────────────────────────────────────────────────
-# Remote hosts referenced by skills (deploy, SSH, telegram relay, etc.).
-# Placeholders below are illustrative — replace with your own hosts.
+# Optional. Only needed if you want git-push auto-deploy (see
+# docs/AUTO_DEPLOY_RECIPE.md) or SSH-driven skills.
 env:
 
   # Primary application server — where products get deployed via `git push`.
-  # Skills read: SSH targets, curl endpoints, log tail commands.
   # Example: root@203.0.113.10 or root@myserver.example
-  server_primary: root@<your-primary-server>
+  # Leave as null if you don't use remote deploy.
+  server_primary: null
 
   # Telegram-relay server (optional). Bots and long-lived polling live here
   # because Telegram API is blocked from some regions.
-  # Skills read: SSH targets for radar-relay / tg-bot-proxy management.
-  # Set to `null` if you don't run a relay.
   # Example: root@198.51.100.20
-  server_telegram_relay: root@<your-telegram-relay>
+  # Leave as null if you don't run a relay.
+  server_telegram_relay: null
 
 # ── Projects ──────────────────────────────────────────────────────────────
-# Registry of your products/projects. `go-start` uses this to build its
-# "Which project are we working on?" menu (commands/go-start/SKILL.md lines
-# 81-93 in aihub source will iterate over this list at init-time resolve).
+# Registry of your projects lives in `aihub/projects.yml` (workspace-relative
+# path). bin/new-project appends entries there; bin/init seeds it on first
+# run if missing.
 #
-# Shape mirrors the top-level entries of a projects.yml file. Add one row per
-# project; keep id short and stable — routing.db `project` column stores it.
-#
-# Leave the list empty on first init and edit later, or seed with your own.
-projects:
-  # - id: my-product
-  #   name: My Product
-  #   domain: my-product.example.com
-  #
-  # - id: internal-tool
-  #   name: Internal Tool
-  #   domain: tool.example.com
-  []
+# See `docs/PROJECTS_GUIDE.md` for the hub-and-spoke pattern that ties this
+# registry to the projects/ folder + skill symlinks.

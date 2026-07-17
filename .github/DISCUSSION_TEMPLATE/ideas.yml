@@ -1,0 +1,41 @@
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas Discussions are for open-ended proposals — things you want
+        to explore before they become concrete feature requests. Once we
+        agree an idea is worth building, we convert it to an issue.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem or opportunity
+      description: What's the situation you'd like the framework to handle differently?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Rough proposal
+      description: Sketch what a solution might look like. Doesn't need to be complete or final.
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Who benefits and how
+      description: Which kind of users would this help, and in what specific workflow?
+    validations:
+      required: false
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks or downsides
+      description: What could go wrong? What are the tradeoffs?
+    validations:
+      required: false
