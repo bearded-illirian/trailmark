@@ -22,7 +22,7 @@ registry (SQLite). No runtime. No SDK. Every step is contractually required
 to produce a tracked file. Different tool, different problem — see the
 [comparison table](./README.md#how-this-compares) for detail.
 
-## How does it compare to prescriptive frameworks like Molyanov ai-dev?
+## How does it compare to prescriptive documentation-first frameworks?
 
 Prescriptive frameworks ship documentation — roles, rules, best practices,
 checklists — that you apply by hand to your codebase. This framework ships

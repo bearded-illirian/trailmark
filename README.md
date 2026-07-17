@@ -31,7 +31,7 @@ engineering record.
 
 ## How this compares
 
-| Axis | Prescriptive frameworks (e.g. Molyanov ai-dev) | Executable orchestrators (LangChain, CrewAI) | Raw Claude Code / Cursor rules | **This framework** |
+| Axis | Prescriptive documentation-first frameworks | Executable orchestrators (LangChain, CrewAI) | Editor-embedded rules (e.g. Cursor rules) | **This framework** |
 |---|---|---|---|---|
 | **Ships** | Documentation (roles, rules, checklists) you apply by hand | Python runtime + agent graph you code against | System prompts + rule files | Skills + tooling + artifact registry |
 | **Artifacts as first-class** | ❌ Prose only | ⚠️ Optional / ad-hoc traces | ❌ Ephemeral chat | ✅ Every step writes a tracked file |
@@ -46,6 +46,11 @@ process, prescriptive frameworks fit. If you're building autonomous agents at
 scale, LangChain / CrewAI fit. This framework fits when you want **discipline
 without a runtime** — every step of every task auditable, but nothing to
 maintain beyond files.
+
+_Note: this framework runs on top of Claude Code (or any agent supporting
+`Skill('name')` invocation). The comparison above is against categories of
+methodology, not against the underlying agent harness — Claude Code is the
+runtime we build on, not a competitor._
 
 ---
 
