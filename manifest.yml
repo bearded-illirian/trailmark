@@ -55,6 +55,7 @@ sync_rules:
     - "SKILL.md"         # Internal working version — often RU or with project refs
     - "SKILL.eng.md"     # EN staging translation — pre-public
     - "SKILL.ru.md"      # Russian language variants
+    - "INFO.md"          # Internal RU metadata — INFO.public.md is the shipped EN version
     - "*.next.md"        # WIP staging drafts (SKILL.next.md)
     - "*.bak-*"          # Backup files from task blocks
     - "domains/"         # Per-domain configs — vschk-specific

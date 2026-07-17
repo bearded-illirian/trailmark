@@ -1,44 +1,44 @@
 ---
 title: Library-First
-pitch: Анализ задачи через таблицу — что готово, что с нуля
+pitch: Task analysis via a table — what's ready, what's new
 icon: 📚
-category: razrabotka
+category: development
 price: free
 publish: true
 order: 30
 works_with:
   - id: flow-first
-    why: До library-first — сверка ландшафта по 3 уровням
+    why: Before library-first — landscape alignment across 3 layers
   - id: plan-first
-    why: После апрува таблицы LOC — пошаговый план действий
+    why: After the LOC table is approved — a step-by-step plan
   - id: project-knowledge
-    why: Источник знания «куда смотреть» для поиска готовых решений
+    why: Source of knowledge "where to look" for ready solutions
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Агент пишет код с нуля там, где в проекте уже есть готовый компонент. То же самое — но в другом месте, под другим именем, с лишними отличиями. Через месяц 3 версии одной утилиты, никто не знает какую использовать.
+The agent writes code from scratch where the project already has a ready component. The same thing — but in a different place, under a different name, with unnecessary differences. A month later there are 3 versions of one utility, nobody knows which to use.
 
-Или наоборот — берёт «похожий» готовый компонент когда задача требует нового. LOC-оценка занижена, через два часа выясняется что это совсем не то.
+Or the opposite — takes a "similar" ready component when the task actually requires something new. The LOC estimate is underestimated, two hours in it turns out it's not that at all.
 
-## Как работает
+## How it works
 
-После flow-first скилл разбивает задачу на атомарные действия. Для каждого определяет: есть готовый компонент в проекте (Библиотека ✅) или с нуля (С нуля ⚠️). Конкретное имя файла/компонента. Оценка LOC. Тип (ui / backend / integration / infra / ai-skill / manual).
+After flow-first the skill breaks the task into atomic actions. For each it decides: is there a ready component in the project (Library ✅) or from scratch (From scratch ⚠️). The concrete file / component name. LOC estimate. Type (ui / backend / integration / infra / ai-skill / manual).
 
-Таблица показывается, записывается в лог, ждёт явный «ок». Если итог >150 LOC или >3 строк С нуля — предлагает эскалацию в Brief (большая задача требует ТЗ, не fast-track).
+The table is shown, written to the log, waits for an explicit "ok". If the total is >150 LOC or >3 "from scratch" rows — it offers escalation to a Brief (a large task requires a spec, not a fast-track).
 
-Каждый риск в «Точках внимания» — с конкретным `file:line`, не абстрактный «может что-то сломаться».
+Every risk in "Watchpoints" — with a concrete `file:line`, not an abstract "something might break".
 
-## Результат работы
+## Result of the work
 
-План с честным размером задачи и явными переиспользуемыми компонентами. Никаких сюрпризов «оказалось вдвое сложнее» в середине. Если задача правда большая — рано эскалируется в полный цикл (brief → tz → epic), не превращается в скрытый эпик.
+A plan with an honest task size and explicit reusable components. No surprises of "turned out twice as complex" mid-way. If the task really is large — it gets escalated early into the full cycle (brief → spec → epic), doesn't become a hidden epic.
 
-Долгосрочно — проект не плодит дубликаты, готовые компоненты находят и используют.
+Long-term — the project doesn't breed duplicates, ready components are found and used.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| flow-first | Перед library-first даёт понимание ландшафта — таблица LOC строится на факте, не на догадке |
-| plan-first | После апрува LOC — пошаговый план и режим работы |
-| project-knowledge | Router «куда смотреть» когда ищем готовое решение |
+| flow-first | Before library-first provides landscape understanding — the LOC table is built on facts, not guesses |
+| plan-first | After the LOC approval — a step-by-step plan and work mode |
+| project-knowledge | Router "where to look" when searching for a ready solution |

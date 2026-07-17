@@ -1,6 +1,6 @@
 ---
 title: Check-First
-pitch: Проверка покрытия требований эпиками в /go-epic
+pitch: Verify requirement coverage by epics before final approval
 icon: ✅
 category: qa
 price: free
@@ -8,34 +8,34 @@ publish: true
 order: 90
 works_with:
   - id: arch-first
-    why: После апрува покрытия check-first каждый эпик уходит в arch-first
+    why: After coverage approval each epic goes into arch-first
   - id: plan-first
-    why: Для каждого эпика отдельный plan-first после check-first
+    why: A separate plan-first per epic after check-first
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-В `/go-epic` агент предлагает декомпозицию большой задачи на эпики. Внешне выглядит логично — но через неделю обнаруживается: одно требование из Brief / ТЗ не покрыто ни одним эпиком. Оно «было очевидно» — поэтому никто его не отдельно не выделил.
+The agent proposes a decomposition of a large task into epics. On the surface it looks logical — but a week later it turns out: one requirement from the brief / spec is covered by no epic. It "was obvious" — so nobody isolated it.
 
-Без явной проверки покрытия — мелкие требования (особенно edge cases и non-functional) теряются при декомпозиции. На финальной сдаче клиенту: «А где обработка ошибок?» — её нет.
+Without an explicit coverage check, small requirements (especially edge cases and non-functional ones) get lost during decomposition. At final delivery: "Where's error handling?" — it isn't there.
 
-## Как работает
+## How it works
 
-После того как агент предложил эпики — `check-first` собирает требования из Brief и ТЗ (секции Скоуп / Acceptance criteria / Что должно быть) в плоский список. Для каждого требования проверяет: покрыто ли оно хоть одним эпиком?
+After the agent proposes the epics, `check-first` collects requirements from the brief / spec (Scope / Acceptance criteria / What must exist sections) into a flat list. For each requirement it checks: is it covered by at least one epic?
 
-Выводится таблица: требование → эпик → статус (✅ покрыто / ⚠️ пробел). Если все ✅ — продолжаем без паузы. Если есть пробелы — стоп, вопрос: добавить эпик / расширить существующий / признать out-of-scope.
+It outputs a table: requirement → epic → status (✅ covered / ⚠️ gap). If everything is ✅ — proceed without a pause. If there are gaps — stop, question: add an epic / extend an existing one / mark as out-of-scope.
 
-Без апрува таблицы покрытия — `/go-epic` не движется дальше предложения эпиков.
+Without approval of the coverage table, the decomposition workflow doesn't move past the epic proposal.
 
-## Результат работы
+## Result of the work
 
-Ни одно требование Brief / ТЗ не теряется при декомпозиции. Если что-то признано out-of-scope — это явное решение, а не упущение. На финальной сдаче всё, что обещано клиенту — реализовано.
+Not a single brief / spec requirement is lost during decomposition. If something is marked out-of-scope — that's an explicit decision, not an omission. At final delivery everything promised to the client is implemented.
 
-Длинные проекты не «находят пропущенные требования» через 2 месяца на демо.
+Long projects don't "discover missing requirements" two months in during a demo.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| arch-first | После апрува покрытия каждый эпик уходит в arch-first |
-| plan-first | Для каждого эпика отдельный plan-first после check-first |
+| arch-first | After coverage approval each epic goes into arch-first |
+| plan-first | A separate plan-first per epic after check-first |

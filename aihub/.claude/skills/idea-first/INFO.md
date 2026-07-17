@@ -1,53 +1,53 @@
 ---
 title: Idea-First
-pitch: "Точка входа: определяет тип задачи в /go-fast"
+pitch: "Entry point: identifies the task type inside the fast-track workflow"
 icon: 🎯
-category: razrabotka
+category: development
 price: free
 publish: true
 order: 15
 works_with:
   - id: habit-first
-    why: Для ветки «новый продукт» — следующий скилл после idea-first
+    why: For the "new product" branch — the next skill after idea-first
   - id: arch-first
-    why: Для ветки «новая фича» (5+ блоков) — следующий скилл
+    why: For the "new feature" branch (5+ blocks) — the next skill
   - id: audit-first
-    why: Для ветки «фикс» — следующий скилл (аудит дыр перед фиксом)
+    why: For the "fix" branch — the next skill (audit gaps before a fix)
   - id: flow-first
-    why: Для маленьких задач после idea-first — сразу flow-first
+    why: For small tasks after idea-first — straight to flow-first
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Агент получил задачу — и сразу пошёл в код через library-first. Через полчаса выяснилось, что задача была про **дизайн новой привычки**, а не про код. Или про **аудит дыр**, а не про новую фичу. Или это вообще огромная задача на 5 блоков, а пошли через мини-цикл.
+The agent got a task — and dove straight into code via library-first. Half an hour later it turned out the task was about **designing a new habit**, not code. Or an **audit of gaps**, not a new feature. Or actually a huge task of 5 blocks was run through a mini-cycle.
 
-Без явного определения типа — каждая задача идёт через один и тот же пайплайн `flow → library → plan`. Маленькая правка — оверкилл, большая — недоинвестирована. Продуктовые задачи идут как код, поведенческие — теряются.
+Without an explicit type identification, every task goes through the same `flow → library → plan` pipeline. A small edit is overkill, a large one is under-invested. Product tasks run as code, behavioral ones get lost.
 
-## Как работает
+## How it works
 
-5-7 вопросов диалога — не больше. Что хотим сделать. Какой результат. Что **не** делаем. Размер (1 коммит / неделя / месяц). Какой слой. Тип: **продукт** (новый сервис, habit-design нужен) / **фича** (расширение продукта, в коде) / **фикс** (баг, неизвестные дыры).
+A dialogue of 5-7 questions — no more. What do we want to do. What's the desired result. What we **don't** do. Size (1 commit / a week / a month). Which layer. Type: **product** (new service, needs habit design) / **feature** (extension of a product, in code) / **fix** (bug, unknown gaps).
 
-Идея-карточка показывается одним сообщением, записывается в `tasks/log/`. Ждёт явный «ок» — без апрува дальше ничего.
+The idea card is shown in one message and written to `tasks/log/`. It waits for an explicit "ok" — nothing continues without approval.
 
-После апрува — роутинг по ветке:
-- **продукт** → `habit-first` (спроектировать habit loop) → `arch-first`
-- **фича** → `arch-first` (декомпозировать на блоки)
-- **фикс** → `audit-first` (найти все дыры до фикса)
-- **маленькая** → сразу `flow-first` без декомпозиции
+After approval — routing along the branch:
+- **product** → habit-first (design the habit loop) → arch-first
+- **feature** → arch-first (decompose into blocks)
+- **fix** → audit-first (find all gaps before the fix)
+- **small** — straight to flow-first without decomposition
 
-Idea-first **не читает код** — это разговор о типе задачи, не технический анализ.
+Idea-first **does not read code** — it's a conversation about the task type, not technical analysis.
 
-## Результат работы
+## Result of the work
 
-Каждая задача попадает в правильный пайплайн с первой минуты. Продуктовые задачи получают habit-design, фичи — архитектурную декомпозицию, фиксы — аудит дыр, мелочи — быстрый flow-first без оверкилла.
+Every task lands in the right pipeline from the first minute. Product tasks get habit design, features get architectural decomposition, fixes get a gap audit, small ones get a fast flow-first without overkill.
 
-Через час работы — нет ситуации «оказалось, это вообще другая задача». Тип зафиксирован явно, scope согласован до старта.
+An hour into the work — no situation of "turned out it's actually a different task". The type is fixed explicitly, scope is agreed before start.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| habit-first | Для ветки «новый продукт» — следующий скилл после idea-first |
-| arch-first | Для ветки «новая фича» (5+ блоков) — следующий скилл |
-| audit-first | Для ветки «фикс» — следующий скилл (аудит дыр перед фиксом) |
-| flow-first | Для маленьких задач после idea-first — сразу flow-first |
+| habit-first | For the "new product" branch — the next skill after idea-first |
+| arch-first | For the "new feature" branch (5+ blocks) — the next skill |
+| audit-first | For the "fix" branch — the next skill (audit gaps before a fix) |
+| flow-first | For small tasks after idea-first — straight to flow-first |

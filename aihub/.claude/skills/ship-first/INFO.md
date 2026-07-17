@@ -1,6 +1,6 @@
 ---
 title: Ship-First
-pitch: "Финал задачи: отчёт, деплой, smoke test, закрытие"
+pitch: "Task finalization: report, deploy, smoke test, closure"
 icon: 🚀
 category: session
 price: free
@@ -8,38 +8,38 @@ publish: true
 order: 50
 works_with:
   - id: plan-first
-    why: Plan-first вызывает ship-first после execute блока
+    why: Plan-first invokes ship-first after executing a block
   - id: go-guide
-    why: По итогам задачи ship-first может вызвать go-guide для гида
+    why: After the task ship-first may invoke go-guide to record a guide
   - id: arch-map
-    why: Финальная привязка артефакта к архитектуре (propagate)
+    why: Final linking of the artifact to architecture (propagate)
   - id: ui-ai-first
-    why: Если задача создаёт user-facing операции — ship-first запускает ui-ai-first
+    why: If the task creates user-facing operations — ship-first invokes ui-ai-first
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Агент написал код и сразу перешёл к следующему — нет отчёта, не сделан коммит, не задеплоено, не проверено на проде, не закрыто в routing.db. Через неделю никто не помнит что было сделано, ship-флоу не воспроизводится.
+The agent wrote code and immediately moved on — no report, no commit, nothing deployed, nothing verified in prod, nothing closed in the registry. A week later nobody remembers what was done, the ship flow can't be reproduced.
 
-Без финального протокола — задача «висит» в полузакрытом состоянии: код есть, но никто не подтвердил что работает. STATUS.md устарел, sessions.md не дополнен.
+Without a final protocol, a task "hangs" in a half-closed state: code exists, but nobody confirmed it works. STATUS.md is stale, sessions.md wasn't updated.
 
-## Как работает
+## How it works
 
-Скилл работает в двух режимах. **Per-block** — закрывает один блок после plan-first: пишет report-NN.md + user-note-NN.md, делает коммит + push + sync, прогоняет smoke test по типам атомов (backend → curl, infra → systemctl, ai-skill → перечитать SKILL.md). UPDATE task_blocks status=done. Затем либо переходит к следующему блоку через flow-first, либо переключается в task-level.
+The skill runs in two modes. **Per-block** — closes a single block after plan-first: writes `report-NN.md` + `user-note-NN.md`, commits + push + sync, runs a smoke test by atom type (backend → curl, infra → systemctl, ai-skill → re-read SKILL.md). Updates task_blocks status=done. Then either moves to the next block via flow-first or switches to task-level.
 
-**Task-level** — закрывает всю задачу: проверяет полноту артефактов, опционально запускает ui-ai-first для UX-аудита новых операций, собирает финальный user-note.md, спрашивает «закрываем?», предлагает гид через go-guide, привязку через arch-map, обновляет routing.db (status=done, atom counts), propagate arch_ref вверх по цепочке (epic → tz → brief), пишет STATUS.md и sessions.md.
+**Task-level** — closes the whole task: checks artifact completeness, optionally invokes ui-ai-first for a UX audit of new operations, assembles the final `user-note.md`, asks "close?", offers a guide via go-guide, linking via arch-map, updates the registry (status=done, atom counts), propagates arch_ref up the chain (epic → spec → brief), writes STATUS.md and sessions.md.
 
-## Результат работы
+## Result of the work
 
-Задача — закрыта явно, не висит. Деплой сделан, smoke test пройден. routing.db содержит полную картину (артефакты, блоки, метрики). STATUS.md показывает следующий шаг, sessions.md — историю.
+The task is closed explicitly, not left hanging. Deploy done, smoke test passed. The registry contains the full picture (artifacts, blocks, metrics). STATUS.md shows the next step, sessions.md the history.
 
-Через неделю любой агент или человек может восстановить контекст задачи за 2 минуты — отчёты, user-note, артефакты лежат в одной папке.
+A week later any agent or human can restore the task's context in 2 minutes — reports, user notes, artifacts sit in one folder.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| plan-first | Вызывает ship-first после execute блока — атомарный финал per-block |
-| go-guide | Если задача даёт знание — ship-first предлагает зафиксировать гид |
-| arch-map | Финальная привязка к архитектуре + propagate вверх по цепочке |
-| ui-ai-first | При наличии user-facing операций — ship-first запускает UX-аудит |
+| plan-first | Invokes ship-first after executing a block — atomic per-block finalization |
+| go-guide | If the task yields knowledge — ship-first offers to record a guide |
+| arch-map | Final architecture linking + propagate up the chain |
+| ui-ai-first | For user-facing operations — ship-first invokes a UX audit |

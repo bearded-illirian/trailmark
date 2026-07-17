@@ -1,6 +1,6 @@
 ---
 title: Audit-First
-pitch: Аудит дыр перед фиксом по 6 плоскостям
+pitch: Audit gaps before a fix across 6 planes
 icon: 🔍
 category: qa
 price: free
@@ -8,40 +8,40 @@ publish: true
 order: 80
 works_with:
   - id: idea-first
-    why: Для типа «фикс» idea-first передаёт в audit-first
+    why: For a "fix" type idea-first hands off to audit-first
   - id: flow-first
-    why: Для каждой найденной дыры запускается отдельный flow-first
+    why: For each found gap a separate flow-first runs
   - id: library-first
-    why: После flow-first per дыра — library-first для готовых компонентов
+    why: After per-gap flow-first — library-first for ready components
   - id: plan-first
-    why: План фикса конкретной дыры после library-first
+    why: The fix plan for a specific gap after library-first
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Задача звучит как «починить баг в X» — агент идёт к видимому симптому и фиксит его. Через неделю выясняется, что симптом был верхушкой айсберга: на самом деле проблема в авторизации, или таймаутах, или гонке потоков. Починили не то.
+The task sounds like "fix a bug in X" — the agent walks to the visible symptom and fixes it. A week later it turns out the symptom was the tip of an iceberg: the real problem was in auth, or timeouts, or a race condition. Wrong thing got fixed.
 
-Без полной картины проблем перед фиксом — каждая правка строится на догадке, что именно сломано. Тратится час на симптом, реальная дыра остаётся и всплывает через месяц в другом месте.
+Without a full picture of problems before the fix, every edit rides on a guess about what's actually broken. An hour is spent on the symptom, the real gap remains and surfaces a month later in a different place.
 
-## Как работает
+## How it works
 
-Перед любым фиксом — обязательная фаза аудита по **6 плоскостям**: Безопасность (auth/authz/secrets), Производительность (запросы/таймауты), Целостность (транзакции/гонки), Наблюдаемость (логи/метрики), Конфигурация (env/деплой), UX (доступность операций).
+Before any fix — a mandatory audit phase across **6 planes**: Security (auth / authz / secrets), Performance (queries / timeouts), Integrity (transactions / races), Observability (logs / metrics), Configuration (env / deploy), UX (operation availability).
 
-По каждой плоскости — конкретные grep/анализ кода. Найденные дыры сводятся в таблицу с приоритетом (HIGH/MED/LOW) и явным «как нашли».
+For each plane — concrete grep / code analysis. Found gaps are collected into a table with priority (HIGH / MED / LOW) and an explicit "how it was found".
 
-Ждёт явный апрув таблицы дыр. Без апрува — никакого кода. Только после апрува — `flow-first` на каждую приоритетную дыру отдельно, потом `library-first → plan-first → фикс`.
+It waits for an explicit approval of the gaps table. Without approval — no code. Only after approval — `flow-first` on each priority gap separately, then `library-first → plan-first → fix`.
 
-## Результат работы
+## Result of the work
 
-Фиксится **реальная** проблема, а не симптом. Через месяц нет «оказалось дыра была глубже». Все найденные дыры зафиксированы — даже LOW могут стать справочником на следующий аудит.
+The **real** problem gets fixed, not the symptom. A month later there's no "it turned out the gap was deeper". All found gaps are recorded — even LOW ones may become the reference for the next audit.
 
-На длинной дистанции — модули с историей аудитов более стабильные, чем те, где фиксили «по запросу пользователя».
+Long-term — modules with an audit history are more stable than those where fixes happened "on user request".
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| idea-first | Для типа «фикс» idea-first передаёт в audit-first |
-| flow-first | Для каждой найденной дыры — отдельный flow-first |
-| library-first | После flow-first per дыра — поиск готовых компонентов |
-| plan-first | План фикса конкретной дыры |
+| idea-first | For a "fix" type idea-first hands off to audit-first |
+| flow-first | For each found gap — a separate flow-first |
+| library-first | After per-gap flow-first — search for ready components |
+| plan-first | Fix plan for a specific gap |

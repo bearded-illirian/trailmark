@@ -1,6 +1,6 @@
 ---
 title: Note-First
-pitch: Сохраняет последнее сообщение агента как заметку к задаче
+pitch: Saves the agent's last message as a note attached to the task
 icon: 📝
 category: session
 price: free
@@ -8,34 +8,34 @@ publish: true
 order: 120
 works_with:
   - id: human-first
-    why: Часто сохраняем именно человеческое объяснение от human-first
+    why: Often what we save is exactly the plain-language explanation from human-first
   - id: project-knowledge
-    why: Заметки становятся источником при следующем routing
+    why: Notes become a source for future routing
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Агент только что написал ценный ответ — анализ, решение, варианты. Но это **в чате**: закроется сессия — потеряется. Через неделю «помню что обсуждали, но не помню что именно».
+The agent just wrote a valuable answer — analysis, solution, options. But it's **in chat**: the session closes, it's gone. A week later "I remember we discussed something, but not what exactly".
 
-Без сохранения важных ответов — на каждой новой сессии всё восстанавливается заново. Прогресс между сессиями теряется.
+Without saving important answers, every new session rebuilds context from scratch. Progress between sessions is lost.
 
-## Как работает
+## How it works
 
-Скилл берёт **последнее сообщение** агента (которое стоит непосредственно перед `/note-first`). Сохраняет дословно — без переформулировки и сокращений — как `note-NN.md` в папку текущей задачи.
+The skill takes the **last message** by the agent (the one right before `/note-first`). Saves it verbatim — no rewording, no truncation — as `note-NN.md` into the current task's folder.
 
-Автоматическая нумерация: первая заметка → `note-01.md`, следующая → `note-02.md`. Двусторонняя привязка: запись попадает в `## Файлы задачи` в `task.md`.
+Automatic numbering: the first note → `note-01.md`, next → `note-02.md`. Two-way linkage: an entry appears under `## Task files` in `task.md`.
 
-`/note-first` вызывается вручную — когда хочется зафиксировать конкретный ответ.
+`/note-first` is invoked manually — when you want to pin a specific answer.
 
-## Результат работы
+## Result of the work
 
-Ценные ответы агента остаются вместе с задачей — после закрытия сессии и через неделю их можно прочитать. История решений зафиксирована.
+Valuable agent answers stay with the task — after the session closes and a week later they can still be read. The history of decisions is recorded.
 
-На длинной дистанции — задачи становятся самодостаточными: открыл папку → видишь весь контекст обсуждения, не нужно искать «а что мы там в чате обсуждали».
+Long-term — tasks become self-contained: open the folder → you see all the discussion context, no need to hunt down "what did we discuss in chat".
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| human-first | Часто сохраняем именно человеческое объяснение |
-| project-knowledge | Заметки становятся источником при следующем routing |
+| human-first | Often we save exactly the plain-language explanation |
+| project-knowledge | Notes become a source for future routing |

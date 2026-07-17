@@ -1,6 +1,6 @@
 ---
 title: UI/AI-First
-pitch: "Финальный аудит: что осталось доступно только через код"
+pitch: "Final audit: what remained accessible only through code"
 icon: 🎛
 category: qa
 price: free
@@ -8,41 +8,41 @@ publish: true
 order: 100
 works_with:
   - id: ship-first
-    why: Ship-first запускает ui-ai-first автоматически при наличии user-facing операций
+    why: Ship-first invokes ui-ai-first automatically when user-facing operations exist
   - id: arch-first
-    why: Применяется к финалу arch-first задачи перед закрытием
+    why: Applied to the end of an arch-first task before closure
   - id: go-guide
-    why: Часть находок типа A (скилл/AI) фиксируется через go-guide
+    why: Some type-A findings (skill / AI) get recorded via go-guide
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Большая задача закрыта: фичи реализованы, тесты прошли, прод задеплоен. Но через 3 месяца оказывается, что половина возможностей **на бумаге**: оператор не может ими воспользоваться, потому что доступ — только через curl с admin token, или прямой SQL INSERT, или вызов скилла в Claude Code.
+A large task is closed: features implemented, tests pass, prod deployed. But 3 months later it turns out half the capabilities are **on paper**: the operator can't use them because access is only via curl with an admin token, direct SQL INSERT, or invoking a skill in the CLI.
 
-Это **технический долг, который выглядит как «всё готово»**. В отчётах звучит «фича в проде», в реальности — никто кроме автора задачи ею не пользуется.
+This is **technical debt that looks like "all done"**. Reports say "feature is in prod", in reality — nobody except the task author uses it.
 
-## Как работает
+## How it works
 
-Запускается после реализации крупной задачи (`arch-first`), перед формальным закрытием. По каждому реализованному блоку: читает `task.md` + отчёты + гайды + код → выписывает операции «только через код / curl / SQL» → формирует под-таблицу.
+Runs after implementation of a large task (`arch-first`), before formal closure. For each implemented block: reads `task.md` + reports + guides + code → lists the operations "only via code / curl / SQL" → forms a sub-table.
 
-Для каждой операции — классификация **A/B**:
-- **A — скилл или AI-агент** для редких или технических операций (дёшево сделать, не нагружает интерфейс)
-- **B — UI-задача** для частых операторских операций (нужна форма, кнопка, дашборд)
+For each operation — an **A/B** classification:
+- **A — a skill or AI agent** for rare or technical operations (cheap to build, doesn't burden the UI)
+- **B — a UI task** for frequent operator operations (needs a form, button, dashboard)
 
-В конце — мастер-таблица всех операций + приоритизированный roadmap по этапам.
+At the end — a master table of all operations + a prioritized roadmap by stages.
 
-`ui-ai-first` **не реализует** найденные айтемы — только классифицирует и фиксирует как roadmap. Реализация — отдельные потоки работы.
+`ui-ai-first` **does not implement** the found items — only classifies and records them as a roadmap. Implementation is separate work streams.
 
-## Результат работы
+## Result of the work
 
-Перед закрытием задачи понятно: что доступно оператору через UI, что нужно автоматизировать скиллом, что вынести в UI-задачу. Roadmap явный — никаких «вдруг через месяц вспомнили».
+Before closing a task it's clear: what's accessible to the operator through UI, what needs to be automated by a skill, what to extract into a UI task. The roadmap is explicit — no "suddenly remembered a month later".
 
-На длинной дистанции — фичи не висят «реализованными в коде, но мёртвыми». Каждая возможность либо имеет интерфейс, либо имеет скилл, либо явно признана out-of-scope для оператора.
+Long-term — features don't hang "implemented in code but dead". Every capability either has an interface, or has a skill, or is explicitly marked out-of-scope for the operator.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| ship-first | Запускает ui-ai-first автоматически при наличии user-facing операций |
-| arch-first | Применяется к финалу arch-first задачи перед закрытием |
-| go-guide | Часть находок типа A (скилл/AI) фиксируется через go-guide |
+| ship-first | Invokes ui-ai-first automatically when user-facing operations exist |
+| arch-first | Applied to the end of an arch-first task before closure |
+| go-guide | Some type-A findings (skill / AI) get recorded via go-guide |

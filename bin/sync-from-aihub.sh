@@ -157,6 +157,29 @@ done
 echo "Renamed: $RENAMED_COUNT files" | tee -a "$LOG_FILE"
 echo "" | tee -a "$LOG_FILE"
 
+# ── Post-rsync rename: INFO.public.md → INFO.md (v0.7.0) ─────────────────
+# Parallel to SKILL rename — INFO.public.md is the sanitized EN description;
+# INFO.md (RU internal metadata) is excluded via manifest.yml exclude_patterns.
+# External users see canonical INFO.md (EN) alongside SKILL.md.
+echo "── Post-rsync rename (INFO.public.md → INFO.md) ──" | tee -a "$LOG_FILE"
+INFO_RENAMED_COUNT=0
+
+for scope in "$FRAMEWORK_PUBLIC/aihub/.claude/skills" "$FRAMEWORK_PUBLIC/aihub/.claude/commands"; do
+  [ -d "$scope" ] || continue
+  find "$scope" -name "INFO.public.md" -type f | while read -r pub_file; do
+    dst_file="$(dirname "$pub_file")/INFO.md"
+    if [ -f "$dst_file" ]; then
+      rm -f "$dst_file"  # overwrite — sync is authoritative
+    fi
+    mv "$pub_file" "$dst_file"
+    echo "  ✓ renamed: $pub_file → INFO.md" | tee -a "$LOG_FILE"
+    INFO_RENAMED_COUNT=$((INFO_RENAMED_COUNT + 1))
+  done
+done
+
+echo "INFO renamed: $INFO_RENAMED_COUNT files" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+
 # ── Config resolver (sync-time inject per D05) ───────────────────────────
 # Substitutes aihub-source literals with `{{ config.paths.X }}` tokens so
 # framework-public/ files ship public-safe. Longest-paths-first order

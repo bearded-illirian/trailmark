@@ -1,6 +1,6 @@
 ---
 title: Dev-Auto-First
-pitch: Автопилот per-block цикла — flow → library → plan → execute без апрува на каждом шаге
+pitch: Autopilot for the per-block cycle — flow → library → plan → execute without approval on every step
 icon: 🤖
 category: development
 price: free
@@ -8,47 +8,47 @@ publish: true
 order: 85
 works_with:
   - id: arch-first
-    why: arch-first спрашивает «как работаем?» — при выборе «автопилот» передаёт управление сюда
+    why: arch-first asks "how do we work?" — on choosing "autopilot" it hands off control here
   - id: audit-first
-    why: audit-first тоже спрашивает режим и передаёт управление dev-auto-first при автопилоте
+    why: audit-first also asks the mode and hands off to dev-auto-first when autopilot is selected
   - id: flow-first
-    why: dev-auto-first запускает flow-first для каждого блока и валидирует артефакт по правилам
+    why: dev-auto-first invokes flow-first for each block and validates the artifact against rules
   - id: library-first
-    why: dev-auto-first валидирует таблицу LOC и auto-approve до plan-first
+    why: dev-auto-first validates the LOC table and auto-approves through to plan-first
   - id: plan-first
-    why: dev-auto-first отвечает «1=Автопилот» в plan-first вместо пользователя
+    why: dev-auto-first answers "1 = Autopilot" in plan-first instead of the user
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Сложная задача из 5+ блоков, запущенная через `/arch-first` или `/audit-first`, требует апрува на каждом шаге каждого блока: «ок» после flow-first, «ок» после library-first, выбор режима в plan-first, проверка report.md. Это десятки ручных подтверждений на одну задачу — даже когда все артефакты тривиальные и проходят без правок.
+A complex task of 5+ blocks launched via `/arch-first` or `/audit-first` requires approval on every step of every block: "ok" after flow-first, "ok" after library-first, mode choice in plan-first, checking `report.md`. That's dozens of manual confirmations per task — even when every artifact is trivial and passes without edits.
 
-Без автопилота инженер сидит над терминалом и нажимает «го» × 25 раз вместо того чтобы заниматься чем-то полезным. А при сложной 10-блочной задаче это уже × 50.
+Without an autopilot the engineer sits over the terminal and presses "go" × 25 times instead of doing something useful. On a complex 10-block task it's already × 50.
 
-## Как работает
+## How it works
 
-dev-auto-first берёт управление после выбора режима «автопилот» в arch-first / audit-first. Для каждого блока он:
+dev-auto-first takes control after "autopilot" is chosen in arch-first / audit-first. For each block it:
 
-1. Запускает `flow-first → library-first → plan-first` через `Skill()` calls
-2. После каждого скилла читает артефакт (`flow-first-N.md`, `library-first-N.md`, `plan-first-N.md`) и валидирует по встроенным правилам (4 проверки для flow-first, 6 для library-first, 5 для plan-first)
-3. Если все 🛑-проверки прошли — **немедленно** вызывает следующий Skill без паузы
-4. В plan-first отвечает «1=Автопилот» вместо ожидания выбора пользователя
-5. Когда валидация проваливается (нарушение 🛑-правила) — эскалирует в TG-бот `@vschk_dev_bot`, ждёт ответа оператора 5 минут через polling
+1. Invokes `flow-first → library-first → plan-first` via `Skill()` calls
+2. After each skill it reads the artifact (`flow-first-N.md`, `library-first-N.md`, `plan-first-N.md`) and validates against built-in rules (4 checks for flow-first, 6 for library-first, 5 for plan-first)
+3. If all 🛑 checks pass — **immediately** invokes the next Skill without pause
+4. In plan-first it answers "1 = Autopilot" instead of waiting for the user's choice
+5. When validation fails (a 🛑 rule violated) — it escalates to a Telegram bot, waits 5 minutes for an operator's reply via polling
 
-Ответ оператора проходит через intent-parser (gpt-4o-mini) и преобразуется в action: `approve_anyway` / `stop` / `skip` / `retry` / `select`. Скилл продолжает по нужной ветке.
+The operator's reply passes through an intent parser and is mapped to an action: `approve_anyway` / `stop` / `skip` / `retry` / `select`. The skill continues along the right branch.
 
-## Результат работы
+## Result of the work
 
-Сложная многоблочная задача проходит за один проход без участия инженера. Пинг в Telegram прилетает только когда автоматическая валидация реально не может принять решение — это раз в несколько блоков, а не на каждом шаге.
+A complex multi-block task passes in one run without the engineer's participation. A Telegram ping arrives only when automatic validation truly can't make the decision — that's once per several blocks, not per every step.
 
-В финале — стандартный отчёт со списком блоков, статусами и количеством эскалаций. Все эскалации записаны в `dev_bot_sessions` для аудита.
+At the end — a standard report with a list of blocks, statuses, and escalation counts. All escalations are recorded in a `dev_bot_sessions` audit trail.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| arch-first | Передаёт управление dev-auto-first при выборе автопилота |
-| audit-first | То же — передаёт при автопилоте |
-| flow-first | dev-auto-first запускает + валидирует артефакт по 4 правилам |
-| library-first | dev-auto-first валидирует таблицу LOC по 6 правилам |
-| plan-first | dev-auto-first отвечает «1» вместо пользователя, валидирует план по 5 правилам |
+| arch-first | Hands off control to dev-auto-first when autopilot is chosen |
+| audit-first | Same — hands off on autopilot |
+| flow-first | dev-auto-first invokes and validates the artifact against 4 rules |
+| library-first | dev-auto-first validates the LOC table against 6 rules |
+| plan-first | dev-auto-first answers "1" instead of the user, validates the plan against 5 rules |

@@ -1,6 +1,6 @@
 ---
 title: Human-First
-pitch: Объясняет последнее сообщение агента простым языком
+pitch: Explains the agent's last message in plain language
 icon: 💬
 category: session
 price: free
@@ -8,31 +8,31 @@ publish: true
 order: 110
 works_with:
   - id: note-first
-    why: Если объяснение полезное — сохранить его как заметку через note-first
+    why: If the explanation is useful — save it as a note via note-first
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Агент только что написал технический ответ — 200 строк с упоминанием 10 файлов и 5 паттернов. Через минуту ты не помнишь что было главным. Через час перечитываешь и снова не понимаешь.
+The agent just wrote a technical answer — 200 lines mentioning 10 files and 5 patterns. A minute later you don't remember what was important. An hour later you re-read and still don't understand.
 
-Без человеческого объяснения каждый раз приходится **расшифровывать** ответ агента: что он реально предлагает, чем это лучше альтернативы, что от меня нужно. Технический язык душит решения.
+Without a human explanation you have to **decode** the agent's answer every time: what it actually proposes, why it beats the alternative, what it needs from you. Technical language smothers decisions.
 
-## Как работает
+## How it works
 
-Скилл берёт **последнее сообщение** агента (которое стоит непосредственно перед `/human-first`). Выделяет 1-3 главные идеи — то что агент хотел сказать по сути, не структуру и не детали.
+The skill takes the **last message** by the agent (the one right before `/human-first`). It extracts the 1-3 main ideas — what the agent was actually trying to say in essence, not the structure and not the details.
 
-Объясняет простым языком: без жаргона (заменяет «UPSERT по name» на «обновляет существующее или создаёт новое»), с конкретными примерами и аналогиями. Финал — одно предложение «итог что важно сделать дальше».
+It explains in plain language: no jargon (replaces "UPSERT by name" with "updates existing or creates new"), with concrete examples and analogies. Ends with a one-sentence "so here's what matters next".
 
-`/human-first` вызывается вручную — когда не понял что агент только что написал.
+`/human-first` is invoked manually — when you didn't understand what the agent just wrote.
 
-## Результат работы
+## Result of the work
 
-После `/human-first` понятно: что предлагает агент, зачем, что от меня требуется. Можно сразу решать «да / нет / уточни», не разбирая технический текст.
+After `/human-first` it's clear: what the agent proposes, why, what's required from you. You can immediately decide "yes / no / clarify" without parsing the technical text.
 
-На длинной дистанции — меньше «потерянных» ответов агента из-за непонимания.
+Long-term — fewer "lost" agent replies because of misunderstanding.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| note-first | Если объяснение полезное — сохранить как заметку к задаче |
+| note-first | If the explanation is useful — save it as a note to the task |

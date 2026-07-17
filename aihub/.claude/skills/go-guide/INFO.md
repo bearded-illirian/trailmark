@@ -1,6 +1,6 @@
 ---
 title: Go-Guide
-pitch: Сохраняет концептуальный гид в проект
+pitch: Saves a conceptual guide into the project's knowledge folder
 icon: 📖
 category: knowledge
 price: free
@@ -8,32 +8,32 @@ publish: true
 order: 130
 works_with:
   - id: ship-first
-    why: При закрытии задачи через ship-first предлагает зафиксировать гид
+    why: On task closure through ship-first offers to record a guide
   - id: project-knowledge
-    why: Гиды становятся источником правды для routing-таблицы
+    why: Guides become the source of truth for the routing table
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-Закрыл сложную задачу — нашёл механизм, паттерн, решение. Через месяц снова сталкиваешься с похожей проблемой и **не помнишь** что уже разобрался. Решаешь повторно с нуля.
+You closed a complex task — found a mechanism, a pattern, a solution. A month later you hit a similar problem and **don't remember** you already figured it out. You solve it from scratch again.
 
-Без сохранения концептуальных гидов — каждое серьёзное обсуждение остаётся в задаче, в чате, в коммите. Никакого общего знания, которое можно использовать в другой задаче.
+Without recording conceptual guides, every serious discussion stays in the task, in the chat, in the commit. There's no shared knowledge you can reuse in another task.
 
-## Как работает
+## How it works
 
-Три режима. **Interactive** — пользователь сам запускает `/go-guide`, выбирает проект, топик, название, текст. **From-task** — `ship-first` после `/go-fast` предлагает зафиксировать гид по итогам задачи (берёт `user-note.md` + последний `report-NN.md`). **From-epic** — `/go-finish` после закрытия эпика собирает гид из всех `user-note.md` эпика + `epic-summary.md` + tech-spec.
+Three modes. **Interactive** — the user launches `/go-guide` manually, picks a project, topic, title, and text. **From-task** — `ship-first` after a fast-track offers to record a guide based on the task result (takes `user-note.md` + the latest `report-NN.md`). **From-epic** — the epic-closure command collects a guide from all epic `user-note.md` + the epic summary + the tech-spec.
 
-Два хранилища. Если у проекта есть секция `guides:` в `projects.yml` — публикация в админку (`.md` в `concepts_path` + INSERT в БД + git push). Если нет — fallback: локальный `.md` в `project-knowledge/guides/`, без БД.
+Storage: a simple `.md` file under `project-knowledge/guides/{topic}/`, registered via git commit + push. No database, no admin panel — the file itself is the artifact, discoverable via the file tree or search.
 
-## Результат работы
+## Result of the work
 
-Концептуальные знания накапливаются как переиспользуемая база — отдельная от задач, отдельная от чатов. Через месяц при похожей проблеме `project-knowledge` направит в готовый гид.
+Conceptual knowledge accumulates as a reusable base — separate from tasks, separate from chats. A month later, on a similar problem, project knowledge points at the ready guide.
 
-На длинной дистанции — проект становится «учащимся»: каждое серьёзное решение остаётся как знание, не теряется в потоке задач.
+Long-term — the project becomes "learning": every serious decision stays as knowledge, doesn't get lost in the task stream.
 
-## С какими скиллами работает
+## Skills it works with
 
-| Скилл | Зачем |
+| Skill | Why |
 |---|---|
-| ship-first | При закрытии задачи через ship-first предлагает зафиксировать гид |
-| project-knowledge | Гиды становятся источником правды для routing-таблицы |
+| ship-first | On task closure through ship-first offers to record a guide |
+| project-knowledge | Guides become the source of truth for the routing table |
