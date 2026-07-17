@@ -55,18 +55,24 @@ schema bump.
 
 | Skill | Tier | Role | Invokes | Invoked by | Delivers |
 |---|---|---|---|---|---|
-| go-start | command | Session startup skill. Reads platform docs (README, WORKFLOW, DEPLOY, PLATFORM_KNOWLEDGE,… | go-fast | — (independent) | TODO |
-| idea-first | protocol | Точка входа самоорганизующейся цепочки скиллов. Запускается из go-fast после создания задачи.… | ship-first | arch-first, audit-first | TODO |
-| arch-first | protocol | Протокол архитектурно-чистого исполнения сложных многоблочных задач. Декомпозиция в блоки →… | audit-first, idea-first, flow-first, dev-auto-first, library-first, plan-first, ship-first | audit-first | TODO |
-| audit-first | protocol | Протокол аудита перед фиксом — сначала найти все дыры по 6 плоскостям, приоритизировать,… | arch-first, idea-first, flow-first, dev-auto-first | arch-first | TODO |
-| ui-ai-first | protocol | Финальный аудит крупной задачи перед закрытием — выясняет какие операции доступны только через код… | — (leaf) | — (independent) | TODO |
-| human-first | core | Берёт последнее сообщение агента и объясняет его простым языком — без технического жаргона, с… | — (leaf) | — (independent) | TODO |
-| flow-first | core | Understanding-alignment protocol before library-first. Asks the user for 2-3 anchors (file, table,… | — (leaf) | arch-first, audit-first, library-first, ship-first | TODO |
-| library-first | core | Mandatory protocol before executing any Fast-track task. Analyzes the task, builds a table: what we… | flow-first | arch-first, plan-first | TODO |
-| plan-first | core | Mandatory protocol before any document creation, code writing, refactoring, DB migration, test… | library-first | arch-first | TODO |
-| ship-first | core | Final task completion protocol: report → user-note → deploy → smoke test → close? → guide? →… | flow-first, arch-map, name | arch-first, idea-first | TODO |
-| decision-first | core | Принимает архитектурное/проектное решение по 5-частной модели ВМЕСТО того чтобы задавать вопрос… | — (leaf) | — (independent) | TODO |
-| note-first | core | Сохраняет последнее сообщение Клода как заметку к текущей задаче. Авто-нумерация (note-01,… | — (leaf) | — (independent) | TODO |
+| go-start | command | Session startup skill. Reads platform docs, builds context, asks which project we're working on,… | go-fast | — (independent) | TODO |
+| go-fast | command | Thin entry point into a self-organizing skill chain for a fast-track task. Creates a task (slug,… | idea-first | go-start | TODO |
+| idea-first | protocol | Entry point of the self-organizing skill chain. Launched right after task creation. Asks 5-7… | ship-first, habit-first, arch-first, audit-first | go-fast | TODO |
+| arch-first | protocol | Protocol for architecturally clean execution of complex multi-block tasks. Decomposition into… | flow-first, dev-auto-first | idea-first | TODO |
+| audit-first | protocol | Audit-before-fix protocol — first find all gaps across 7 planes, prioritize, pin the gap table, and… | flow-first, dev-auto-first | idea-first | TODO |
+| ui-ai-first | protocol | Final audit of a large task before closure — finds which operations are available only via code /… | — (leaf) | — (independent) | TODO |
+| human-first | core | Takes the agent's last message and explains it in plain language — without technical jargon, with… | — (leaf) | — (independent) | TODO |
+| flow-first | core | Understanding-alignment protocol before library-first. Asks the user for 2-3 anchors (file, table,… | — (leaf) | arch-first, audit-first, dev-auto-first, ship-first | TODO |
+| library-first | core | Mandatory protocol before executing any fast-track task. Analyzes the task, builds a table: what we… | — (leaf) | dev-auto-first | TODO |
+| plan-first | core | Mandatory protocol before any document creation, code writing, refactoring, DB migration, test… | — (leaf) | dev-auto-first | TODO |
+| ship-first | core | Final task completion protocol: report → user-note → deploy → smoke test → close? → guide? →… | flow-first, arch-map | idea-first | TODO |
+| decision-first | core | Makes an architectural / project / scope decision using a 5-part model INSTEAD of asking the user.… | — (leaf) | — (independent) | TODO |
+| note-first | core | Saves the last assistant message as a note attached to the current task. Auto-numbered (note-01,… | — (leaf) | — (independent) | TODO |
+| dev-auto-first | core | Autonomous orchestrator of the per-block go-fast cycle. Takes over after arch-first/audit-first… | library-first, plan-first, flow-first | arch-first, audit-first | TODO |
+| cadence-first | core | Meta-orchestrator: assigns skill-chain cadence per block (Tier 1/2/3) via Q1-Q6 rules. Reads target… | — (leaf) | — (independent) | TODO |
+| arch-map | core | Automatic linking of an artifact to project architecture elements. Two modes: file-mode (by file… | — (leaf) | ship-first | TODO |
+| check-first | core | Coverage validation protocol before a final approval gate. Reads requirements from any structured… | — (leaf) | — (independent) | TODO |
+| go-guide | core | Adds a new conceptual guide to a project's knowledge folder. Runs in three modes: interactive… | — (leaf) | — (independent) | TODO |
 
 
 ## Populating

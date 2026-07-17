@@ -76,7 +76,7 @@ Once initialised, your workspace looks like:
 workspace-root/
 ├── aihub/               # Central skill registry — one source, many consumers
 │   └── .claude/
-│       ├── skills/      # 12 skills (protocol + core)
+│       ├── skills/      # 16 skills (protocol + core)
 │       └── commands/    # 2 slash-commands (/go-start, /go-fast)
 ├── projects/            # Your projects — each symlinks aihub skills
 │   ├── my-app/.claude/skills → ../../aihub/.claude/skills
@@ -90,7 +90,7 @@ workspace-root/
 │   ├── sync-from-aihub.sh    # Pull skill updates from upstream
 │   └── flow-ui/         # Local web browser over routing.db
 ├── docs/                # Framework documentation
-└── manifest.yml         # Declares what ships (15 entries: 2 cmd + 4 protocol + 8 core + 1 tool)
+└── manifest.yml         # Declares what ships (19 entries: 2 cmd + 4 protocol + 12 core + 1 tool)
 ```
 
 **Hub-and-spoke skills.** All projects share the same `aihub/.claude/skills/`
@@ -245,9 +245,9 @@ No services. No package managers beyond pip for Flow UI.
 
 ## Status
 
-**MVP release — 14 skills + 1 tool, manifest v0.5.0.**
+**MVP release — 18 skills + 1 tool, manifest v0.6.0.**
 
-The 14 shipped skills (2 slash-commands + 4 protocol skills + 8 core skills)
+The 18 shipped skills (2 slash-commands + 4 protocol skills + 12 core skills)
 are functional and used daily on real production work. The Flow UI is a
 sibling tool synced from an upstream repo via the `tool` tier. Surrounding
 tooling (contract verifier, skills map generator, init wizard, sync script,

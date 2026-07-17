@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 Nothing yet.
 
+## [0.6.0] — 2026-07-17
+
+### Added
+
+- **cadence-first** (core) — meta-orchestrator that assigns Tier 1/2/3
+  cadence per block via Q1-Q6 rules. Runs before `plan-first` to
+  right-size the skill chain per block scope.
+- **arch-map** (core) — auto-links artifacts to project architecture
+  elements. Two modes: file-mode (by file paths) and feature-mode
+  (by artifact text). Propagates arch_ref up the epic → spec → brief
+  chain.
+- **check-first** (core) — coverage validation before an approval gate.
+  Reads requirements from any structured document and matches them
+  against proposed decomposition units (blocks, epics, tasks).
+- **go-guide** (core) — captures a conceptual guide into
+  `project-knowledge/guides/{topic}/`. Three modes: interactive,
+  from-task (ship-first hook), from-epic. Fallback-only storage (no
+  DB required).
+
+### Changed
+
+- Manifest grew from 15 to 19 entries: 2 commands + 4 protocol +
+  **12 core** (was 8) + 1 tool.
+- README: `Status` line + `Architecture` ASCII tree updated to new
+  counts.
+
 ## [1.0.0-mvp] — TBD
 
 The first public release. Contents are the accumulated result of two

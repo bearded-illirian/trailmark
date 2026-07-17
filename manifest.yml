@@ -8,8 +8,15 @@
 #   - Change `sync_rules` → re-run full sync + review diff
 
 meta:
-  version: 0.5.0
+  version: 0.6.0
   description: |
+    v0.6.0 — MVP extension +4 skills: `cadence-first` (meta-orchestrator
+    assigning Tier 1/2/3 per block), `arch-map` (auto-link artifact ↔
+    architecture elements), `check-first` (coverage validation before
+    approval), `go-guide` (add conceptual guide, with ship-first hook).
+    Manifest grew from 15 to 19 entries. All 4 shipped with adapted
+    SKILL.public.md (0 VSCHK refs, fallback-only for go-guide).
+
     v0.5.0 — added `tool` tier for executable code trees synced from external
     repos (first consumer: Flow UI). Tools bypass the SKILL.public.md rename
     loop and use per-tool exclude_patterns (see sync_rules.tool_exclude_patterns).
@@ -32,6 +39,7 @@ meta:
     zero leaks. Sync-script renames *.public.md → canonical name on destination.
 
     v0.5.0 release — 15 items (2 commands + 4 protocol skills + 8 core skills + 1 tool).
+    v0.6.0 release — 19 items (2 commands + 4 protocol skills + 12 core skills + 1 tool).
   updated_at: 2026-07-17
 
 source:
@@ -163,6 +171,30 @@ entries:
     tier: core
     source_path: skills/dev-auto-first/
     destination_path: aihub/.claude/skills/dev-auto-first/
+    last_synced_commit: null
+
+  - id: cadence-first
+    tier: core
+    source_path: skills/cadence-first/
+    destination_path: aihub/.claude/skills/cadence-first/
+    last_synced_commit: null
+
+  - id: arch-map
+    tier: core
+    source_path: skills/arch-map/
+    destination_path: aihub/.claude/skills/arch-map/
+    last_synced_commit: null
+
+  - id: check-first
+    tier: core
+    source_path: skills/check-first/
+    destination_path: aihub/.claude/skills/check-first/
+    last_synced_commit: null
+
+  - id: go-guide
+    tier: core
+    source_path: skills/go-guide/
+    destination_path: aihub/.claude/skills/go-guide/
     last_synced_commit: null
 
   # ── Tools (1 — executable code trees, synced as-is with per-tool excludes) ─
