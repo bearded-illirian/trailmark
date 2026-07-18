@@ -1,104 +1,169 @@
 # Quickstart
 
-Five steps to your first tracked task. Assumes you already ran `./bin/init`
-per the [main README](../README.md). If not, do that first — this
-walkthrough won't work without a filled-in `framework.yml`.
+**5 minutes to your first tracked task.** By the end you'll have:
 
-## 1. Create a sample project
+- A running Flow UI showing populated demo data
+- Your own project registered with framework skills
+- One real task with a complete artifact trail (plan → execute → report)
 
-Point a project at the framework skills. From anywhere on disk:
+Assumes you've cloned the framework repo. If not: `git clone <repo>` first,
+then `cd framework-public`.
+
+---
+
+## 1. Install (30 seconds)
 
 ```bash
-mkdir hello-framework
-cd hello-framework
-mkdir -p .claude/skills
-ln -s ../../../framework/core/*       .claude/skills/
-ln -s ../../../framework/protocols/*  .claude/skills/
-ln -s ../../../framework/commands/*   .claude/skills/
+bash bin/init
 ```
 
-(Substitute the actual path to your cloned framework folder for
-`../../../framework/`. On systems without symlinks, `cp -r` works too —
-you just lose auto-updates when the framework changes.)
+Answers three questions (framework name, path style, default AI). Writes
+`framework.yml` — the workspace config every skill reads.
 
-Any Claude-compatible agent launched in `hello-framework/` will now see
-every shipped skill by name.
+---
 
-## 2. Invoke go-fast with a first task
+## 2. See it working — populate demo data
+
+```bash
+bash bin/init-demo
+```
+
+This populates the workspace with **3 demo projects × 2 tasks × 5 artifacts each**
+(123 rows total in `tasks/routing.db`) — a realistic hub-and-spoke setup so
+you can see how the framework looks when it's actually being used.
+
+Everything created is marked `is_demo=1` in the DB and tracked in
+`tasks/.demo-manifest.json`. Removal later is one command (see § 6).
+
+---
+
+## 3. Open Flow UI
+
+```bash
+bash bin/flow-ui/bin/serve
+```
+
+Opens on **http://127.0.0.1:8765**. You'll see:
+
+- A **⚠️ yellow banner** at the top: "Demo mode — sample projects loaded"
+- **3 projects** in the sidebar: `demo-blog-cms`, `demo-analytics-api`, `demo-mobile-app`
+- **6 tasks** with populated artifacts, deploys, and skill invocations
+- Click any task → see the full artifact tree (plan-first, library-first, report, etc.)
+
+Take 2-3 minutes to click through. This is what your own workspace will
+look like once you start real work.
+
+Stop the server when done: `bash bin/flow-ui/bin/stop`.
+
+---
+
+## 4. Now try your own task
+
+The demo shows you the shape. Now let's create something real. The
+framework uses **hub-and-spoke**: skills live once in the framework root,
+projects link to them. New projects inherit every skill by symlink.
+
+### Create your first project
+
+```bash
+bash bin/new-project my-first-app
+```
+
+Creates `projects/my-first-app/` with `.claude/skills/` symlinked to the
+framework's shared skill catalog. Also registers it in `aihub/projects.yml`
+so Flow UI picks it up.
+
+### Run your first task
+
+```bash
+cd projects/my-first-app
+claude   # or your preferred Claude-compatible CLI
+```
 
 In the agent chat:
 
 ```
-/go-fast add a hello function to greetings.py
+/go-start
+/go-fast create a hello-world function in greetings.py
 ```
 
-The framework starts the chain automatically. You'll see a folder appear
-under `tasks/log/` — the task's home. That folder is the **task**
-(from CONCEPTS.md).
+The framework auto-runs the chain: `flow-first` (4×3 understanding table)
+→ `library-first` (LOC table + watchpoints) → `plan-first` (7-15 step plan).
 
-## 3. Answer flow-first anchors
+Reply `ok` to approve each gate. On plan-first, choose **`1` (Autopilot)** —
+the agent writes the file, produces `report-1.1.md` + `user-note-1.1.md`,
+commits, and stops.
 
-The chain's first skill (`flow-first`) will pause and ask:
+Refresh Flow UI at http://127.0.0.1:8765 — your task is now there,
+alongside the demo ones.
 
-```
-Give me 2-3 anchors — file, table, route, or entry point.
-```
+---
 
-Reply with a real path or "no analog yet". For our example:
+## 5. Homework — verify you understood
 
-```
-greetings.py (doesn't exist yet)
-```
+Do these five steps **on your own project** (not on the demo). When done,
+the `/tutorial-check` skill will validate your setup and report ✅ or ❌.
 
-flow-first now writes `flow-first-1.1.md` in the task folder — that's an
-**artifact**. You'll see a 4×3 Landscape/Problem/Solution/Result table.
-Reply `ok` to approve.
+1. **Create a project** named `my-tutorial` via `bin/new-project my-tutorial`
+2. **Start a task** in that project via `/go-start` then `/go-fast "add a README with project purpose"`
+3. **Approve the chain** — reply `ok` at flow-first, `ok` at library-first, `1` at plan-first
+4. **Verify artifacts** exist in `projects/my-tutorial/tasks/log/{slug}/`:
+   `flow-first-*.md`, `library-first-*.md`, `plan-first-*.md`, `report-*.md`, `user-note-*.md`
+5. **Open Flow UI** and confirm your task shows up with all 5 artifacts
 
-## 4. Approve the library-first table
-
-`library-first` runs next. It shows a LOC table:
-
-```
-| # | What we do              | Source           | LOC | Type    |
-| 1 | Create greetings.py     | From scratch ⚠️ | ~5  | backend |
-```
-
-Plus a Watchpoints block and an Out-of-scope block. Reply `ok` if the
-table matches your intent — that's your **approval** opening the
-library-first **gate**.
-
-## 5. Choose plan-first autopilot mode
-
-`plan-first` presents a step-by-step plan (7-15 rows) and asks:
+Then run:
 
 ```
-What mode do we work in?
-1. 🚀 Autopilot
-2. 🔁 Step-by-step
-3. 🎯 Hybrid
+/tutorial-check
 ```
 
-Reply `1`. The agent now writes the file, produces `report-1.1.md` +
-`user-note-1.1.md`, and commits — no more prompts until the block closes.
+You'll get a pass/fail report telling you exactly which of the 5 steps
+landed correctly and which need attention.
 
-You just ran one full **block** of one **chain**, produced 5 artifacts
-(flow-first, library-first, plan-first, report, user-note), and passed
-2 approval gates.
+> *`/tutorial-check` is one of the shipped skills — it does 5-6 SQL/file
+> checks against your workspace. Zero setup needed.*
+
+---
+
+## 6. Cleanup — remove demo data
+
+When you're done exploring, remove the demo cleanly:
+
+```bash
+bash bin/archive-demo
+```
+
+**3-marker safety guaranteed.** The script only removes rows where
+**all three** are true:
+
+1. `is_demo=1` in the DB
+2. `project LIKE 'demo-%'` prefix
+3. `id IN .demo-manifest.json` (exact rowids tracked at populate-time)
+
+Even if you named your own project `demo-my-real-work`, its rows
+(is_demo=0) are untouched. The script asks for `YES REMOVE DEMO`
+confirmation before deleting anything.
+
+Auto-backup goes to `tasks/backups/` — reversible via
+`bash bin/restore-demo-backup <timestamp>` if you change your mind.
+
+---
 
 ## What just happened
 
 You used the framework's five core concepts (all defined in
 [`CONCEPTS.md`](./CONCEPTS.md)):
 
-- **Task** — the `hello-framework/tasks/log/{slug}/` folder that
-  collected every artifact of this run.
-- **Block** — the single Add-hello-function unit inside the task.
-- **Chain** — `flow-first → library-first → plan-first → execute →
-  report`, the fixed skill sequence.
-- **Artifact** — each markdown file the skills wrote, tracked in
-  `routing.db`.
-- **Gate + Approval** — the `ok` you typed at flow-first and
-  library-first, and the `1` you typed at plan-first.
+- **Task** — the `projects/my-first-app/tasks/log/{slug}/` folder that
+  collected every artifact of this run
+- **Block** — the single "add hello-world function" unit inside the task
+- **Chain** — `flow-first → library-first → plan-first → execute → report`,
+  the fixed skill sequence auto-run by `/go-fast`
+- **Artifact** — each markdown file the skills wrote, tracked in `routing.db`
+- **Gate + Approval** — the `ok` you typed at flow-first and library-first,
+  and the `1` you typed at plan-first
+
+---
 
 ## Optional skills — install for full functionality
 
@@ -113,19 +178,18 @@ no crashes, just less automation.
 | `habit-first` | `idea-first` | New-product tasks are routed to `arch-first` (treated as features) |
 
 **Rationale:** these are optional dependencies — not core requirements. The
-13 core/protocol/command skills shipped in this framework work fully without
-them. Enhanced automation with them.
+shipped core/protocol/command skills work fully without them.
 
 **How to install:** copy any of the three folders from the source repository
 into your `.claude/skills/` directory. The framework auto-detects presence
 per invocation and picks the fallback path if missing.
 
+---
+
 ## Next steps
 
-- Read [`CONCEPTS.md`](./CONCEPTS.md) for term-by-term depth.
-- Skim [`SKILLS_MAP.md`](./SKILLS_MAP.md) to see the other shipped
-  skills — decision-first, ship-first, note-first, and more.
-- Consult [`SKILL_CONTRACT.md`](./SKILL_CONTRACT.md) before writing a
-  new skill of your own.
-- Try a real task in one of your own projects — the same 5-step flow
-  scales.
+- Read [`CONCEPTS.md`](./CONCEPTS.md) for term-by-term depth
+- Skim [`SKILLS_MAP.md`](./SKILLS_MAP.md) to see the other shipped skills
+- Consult [`PROJECTS_GUIDE.md`](./PROJECTS_GUIDE.md) for advanced project layouts (project-local skill overrides, monorepo patterns)
+- Consult [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) if any command above misbehaves
+- Consult [`SKILL_CONTRACT.md`](./SKILL_CONTRACT.md) before writing a skill of your own

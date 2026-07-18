@@ -18,3 +18,9 @@ AUDIT.md
 
 # Task-generated backup files during internal blocks (not for public)
 *.bak-*
+
+# Demo lifecycle state (populated by bin/init-demo, removed by bin/archive-demo)
+tasks/.demo-manifest.json
+tasks/backups/
+tasks/log/*-demo-*/
+projects/demo-*/

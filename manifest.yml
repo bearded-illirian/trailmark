@@ -8,8 +8,16 @@
 #   - Change `sync_rules` → re-run full sync + review diff
 
 meta:
-  version: 0.7.0
+  version: 0.8.0
   description: |
+    v0.8.0 — Onboarding closure: added `tutorial-check` core skill —
+    homework validator that runs 5 SQL/file checks against user's
+    workspace after they complete the QUICKSTART § 5 walkthrough.
+    Read-only; reports ✅/❌ per step with remediation hints. Ships
+    with SKILL.md + SKILL.public.md + INFO.md + INFO.public.md.
+    Manifest grew from 19 to 20 entries (13 core skills now).
+    Complements bin/init-demo + bin/archive-demo demo lifecycle.
+
     v0.7.0 — INFO.md extension: 16 EN INFO.md files (frontmatter + pitch +
     4 sections) shipped alongside every SKILL.md. Added `INFO.public.md`
     → `INFO.md` rename pattern to `bin/sync-from-aihub.sh` (parallel to
@@ -51,7 +59,8 @@ meta:
     v0.6.0 release — 19 items (2 commands + 4 protocol skills + 12 core skills + 1 tool).
     v0.7.0 release — same 19 items + 16 EN INFO.md descriptions (no manifest count change,
     per-item metadata layer added).
-  updated_at: 2026-07-17
+    v0.8.0 release — 20 items (2 commands + 4 protocol skills + 13 core skills + 1 tool).
+  updated_at: 2026-07-18
 
 source:
   repo: aihub
@@ -207,6 +216,12 @@ entries:
     tier: core
     source_path: skills/go-guide/
     destination_path: aihub/.claude/skills/go-guide/
+    last_synced_commit: null
+
+  - id: tutorial-check
+    tier: core
+    source_path: skills/tutorial-check/
+    destination_path: aihub/.claude/skills/tutorial-check/
     last_synced_commit: null
 
   # ── Tools (1 — executable code trees, synced as-is with per-tool excludes) ─

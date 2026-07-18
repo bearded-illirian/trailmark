@@ -1,0 +1,95 @@
+#!/bin/bash
+# restore-demo-backup — Restores demo data from archive-demo backup.
+#
+# Usage: bash bin/restore-demo-backup <timestamp>
+#
+# What it does:
+#   1. Locates routing.db.pre-archive-demo-<timestamp>.bak in tasks/backups/
+#   2. Locates demo-log-folders-<timestamp>.tar.gz
+#   3. Restores routing.db (overwrites current)
+#   4. Extracts tarball to workspace root (rebuilds tasks/log/demo-* folders)
+#   5. Verifies restored state
+#
+# Use case: if archive-demo went wrong, or you want demo back after archiving.
+
+set -e
+
+if [ -z "$1" ]; then
+  echo "Usage: bash bin/restore-demo-backup <timestamp>"
+  echo ""
+  echo "Available backups:"
+  ls -1 "$(dirname "${BASH_SOURCE[0]}")/../tasks/backups/" 2>/dev/null | grep pre-archive-demo | head -10 || echo "  (none)"
+  exit 1
+fi
+
+TS="$1"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BACKUPS_DIR="$WORKSPACE_ROOT/tasks/backups"
+ROUTING_DB="$WORKSPACE_ROOT/tasks/routing.db"
+DB_BAK="$BACKUPS_DIR/routing.db.pre-archive-demo-$TS.bak"
+TAR_BAK="$BACKUPS_DIR/demo-log-folders-$TS.tar.gz"
+
+if [ ! -f "$DB_BAK" ]; then
+  echo "❌ DB backup not found: $DB_BAK"
+  echo ""
+  echo "Available:"
+  ls -1 "$BACKUPS_DIR" 2>/dev/null | grep pre-archive-demo
+  exit 1
+fi
+
+echo "── Restoring demo backup $TS ──"
+echo ""
+
+# 1. Restore DB
+cp "$DB_BAK" "$ROUTING_DB"
+echo "  ✓ Restored routing.db from $DB_BAK"
+
+# 2. Extract tarball
+if [ -f "$TAR_BAK" ]; then
+  tar xzf "$TAR_BAK" -C "$WORKSPACE_ROOT"
+  echo "  ✓ Extracted task folders from $TAR_BAK"
+else
+  echo "  ℹ️  No folders tarball (may be empty backup)"
+fi
+
+# 3. Recreate project dirs + symlinks + projects.yml entries from manifest
+python3 - <<PYEOF
+import json, os
+manifest_path = "$WORKSPACE_ROOT/tasks/.demo-manifest.json"
+if os.path.exists(manifest_path):
+    m = json.load(open(manifest_path))
+    projects_dir = "$WORKSPACE_ROOT/projects"
+    projects_yml = "$WORKSPACE_ROOT/aihub/projects.yml"
+    yml_content = open(projects_yml).read()
+    for proj in m["projects"]:
+        pd = os.path.join(projects_dir, proj)
+        if not os.path.isdir(pd):
+            os.makedirs(os.path.join(pd, ".claude"), exist_ok=True)
+            src = "../../../aihub/.claude/skills"
+            dst = os.path.join(pd, ".claude/skills")
+            if not os.path.lexists(dst): os.symlink(src, dst)
+            print(f"  ✓ Recreated {pd}")
+        entry = f"\n  - id: {proj}\n    path: ./projects/{proj}\n"
+        if f"id: {proj}" not in yml_content:
+            yml_content += entry
+    open(projects_yml, "w").write(yml_content)
+    print(f"  ✓ Registered {len(m['projects'])} demo projects in projects.yml")
+PYEOF
+
+# 4. Verify
+python3 - <<PYEOF
+import sqlite3
+conn = sqlite3.connect("$ROUTING_DB")
+counts = {}
+for t in ("artifacts", "task_blocks", "task_artifacts", "skill_invocations", "deploys"):
+    counts[t] = conn.execute(f"SELECT COUNT(*) FROM {t} WHERE is_demo=1").fetchone()[0]
+conn.close()
+total = sum(counts.values())
+print(f"  ✓ Restored: {counts['artifacts']} artifacts, {counts['task_blocks']} blocks, "
+      f"{counts['task_artifacts']} artifact rows, {counts['skill_invocations']} invocations, "
+      f"{counts['deploys']} deploys — {total} demo rows total")
+PYEOF
+
+echo ""
+echo "✅ Restore complete. Open Flow UI to see restored data."

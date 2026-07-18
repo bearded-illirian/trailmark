@@ -37,7 +37,7 @@ engineering record.
 | **Artifacts as first-class** | ❌ Prose only | ⚠️ Optional / ad-hoc traces | ❌ Ephemeral chat | ✅ Every step writes a tracked file |
 | **Cross-block memory** | ❌ Human's responsibility | ⚠️ Depends on your setup | ❌ Per-session | ✅ Registry survives sessions |
 | **Approval gates** | ❌ Etiquette / prose rules | ⚠️ Callback hooks you wire | ❌ Trust the model | ✅ Enforced by protocol skills |
-| **Onboarding** | Hours reading docs → apply | Learn API + build workflow | Copy rules → hope | `git clone → bin/init → bin/new-project → bin/flow-ui/serve` |
+| **Onboarding** | Hours reading docs → apply | Learn API + build workflow | Copy rules → hope | `git clone → bin/init → bin/new-project → bin/flow-ui/bin/serve` |
 | **Lock-in** | Zero — it's a book | Runtime + vendor SDK | Editor-specific | Plain markdown + bash + sqlite |
 | **Language of skills** | Domain jargon | Python | Model prompts | Plain markdown, editable |
 
@@ -76,7 +76,7 @@ Once initialised, your workspace looks like:
 workspace-root/
 ├── aihub/               # Central skill registry — one source, many consumers
 │   └── .claude/
-│       ├── skills/      # 16 skills (protocol + core)
+│       ├── skills/      # 17 skills (protocol + core)
 │       └── commands/    # 2 slash-commands (/go-start, /go-fast)
 ├── projects/            # Your projects — each symlinks aihub skills
 │   ├── my-app/.claude/skills → ../../aihub/.claude/skills
@@ -90,7 +90,7 @@ workspace-root/
 │   ├── sync-from-aihub.sh    # Pull skill updates from upstream
 │   └── flow-ui/         # Local web browser over routing.db
 ├── docs/                # Framework documentation
-└── manifest.yml         # Declares what ships (19 entries: 2 cmd + 4 protocol + 12 core + 1 tool)
+└── manifest.yml         # Declares what ships (20 entries: 2 cmd + 4 protocol + 13 core + 1 tool)
 ```
 
 **Hub-and-spoke skills.** All projects share the same `aihub/.claude/skills/`
@@ -139,9 +139,9 @@ your project filesystems. Runs on `127.0.0.1:8765`, read-only against the
 database, no auth, no cloud.
 
 ```bash
-bash bin/flow-ui/serve    # start (idempotent, backgrounded)
-bash bin/flow-ui/status   # check
-bash bin/flow-ui/stop     # stop
+bash bin/flow-ui/bin/serve    # start (idempotent, backgrounded)
+bash bin/flow-ui/bin/status   # check
+bash bin/flow-ui/bin/stop     # stop
 ```
 
 Then open `http://127.0.0.1:8765/`. You see: projects, tasks per project,
@@ -162,15 +162,20 @@ No YAML editing. No CLI queries. Point and read.
 git clone <this-repo> framework
 cd framework
 bash bin/init                        # 3-question wizard writes framework.yml
-bash bin/new-project my-first-app    # register a project
-bash bin/init-sample                 # optional: seed a populated demo tour
+bash bin/init-demo                   # recommended: seed 3 projects × 2 tasks populated tour
+bash bin/new-project my-first-app    # register your own project
 ```
 
-That's four commands (five with the demo). `bin/init` prompts you for 3 values:
-aihub location (default: bundled `./aihub`), optional deploy server, optional
-Telegram relay. Empty input keeps the default. `bin/init-sample` is opt-in — it
-adds a `sample-app` project with one completed task and full artifact chain so
-Flow UI shows real content on first serve. Remove later with `bash bin/archive-sample`.
+Three commands, ~1 minute. `bin/init` prompts you for 3 values: aihub location
+(default: bundled `./aihub`), optional deploy server, optional Telegram relay.
+Empty input keeps the default.
+
+`bin/init-demo` populates the workspace with **3 demo projects × 2 tasks ×
+5 artifacts each** (123 rows + 6 folders) so Flow UI shows realistic content
+on first serve. Every row is marked `is_demo=1` and tracked in
+`tasks/.demo-manifest.json`. Remove cleanly later with `bash bin/archive-demo`
+(3-marker safety — your real data is never touched). See
+[`docs/DEMO_DATA.md`](./docs/DEMO_DATA.md) for the full guarantee.
 
 `bin/new-project <id>` creates `projects/<id>/.claude/skills` as a symlink
 to `aihub/.claude/skills` and appends an entry to `aihub/projects.yml`.
@@ -182,16 +187,31 @@ to `aihub/.claude/skills` and appends an entry to `aihub/projects.yml`.
 ```bash
 cd projects/my-first-app
 claude                               # or any agent supporting Skill('name')
-/go-fast "fix the null-check in email_service.py"
+/go-start
+/go-fast "add a hello function to greetings.py"
 ```
 
 Follow the chain — `flow-first` will ask for anchors, `library-first` will
 show a LOC table with what's reused vs new, `plan-first` will show the plan
-before touching code. Approve, and the agent executes. Every artifact lands
-in `tasks/log/<slug>/`.
+before touching code. Approve each gate (`ok` at flow-first, `ok` at
+library-first, `1` at plan-first for autopilot). The agent executes. Every
+artifact lands in `tasks/log/<slug>/`.
 
 Open `http://127.0.0.1:8765/` in another terminal window to watch artifacts
 appear as the block runs.
+
+### Verify with /tutorial-check
+
+After completing your first real task, run:
+
+```
+/tutorial-check
+```
+
+The shipped `tutorial-check` skill validates your setup via 5-6 SQL and
+file checks — reports ✅/❌ per step so you know exactly what landed
+correctly and what needs attention. Full homework walkthrough:
+[`docs/QUICKSTART.md`](./docs/QUICKSTART.md) § 5.
 
 ---
 
@@ -204,8 +224,11 @@ appear as the block runs.
 - [`docs/SKILL_CONTRACT.md`](./docs/SKILL_CONTRACT.md) — authoring standard
   for skill files. Required reading if you plan to add or modify a skill.
 - [`docs/PROJECTS_GUIDE.md`](./docs/PROJECTS_GUIDE.md) — the hub-and-spoke
-  project pattern in detail.
-- [`docs/QUICKSTART.md`](./docs/QUICKSTART.md) — 5-step walkthrough.
+  project pattern in detail (includes Advanced: project-local skill overrides).
+- [`docs/QUICKSTART.md`](./docs/QUICKSTART.md) — 5-step walkthrough with homework.
+- [`docs/DEMO_DATA.md`](./docs/DEMO_DATA.md) — demo dataset guide (init-demo,
+  archive-demo, 3-marker safety guarantees).
+- [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) — top failure modes and fixes.
 - [`docs/AUTO_DEPLOY_RECIPE.md`](./docs/AUTO_DEPLOY_RECIPE.md) — opt-in
   git-push auto-deploy pattern (bare repo + post-receive + snapshot backups).
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — how to add / modify skills,
@@ -239,15 +262,15 @@ No services. No package managers beyond pip for Flow UI.
 - `bin/sync-from-aihub.sh` — pull skill updates from an upstream aihub source.
 - `bin/gen-skills-map.sh` — regenerate `docs/SKILLS_MAP.md` from the manifest.
 - `bin/verify-contract.sh` — lint every skill against `docs/SKILL_CONTRACT.md`.
-- `bin/flow-ui/serve|status|stop` — local web browser.
+- `bin/flow-ui/bin/serve|status|stop` — local web browser.
 
 ---
 
 ## Status
 
-**MVP release — 18 skills + 1 tool, manifest v0.6.0.**
+**MVP release — 19 skills + 1 tool, manifest v0.8.0.**
 
-The 18 shipped skills (2 slash-commands + 4 protocol skills + 12 core skills)
+The 19 shipped skills (2 slash-commands + 4 protocol skills + 13 core skills)
 are functional and used daily on real production work. The Flow UI is a
 sibling tool synced from an upstream repo via the `tool` tier. Surrounding
 tooling (contract verifier, skills map generator, init wizard, sync script,

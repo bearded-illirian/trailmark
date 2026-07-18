@@ -90,12 +90,27 @@ templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
 # ── Root + health ────────────────────────────────────────────────────────
 
+def _detect_demo_active() -> bool:
+    """Return True if any demo row exists in DB (guides banner display).
+    Graceful: on pre-migration DB (no is_demo column) returns False silently.
+    """
+    try:
+        with db._connect(CFG.paths.routing_db) as conn:  # noqa: SLF001
+            row = conn.execute("SELECT COUNT(*) FROM artifacts WHERE is_demo = 1").fetchone()
+            return bool(row and row[0] > 0)
+    except Exception:
+        return False
+
+
 @app.get("/")
 def root(request: Request):
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"stats": access.get_stats(CFG.paths.access_log)},
+        {
+            "stats": access.get_stats(CFG.paths.access_log),
+            "is_demo_active": _detect_demo_active(),
+        },
     )
 
 

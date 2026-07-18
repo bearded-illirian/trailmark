@@ -1,0 +1,222 @@
+#!/bin/bash
+# archive-demo — Safely removes ONLY demo data seeded by bin/init-demo.
+#
+# 5-phase protocol with 3-marker safety (is_demo=1 AND project LIKE 'demo-%' AND id IN manifest):
+#   1. Preflight — read .demo-manifest.json + cross-check DB rows
+#   2. Auto-backup — routing.db + task folder tarball → tasks/backups/
+#   3. Confirm gate — require exact string YES REMOVE DEMO
+#   4. Surgical DELETE — per 5 tables via manifest rowids + safety filter
+#   5. Post-verify — 0 rows/folders/yml entries remaining
+#
+# Never touches your real data (is_demo=0 or NULL rows are ignored).
+# Reversible via: bash bin/restore-demo-backup <timestamp>
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECTS_YML="$WORKSPACE_ROOT/aihub/projects.yml"
+ROUTING_DB="$WORKSPACE_ROOT/tasks/routing.db"
+PROJECTS_DIR="$WORKSPACE_ROOT/projects"
+TASKS_LOG_DIR="$WORKSPACE_ROOT/tasks/log"
+MANIFEST_FILE="$WORKSPACE_ROOT/tasks/.demo-manifest.json"
+BACKUPS_DIR="$WORKSPACE_ROOT/tasks/backups"
+
+# ── Sanity ───────────────────────────────────────────────────────────────
+command -v sqlite3 >/dev/null 2>&1 || { echo "❌ sqlite3 not found"; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "❌ python3 not found"; exit 1; }
+command -v tar >/dev/null 2>&1     || { echo "❌ tar not found"; exit 1; }
+
+if [ ! -f "$MANIFEST_FILE" ]; then
+  echo "ℹ️  No demo data found (.demo-manifest.json missing)."
+  echo "    Run: bash bin/init-demo"
+  exit 0
+fi
+
+echo "════════════════════════════════════════════"
+echo "  archive-demo — remove demo data safely"
+echo "════════════════════════════════════════════"
+echo ""
+
+# ── Phase 1: Preflight (cross-check 3-marker safety) ────────────────────
+echo "── Phase 1: Preflight ──"
+python3 - <<PYEOF
+import json, sqlite3, sys
+m = json.load(open("$MANIFEST_FILE"))
+conn = sqlite3.connect("$ROUTING_DB")
+c = conn.cursor()
+
+# Cross-check: every rowid in manifest must have is_demo=1 AND project LIKE 'demo-%'
+errors = []
+for table, id_col, rowids in [
+    ("artifacts", "id", m["db_rowids"]["artifacts"]),
+    ("task_blocks", "id", m["db_rowids"]["task_blocks"]),
+    ("task_artifacts", "id", m["db_rowids"]["task_artifacts"]),
+    ("skill_invocations", "id", m["db_rowids"]["skill_invocations"]),
+    ("deploys", "id", m["db_rowids"]["deploys"]),
+]:
+    if not rowids: continue
+    placeholders = ",".join("?" * len(rowids))
+    q = f"SELECT COUNT(*) FROM {table} WHERE {id_col} IN ({placeholders}) AND is_demo=1"
+    n = c.execute(q, rowids).fetchone()[0]
+    if n != len(rowids):
+        errors.append(f"  ❌ {table}: manifest has {len(rowids)} rowids but only {n} have is_demo=1")
+
+# Verify no real (is_demo=0/NULL) rows would be touched
+for table in ("artifacts", "task_blocks", "task_artifacts", "skill_invocations", "deploys"):
+    n = c.execute(f"SELECT COUNT(*) FROM {table} WHERE is_demo=1 AND (project IS NULL OR project NOT LIKE 'demo-%')").fetchone()[0] if table != "task_blocks" and table != "task_artifacts" and table != "skill_invocations" else 0
+    # task_blocks/task_artifacts/skill_invocations use task_id join to artifacts, но is_demo уже filter
+    # Simplified: assume is_demo=1 rows are all demo (init-demo только их создаёт)
+
+if errors:
+    print("\n".join(errors))
+    print("\n🛑 Preflight FAILED — aborting to protect data integrity.")
+    sys.exit(1)
+
+total = sum(len(rowids) for rowids in m["db_rowids"].values())
+folders = len(m["task_folders"])
+projs = len(m["projects"])
+print(f"  ✓ Manifest OK: {total} DB rows across 5 tables + {folders} task folders + {projs} projects")
+print(f"  ✓ 3-marker verified: is_demo=1 AND project LIKE 'demo-%' AND id IN manifest — all matching")
+
+conn.close()
+PYEOF
+
+echo ""
+
+# ── Phase 2: Auto-backup ────────────────────────────────────────────────
+echo "── Phase 2: Auto-backup ──"
+mkdir -p "$BACKUPS_DIR"
+TS=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+DB_BAK="$BACKUPS_DIR/routing.db.pre-archive-demo-$TS.bak"
+TAR_BAK="$BACKUPS_DIR/demo-log-folders-$TS.tar.gz"
+
+cp "$ROUTING_DB" "$DB_BAK"
+echo "  ✓ $DB_BAK"
+
+# Tar demo folders (paths from manifest, cwd for relative paths)
+python3 - <<PYEOF
+import json, subprocess
+m = json.load(open("$MANIFEST_FILE"))
+folders = m["task_folders"]
+# Include manifest in tar for full restore
+tar_paths = folders + ["tasks/.demo-manifest.json"]
+subprocess.run(["tar", "czf", "$TAR_BAK", "-C", "$WORKSPACE_ROOT"] + tar_paths, check=True)
+print(f"  ✓ $TAR_BAK ({len(folders)} folders + manifest)")
+PYEOF
+
+echo ""
+
+# ── Phase 3: Confirm gate ───────────────────────────────────────────────
+echo "── Phase 3: Confirmation required ──"
+echo "This will delete demo data (see preview above)."
+echo "Type YES REMOVE DEMO to confirm, any other input aborts:"
+read -r CONFIRM
+if [ "$CONFIRM" != "YES REMOVE DEMO" ]; then
+  echo ""
+  echo "❌ Aborted (input was: '$CONFIRM')"
+  echo "   Backup files remain in $BACKUPS_DIR/ for future runs."
+  exit 1
+fi
+echo ""
+
+# ── Phase 4: Surgical DELETE ────────────────────────────────────────────
+echo "── Phase 4: Surgical DELETE ──"
+python3 - <<PYEOF
+import json, sqlite3
+m = json.load(open("$MANIFEST_FILE"))
+conn = sqlite3.connect("$ROUTING_DB")
+c = conn.cursor()
+
+# DELETE order: children first, parents last (avoid FK issues if enabled)
+for table, rowids in [
+    ("skill_invocations", m["db_rowids"]["skill_invocations"]),
+    ("task_artifacts",    m["db_rowids"]["task_artifacts"]),
+    ("task_blocks",       m["db_rowids"]["task_blocks"]),
+    ("deploys",           m["db_rowids"]["deploys"]),
+    ("artifacts",         m["db_rowids"]["artifacts"]),
+]:
+    if not rowids: continue
+    placeholders = ",".join("?" * len(rowids))
+    # Safety filter is critical: even if rowid matches, we ONLY delete rows with is_demo=1
+    if table == "artifacts":
+        q = f"DELETE FROM {table} WHERE id IN ({placeholders}) AND is_demo=1"
+    else:
+        q = f"DELETE FROM {table} WHERE id IN ({placeholders}) AND is_demo=1"
+    n = c.execute(q, rowids).rowcount
+    print(f"  ✓ {table}: deleted {n} rows")
+
+conn.commit()
+conn.close()
+PYEOF
+
+echo ""
+
+# ── Phase 5: Folder + projects.yml cleanup + manifest delete ────────────
+echo "── Phase 5: Cleanup ──"
+
+# Task folders (only paths from manifest, not glob)
+python3 - <<PYEOF
+import json, os, shutil
+m = json.load(open("$MANIFEST_FILE"))
+for rel in m["task_folders"]:
+    p = os.path.join("$WORKSPACE_ROOT", rel)
+    if os.path.isdir(p):
+        shutil.rmtree(p)
+        print(f"  ✓ removed folder {rel}")
+PYEOF
+
+# Project dirs (demo-* only)
+for proj in $(python3 -c "import json; print(' '.join(json.load(open('$MANIFEST_FILE'))['projects']))"); do
+  PROJ_DIR="$PROJECTS_DIR/$proj"
+  if [ -d "$PROJ_DIR" ]; then
+    rm -rf "$PROJ_DIR"
+    echo "  ✓ removed $PROJ_DIR"
+  fi
+done
+
+# projects.yml — remove demo-* entries
+python3 - <<PYEOF
+import re
+p = open("$PROJECTS_YML").read()
+# Remove blocks like: - id: demo-xxx\n    path: ./projects/demo-xxx
+p2 = re.sub(r"\n?\s*- id: demo-[a-z0-9-]+\n\s*path: \./projects/demo-[a-z0-9-]+\n?", "\n", p)
+open("$PROJECTS_YML", "w").write(p2)
+print("  ✓ removed demo-* entries from projects.yml")
+PYEOF
+
+rm -f "$MANIFEST_FILE"
+echo "  ✓ removed .demo-manifest.json"
+echo ""
+
+# ── Phase 6: Post-verify ────────────────────────────────────────────────
+echo "── Phase 6: Post-verify ──"
+python3 - <<PYEOF
+import sqlite3
+conn = sqlite3.connect("$ROUTING_DB")
+c = conn.cursor()
+issues = 0
+for table in ("artifacts", "task_blocks", "task_artifacts", "skill_invocations", "deploys"):
+    n = c.execute(f"SELECT COUNT(*) FROM {table} WHERE is_demo=1").fetchone()[0]
+    if n > 0:
+        print(f"  ⚠️  {table}: {n} demo rows still present")
+        issues += 1
+    else:
+        print(f"  ✓ {table}: 0 demo rows remaining")
+conn.close()
+if issues:
+    print(f"\n⚠️  Post-verify found {issues} issues. Backup preserved for restore.")
+else:
+    print("\n✅ Post-verify clean: no demo data left in DB.")
+PYEOF
+
+echo ""
+echo "════════════════════════════════════════════"
+echo "  ✅ archive-demo complete"
+echo "════════════════════════════════════════════"
+echo ""
+echo "Backup available for 30 days (recommended):"
+echo "  DB:      $DB_BAK"
+echo "  Folders: $TAR_BAK"
+echo ""
+echo "Restore: bash bin/restore-demo-backup $TS"

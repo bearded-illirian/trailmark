@@ -1,0 +1,377 @@
+#!/bin/bash
+# init-demo — Seeds a rich populated demo workspace: 3 projects × 2 tasks + deploys + skills usage.
+#
+# Purpose: on first `git clone` the user sees a working Flow UI populated with realistic
+# sample data, so they understand what artifact-first looks like BEFORE they do their own work.
+#
+# What it does:
+#   1. Migrates DB schema: adds `is_demo INTEGER DEFAULT 0` to 5 tables (idempotent PRAGMA check).
+#   2. Creates 3 demo project dirs: projects/demo-{blog-cms,analytics-api,mobile-app}/ + symlinks.
+#   3. Appends 3 demo-* entries to aihub/projects.yml.
+#   4. Generates 6 fixture task folders (2 per project) in tasks/log/demo-*/ with realistic
+#      task.md + full artifact chain (flow-first/library-first/plan-first/report/user-note).
+#   5. Populates routing.db with 6 artifacts + 12 blocks + ~60 task_artifacts + ~40 skill_invocations
+#      + 9 deploys. ALL rows carry is_demo=1 AND project field starts with 'demo-'.
+#   6. Writes .demo-manifest.json — the source of truth listing every rowid + folder + project
+#      created. bin/archive-demo uses this manifest for surgical safe removal.
+#
+# Idempotent: safe to re-run. If .demo-manifest.json exists, exits with a hint.
+# To remove ONLY demo data (never touches your real data): `bash bin/archive-demo`.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECTS_YML="$WORKSPACE_ROOT/aihub/projects.yml"
+ROUTING_DB="$WORKSPACE_ROOT/tasks/routing.db"
+TASKS_LOG_DIR="$WORKSPACE_ROOT/tasks/log"
+PROJECTS_DIR="$WORKSPACE_ROOT/projects"
+MANIFEST_FILE="$WORKSPACE_ROOT/tasks/.demo-manifest.json"
+
+# ── Sanity ───────────────────────────────────────────────────────────────
+command -v sqlite3 >/dev/null 2>&1 || { echo "❌ sqlite3 not found"; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "❌ python3 not found"; exit 1; }
+
+# ── Idempotency guard ───────────────────────────────────────────────────
+if [ -f "$MANIFEST_FILE" ]; then
+  echo "ℹ️  Demo data already loaded (see $MANIFEST_FILE)"
+  echo "    To remove: bash bin/archive-demo"
+  exit 0
+fi
+
+echo "════════════════════════════════════════════"
+echo "  init-demo — seed populated demo workspace"
+echo "════════════════════════════════════════════"
+
+# ── 1. DB schema init + is_demo migration ────────────────────────────────
+echo "── Migrating DB schema (adds is_demo columns) ──"
+
+sqlite3 "$ROUTING_DB" <<'SQLEOF'
+CREATE TABLE IF NOT EXISTS artifacts (
+    id TEXT PRIMARY KEY, type TEXT NOT NULL, project TEXT, title TEXT,
+    file_path TEXT, status TEXT DEFAULT 'open', created_at TEXT, closed_at TEXT,
+    number INTEGER, domain TEXT NOT NULL DEFAULT 'development'
+);
+CREATE TABLE IF NOT EXISTS task_blocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT NOT NULL, block_num INTEGER,
+    title TEXT, status TEXT DEFAULT 'pending', source TEXT, commit_hash TEXT,
+    created_at TEXT, closed_at TEXT, type TEXT DEFAULT 'block', sort_order INTEGER,
+    atom_type TEXT, recommended_cadence TEXT
+);
+CREATE TABLE IF NOT EXISTS task_artifacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT NOT NULL, block_num TEXT,
+    round_num INTEGER, artifact_type TEXT, file_name TEXT, file_path TEXT,
+    created_by TEXT, created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS skill_invocations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, block_num TEXT,
+    skill_name TEXT, invoked_at TEXT
+);
+CREATE TABLE IF NOT EXISTS deploys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, project TEXT NOT NULL, commit_sha TEXT NOT NULL,
+    deployed_at TEXT NOT NULL, status TEXT NOT NULL CHECK (status IN ('ok', 'fail')),
+    ref_name TEXT, commit_msg TEXT, task_id TEXT, block_num INTEGER, raw_log TEXT,
+    UNIQUE (project, commit_sha)
+);
+SQLEOF
+
+# Add is_demo column to each table if not present
+for tbl in artifacts task_blocks task_artifacts skill_invocations deploys; do
+  has_col=$(sqlite3 "$ROUTING_DB" "PRAGMA table_info($tbl);" | grep -c "is_demo" || true)
+  if [ "$has_col" = "0" ]; then
+    sqlite3 "$ROUTING_DB" "ALTER TABLE $tbl ADD COLUMN is_demo INTEGER DEFAULT 0;"
+    echo "  ✓ added is_demo to $tbl"
+  else
+    echo "  ✓ is_demo already present in $tbl"
+  fi
+done
+echo ""
+
+# ── 2. Create 3 project dirs + symlinks ─────────────────────────────────
+echo "── Creating 3 demo project dirs + skill symlinks ──"
+for proj in demo-blog-cms demo-analytics-api demo-mobile-app; do
+  PROJECT_DIR="$PROJECTS_DIR/$proj"
+  if [ ! -d "$PROJECT_DIR" ]; then
+    mkdir -p "$PROJECT_DIR/.claude"
+    ln -s "../../../aihub/.claude/skills" "$PROJECT_DIR/.claude/skills"
+    echo "  ✓ created $PROJECT_DIR"
+  else
+    echo "  ✓ $PROJECT_DIR already exists"
+  fi
+done
+echo ""
+
+# ── 3. Append to aihub/projects.yml ─────────────────────────────────────
+echo "── Registering demo projects in $PROJECTS_YML ──"
+for proj in demo-blog-cms demo-analytics-api demo-mobile-app; do
+  if ! grep -q "id: $proj" "$PROJECTS_YML" 2>/dev/null; then
+    printf "\n  - id: %s\n    path: ./projects/%s\n" "$proj" "$proj" >> "$PROJECTS_YML"
+    echo "  ✓ registered $proj"
+  else
+    echo "  ✓ $proj already registered"
+  fi
+done
+echo ""
+
+# ── 4. Generate 6 fixture task folders + populate DB via Python ─────────
+echo "── Generating 6 demo task folders + populating routing.db ──"
+
+python3 - <<PYEOF
+import os, sqlite3, json, datetime
+
+WORKSPACE = "$WORKSPACE_ROOT"
+DB = "$ROUTING_DB"
+LOG = "$TASKS_LOG_DIR"
+MANIFEST = "$MANIFEST_FILE"
+
+# Data model: 3 projects × 2 tasks × 2 blocks × 5 artifacts + deploys + skill invocations
+PROJECTS = [
+    ("demo-blog-cms", "Blog CMS", [
+        ("demo-cms--001-post-editor-fix",  "Fix rich-text editor autosave loss on tab switch",
+         [("Reproduce autosave loss on tab switch", "backend"), ("Add beforeunload guard + localStorage draft", "ui")]),
+        ("demo-cms--002-tag-system",       "Add tag taxonomy with autocomplete",
+         [("Design tags/tag_posts schema + migration", "backend"), ("Wire tag input UI with async autocomplete", "ui")]),
+    ]),
+    ("demo-analytics-api", "Analytics API", [
+        ("demo-analytics--001-events-endpoint", "Add /events/batch endpoint for high-volume ingestion",
+         [("Define batch payload schema + validation", "backend"), ("Implement queue-based writer + tests", "backend")]),
+        ("demo-analytics--002-rate-limit",       "Add per-tenant rate limiting to /events",
+         [("Add token-bucket state in Redis-like store", "backend"), ("Return 429 with Retry-After header", "backend")]),
+    ]),
+    ("demo-mobile-app", "Mobile App", [
+        ("demo-mobile--001-push-notifications", "Wire push notifications for new-message events",
+         [("Integrate APNs/FCM credentials + service", "integration"), ("Handle notification tap → open thread", "ui")]),
+        ("demo-mobile--002-offline-mode",       "Enable offline message queue + sync on reconnect",
+         [("Local queue in SQLite with retry policy", "backend"), ("Reconnect handler + conflict resolution", "ui")]),
+    ]),
+]
+
+# Artifact content templates (short but realistic)
+def task_md(slug, title, project):
+    return f"""# {slug}
+
+**Date:** 2026-01-15
+**Project:** {project}
+**Type:** feature (arch-first)
+
+## Task
+
+{title}
+
+## Blocks
+
+| # | Block title | Status | commit |
+|:-:|---|:-:|---|
+| 1 | Block 1 title | ✅ | demo-{slug}-1 |
+| 2 | Block 2 title | ✅ | demo-{slug}-2 |
+
+## Task files
+
+| File | Skill | Block | Round | Created |
+|---|---|---|---|---|
+"""
+
+def flow_first(N):
+    return f"""# Flow-First — Block {N}.1
+
+**Date:** 2026-01-15
+
+## Landscape
+
+| UI | DB | Integrations |
+|---|---|---|
+| Current form component | Existing schema | External API |
+
+## Problem
+
+| UI | DB | Integrations |
+|---|---|---|
+| Missing feedback | Missing column | Rate limit hit |
+
+## Solution
+
+| UI | DB | Integrations |
+|---|---|---|
+| Add inline error | Migration + index | Add exponential backoff |
+
+## Result
+
+| UI | DB | Integrations |
+|---|---|---|
+| Clear error state | Faster queries | Reliable retries |
+"""
+
+def library_first(N):
+    return f"""# Library-First — Block {N}.1
+
+**Date:** 2026-01-15
+
+## Table
+
+| # | What we do | Source | What we use | LOC | Type |
+|---|---|---|---|---|---|
+| 1 | Add inline error handler | Library ✅ | error-toast.js | ~15 | ui |
+| 2 | Add validation on server | Library ✅ | validate.py | ~10 | backend |
+
+## Summary
+
+Rows "From scratch ⚠️": 0
+Rows "Library ✅": 2
+Total new LOC: ~25
+Types: ui, backend
+
+## Watchpoints
+—
+
+## Out of scope
+- Related refactor of neighbor forms
+"""
+
+def plan_first(N):
+    return f"""# Plan-First — Block {N}.1
+
+**Date:** 2026-01-15
+
+## Plan
+
+| # | Section / Step | Brief summary |
+|---|---|---|
+| 1 | Read existing handler | Understand current flow |
+| 2 | Add validation call | Server-side guard |
+| 3 | Add error toast on failure | UX feedback |
+| 4 | Write test | Regression guard |
+| 5 | Update docs | Note new behavior |
+| 6 | Commit | Squashed message |
+| 7 | Deploy | Verify on staging |
+
+## Risks
+⚠️  Legacy form uses different toast component — check compat.
+
+## Out of scope
+- Full form redesign
+"""
+
+def report(N):
+    return f"""# Report {N}.1
+
+**Date:** 2026-01-15
+**Status:** ✅
+
+## What was done
+
+✅ 1. Read existing handler
+✅ 2. Added validation
+✅ 3. Wired error toast
+✅ 4. Wrote regression test
+✅ 5. Updated docs
+✅ 6. Committed
+✅ 7. Deployed to staging
+
+## What was notable
+
+- Reused existing toast component — no drift.
+- Test caught an edge case with empty payload.
+
+## Next
+
+Block closed. Next block continues fix cycle.
+"""
+
+def user_note(N):
+    return f"""# User Note: Block {N}.1
+
+**Date:** 2026-01-15
+
+## What changed
+
+Feedback now appears inline when the submitted form is invalid.
+
+## Where it affects
+
+- Post editor
+- Comment box
+"""
+
+# Generate folders + files, INSERT to DB
+conn = sqlite3.connect(DB)
+c = conn.cursor()
+
+manifest = {
+    "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+    "projects": [],
+    "task_folders": [],
+    "db_rowids": {"artifacts": [], "task_blocks": [], "task_artifacts": [], "skill_invocations": [], "deploys": []},
+}
+
+for project_id, project_name, tasks in PROJECTS:
+    manifest["projects"].append(project_id)
+    # 3 deploys per project (ok, fail, ok)
+    for i, (status, msg) in enumerate([("ok", "Feature merge"), ("fail", "Failed migration"), ("ok", "Hotfix deploy")]):
+        c.execute("INSERT INTO deploys (project, commit_sha, deployed_at, status, ref_name, commit_msg, raw_log, is_demo) VALUES (?, ?, ?, ?, 'refs/heads/main', ?, 'demo deploy log entry', 1)",
+                  (project_id, f"demo-{project_id}-deploy-{i+1}", f"2026-01-1{5+i}T10:00:00Z", status, msg))
+        manifest["db_rowids"]["deploys"].append(c.lastrowid)
+
+    for task_slug, task_title, blocks in tasks:
+        # Task folder
+        folder = f"{LOG}/2026-01-15-{task_slug}"
+        os.makedirs(folder, exist_ok=True)
+        with open(f"{folder}/task.md", "w") as f: f.write(task_md(task_slug, task_title, project_id))
+        manifest["task_folders"].append(f"tasks/log/2026-01-15-{task_slug}")
+
+        # artifacts row
+        c.execute("INSERT OR IGNORE INTO artifacts (id, type, project, title, file_path, status, created_at, closed_at, number, is_demo) VALUES (?, 'fast-track', ?, ?, ?, 'done', '2026-01-15', '2026-01-15', 1, 1)",
+                  (task_slug, project_id, task_title, f"tasks/log/2026-01-15-{task_slug}/task.md"))
+        manifest["db_rowids"]["artifacts"].append(task_slug)
+
+        for bnum, (btitle, atom) in enumerate(blocks, 1):
+            # Block row
+            c.execute("INSERT INTO task_blocks (task_id, block_num, title, status, source, commit_hash, created_at, closed_at, type, sort_order, atom_type, recommended_cadence, is_demo) VALUES (?, ?, ?, 'done', 'plan-first', ?, '2026-01-15', '2026-01-15', 'block', ?, ?, 'flow+lib+plan', 1)",
+                      (task_slug, bnum, btitle, f"demo-{task_slug}-{bnum}", bnum * 100, atom))
+            manifest["db_rowids"]["task_blocks"].append(c.lastrowid)
+
+            # 5 artifact files + rows
+            for atype, contentfn, aname in [
+                ("flow-first",    flow_first,    f"flow-first-{bnum}.1.md"),
+                ("library-first", library_first, f"library-first-{bnum}.1.md"),
+                ("plan-first",    plan_first,    f"plan-first-{bnum}.1.md"),
+                ("report",        report,        f"report-{bnum}.1.md"),
+                ("user-note",     user_note,     f"user-note-{bnum}.1.md"),
+            ]:
+                with open(f"{folder}/{aname}", "w") as f: f.write(contentfn(bnum))
+                c.execute("INSERT INTO task_artifacts (task_id, block_num, round_num, artifact_type, file_name, file_path, created_by, created_at, is_demo) VALUES (?, ?, 1, ?, ?, ?, ?, '2026-01-15', 1)",
+                          (task_slug, str(bnum), atype, aname, f"tasks/log/2026-01-15-{task_slug}/{aname}", atype))
+                manifest["db_rowids"]["task_artifacts"].append(c.lastrowid)
+
+            # 3 skill invocations per block (flow-first, library-first, plan-first)
+            for skill, hour in [("flow-first", 10), ("library-first", 10), ("plan-first", 10)]:
+                c.execute("INSERT INTO skill_invocations (task_id, block_num, skill_name, invoked_at, is_demo) VALUES (?, ?, ?, ?, 1)",
+                          (task_slug, str(bnum), skill, f"2026-01-15 {hour + bnum}:0{bnum}:00"))
+                manifest["db_rowids"]["skill_invocations"].append(c.lastrowid)
+
+conn.commit()
+
+# Summary counts
+summary = {k: len(v) for k, v in manifest["db_rowids"].items()}
+manifest["summary"] = summary
+manifest["summary"]["projects"] = len(manifest["projects"])
+manifest["summary"]["task_folders"] = len(manifest["task_folders"])
+
+with open(MANIFEST, "w") as f: json.dump(manifest, f, indent=2)
+
+print(f"  ✓ Populated: {summary['artifacts']} tasks, {summary['task_blocks']} blocks, {summary['task_artifacts']} artifact rows, {summary['skill_invocations']} skill invocations, {summary['deploys']} deploys")
+print(f"  ✓ Wrote manifest: {MANIFEST}")
+
+conn.close()
+PYEOF
+
+echo ""
+echo "════════════════════════════════════════════"
+echo "  ✅ Demo workspace ready"
+echo "════════════════════════════════════════════"
+echo ""
+echo "Next:"
+echo "  bash bin/flow-ui/bin/serve       # start Flow UI"
+echo "  open http://127.0.0.1:8765/       # see populated dashboard"
+echo ""
+echo "To remove (only demo, never touches your real data):"
+echo "  bash bin/archive-demo"
