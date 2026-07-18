@@ -19,9 +19,11 @@ only in chat.
 
 ![Chat-only agent vs Artifact-first agent — the difference](docs/assets/before-after.png)
 
-![One task in Flow UI — every artifact of the skill chain is a first-class file](docs/assets/flow-ui-task.png)
+**Every artifact of the skill chain is a first-class file — visible in one file tree.**
 
-![Global statistics — Trailmark running on a real production instance (18k artifacts, 5.5k deploys, 6 domains)](docs/assets/flow-ui-global.png)
+![One task in Flow UI showing every artifact of its skill chain](docs/assets/flow-ui-task.png)
+
+*Left panel: sidebar with every file the block produced — flow-first, library-first, plan-first, report, user-note, decisions. Right panel: markdown preview. No hidden state, no chat scrollback.*
 
 ---
 
@@ -68,7 +70,11 @@ Something worked last week, fails today. Git blame shows "fix bug" without conte
 
 Chat log → auditable engineering record. **One rule, enforced by protocol.**
 
-![Task breakdown in Flow UI — top projects, task types, artifact type distribution](docs/assets/flow-ui-tasks-breakdown.png)
+**See at a glance which projects dominate, which task types are common, how artifact types distribute.**
+
+![Task breakdown analytics in Flow UI](docs/assets/flow-ui-tasks-breakdown.png)
+
+*Once every step writes a file, this is what emerges: real signal about where time goes, which flavors of work are most common, which artifact types the framework actually produces.*
 
 ---
 
@@ -144,7 +150,11 @@ invocation. No per-project duplication, no drift.
 `routing.db`. Cross-project queries ("what did we touch this week?") work
 natively.
 
-![Deploys tab in Flow UI — every commit linked to task + block + artifact](docs/assets/flow-ui-deploys.png)
+**Every deploy traces to a task, a block, and the user note that closed it.**
+
+![Deploys tab in Flow UI showing commit-to-artifact linkage](docs/assets/flow-ui-deploys.png)
+
+*Click any deploy on the left — the right panel opens the user note written when that block finished. No hunt through git blame, no guessing which regression came from which change.*
 
 ---
 
@@ -206,7 +216,11 @@ Then open `http://127.0.0.1:8765/`. You see: projects, tasks per project,
 blocks per task, artifacts per block, deploys, and skill-usage analytics.
 No YAML editing. No CLI queries. Point and read.
 
-![Skills methodology in Flow UI — which skills are actively used, dormant, domain coverage](docs/assets/flow-ui-skills.png)
+**Which skills fire most often, which are dormant, coverage by domain.**
+
+![Skills methodology dashboard in Flow UI](docs/assets/flow-ui-skills.png)
+
+*Ship-first tops the chart — because every block ends with it. Dormant skills surface curation candidates. Domain coverage shows which slices of work are actually served by named protocols.*
 
 ---
 
@@ -329,6 +343,12 @@ are functional and used daily on real production work. The Flow UI is a
 sibling tool synced from an upstream repo via the `tool` tier. Surrounding
 tooling (contract verifier, skills map generator, init wizard, sync script,
 Discussions/Issue templates) is stable for the public release.
+
+**Real-world scale — 18k artifacts across 1276 tasks, 5.5k deploys, 6 domains, 72 skills active.**
+
+![Global statistics from a live Trailmark production instance](docs/assets/flow-ui-global.png)
+
+*Numbers from the author's own production instance. Trailmark is not a toy — it drives daily engineering at real scale.*
 
 CI workflow verifies contracts on every push. First stable release v1.0.0
 tagged — see [Releases](../../releases/tag/v1.0.0).
