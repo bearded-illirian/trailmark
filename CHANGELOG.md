@@ -66,18 +66,83 @@ Nothing yet.
 - README: `Status` line + `Architecture` ASCII tree updated to new
   counts.
 
-## [1.0.0-mvp] — TBD
+## [1.0.0] — 2026-07-18
 
-The first public release. Contents are the accumulated result of two
-internal tasks (498 assembly, 594 release-prep) — see previous versions
-below for the incremental history.
+**First stable public release** as **Trailmark** — the artifact-first
+agent framework. Repo public, brand identity fixed, full docs parity
+EN/RU, CI wired.
 
 ### Added
 
-- Public release under MIT License.
-- GitHub Actions CI (`.github/workflows/verify-contract.yml`) — runs
-  `verify-contract.sh` and skills-map drift check on every PR.
-- Release tag `v1.0.0-mvp` and GitHub release notes.
+- **Public release** under MIT License at `github.com/bearded-illirian/trailmark`.
+- **Product name: Trailmark** (rebranded from working title «The Framework»).
+- **GitHub Actions CI** (`.github/workflows/verify-contract.yml`) — runs
+  `verify-contract.sh` + `manifest.yml` parse check on every push/PR to main.
+- **Social preview poster** (`docs/assets/og-poster.png`) — 1280×640, Flow UI
+  brand palette (bg `#04070d`, accent `#F4A300`). Uploaded via Settings.
+- **Before/after diagram** (`docs/assets/before-after.png`) — 1200×600
+  visual comparison «chat-only agent vs artifact-first agent» embedded
+  in README hero.
+- **README badges cluster** — MIT / Manifest / Skills / Stars / Issues.
+- **README «Star history»** section via star-history.com.
+- **10 GitHub topics** for discoverability (ai-framework, claude-code,
+  agent-orchestration, artifact-first, etc.).
+- **Repository description** with core value prop hook.
+- **`.github` templates** — bug report, feature request, discussion
+  templates (Q&A, ideas, show-and-tell) with Trailmark branding.
+
+### Changed
+
+- **README** — full rewrite to `Trailmark` identity, contrast-card
+  «Why artifact-first» (bullets vs wall-of-text), inline glosses for
+  key terms (block, report, skill, chain, gate), star history embed,
+  homework section with `/tutorial-check` reference.
+- **README.ru.md** — full parity with English v1.0.0 content (was
+  stale v0.5.0 snapshot).
+- **Install flow** — 3 commands (`init` → `init-demo` → `new-project`),
+  was 4 commands with deprecated `bin/init-sample`.
+- **Security** — removed all `/Users/viktor/` path leaks from
+  `manifest.yml` + `bin/sync-from-aihub.sh` (author's absolute paths
+  now use dynamic `${HOME}` / `${AIHUB_ROOT}` patterns).
+
+### Removed
+
+- «MVP» label everywhere (product is stable now, not a work-in-progress
+  preview). FAQ scope phrasing + Status section reworded.
+- Deprecated `bin/init-sample` + `bin/archive-sample` (replaced by
+  `bin/init-demo` + `bin/archive-demo` with 3-marker safety).
+
+## [0.8.0] — 2026-07-18
+
+**Onboarding closure + Trailmark rebrand foundation.** Added the
+`tutorial-check` skill (20th shipped item) and cleaned demo lifecycle.
+
+### Added
+
+- **`tutorial-check`** (core) — homework validator that runs 5 SQL/file
+  checks against user's workspace after they complete QUICKSTART § 5.
+  Reports ✅/❌ per step with one-line remediation. Ships as SKILL.md +
+  SKILL.public.md + INFO.md + INFO.public.md.
+- **`bin/init-demo`** (377 LOC) — populates workspace with 3 demo
+  projects × 2 tasks × 5 artifacts (123 rows total). Every row marked
+  `is_demo=1` + tracked in `tasks/.demo-manifest.json`.
+- **`bin/archive-demo`** (200 LOC) — surgical safe remove with 3-marker
+  safety (is_demo=1 AND project LIKE 'demo-%' AND id IN manifest).
+- **`bin/restore-demo-backup`** — full round-trip recovery from tar.gz
+  + routing.db snapshot.
+- **`docs/DEMO_DATA.md`** — full guide to demo dataset with safety
+  guarantees + FAQ.
+- **`docs/TROUBLESHOOTING.md`** — top 7 failure modes + fixes.
+- **QUICKSTART.md rewrite** — 5-minute walkthrough under init-demo flow
+  with homework 5-step checklist for `/tutorial-check` validation.
+
+### Changed
+
+- Manifest grew from 19 to 20 entries (13 core skills, was 12).
+- **Flow UI paths in README fixed** — `bin/flow-ui/serve` →
+  `bin/flow-ui/bin/serve` (5 broken references).
+- **`PROJECTS_GUIDE.md`** — added Advanced section on project-local
+  skill overrides.
 
 ## [0.5.0] — 2026-07-17
 
@@ -154,8 +219,11 @@ below for the incremental history.
 - Initial internal MVP: 13 skills (2 commands + 4 protocol + 7 core) +
   tooling scaffolding + `manifest.yml`.
 
-[Unreleased]: https://github.com/bearded-illirian/trailmark/compare/v1.0.0-mvp...HEAD
-[1.0.0-mvp]: https://github.com/bearded-illirian/trailmark/releases/tag/v1.0.0-mvp
+[Unreleased]: https://github.com/bearded-illirian/trailmark/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/bearded-illirian/trailmark/releases/tag/v1.0.0
+[0.8.0]: https://github.com/bearded-illirian/trailmark/compare/v0.5.0...v1.0.0
+[0.7.0]: https://github.com/bearded-illirian/trailmark/releases/tag/v0.7.0
+[0.6.0]: https://github.com/bearded-illirian/trailmark/releases/tag/v0.6.0
 [0.5.0]: https://github.com/bearded-illirian/trailmark/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/bearded-illirian/trailmark/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/bearded-illirian/trailmark/compare/v0.2.0...v0.3.0
