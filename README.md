@@ -353,6 +353,13 @@ Discussions/Issue templates) is stable for the public release.
 CI workflow verifies contracts on every push. First stable release v1.0.0
 tagged — see [Releases](../../releases/tag/v1.0.0).
 
+### Coming from Codex / Cursor / another agent?
+
+Trailmark currently runs on Claude Code only. If you'd use it on another
+agent, drop a comment on [Discussion #1](https://github.com/bearded-illirian/trailmark/discussions/1)
+with which platform you're on. **If we hit 10+ signals, I'll prioritise
+the port.**
+
 ---
 
 ## License
