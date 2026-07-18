@@ -76,8 +76,11 @@ cp "$SOURCE_DIR/.gitignore" "$TEMP_DIR/.gitignore"
 cd "$TEMP_DIR"
 
 # Ensure git identity is set for the commit
-git config user.email "sync@$(hostname -s).local"
-git config user.name "sync-to-github"
+# Uses GitHub noreply email format: <numeric-id>+<username>@users.noreply.github.com
+# — links commits to the GitHub account (contribution graph fills), keeps email private.
+# Override via GH_SYNC_EMAIL / GH_SYNC_NAME env vars if forking.
+git config user.email "${GH_SYNC_EMAIL:-288121890+bearded-illirian@users.noreply.github.com}"
+git config user.name "${GH_SYNC_NAME:-bearded-illirian}"
 
 git add -A
 if git diff --staged --quiet; then
