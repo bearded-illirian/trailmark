@@ -25,7 +25,7 @@ export GH_TOKEN=$(cat "$HOME/.gh-token")
 # ── Paths ────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-REPO_SLUG="${GH_REPO_SLUG:-bearded-illirian/framework}"
+REPO_SLUG="${GH_REPO_SLUG:-bearded-illirian/trailmark}"
 REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO_SLUG}.git"
 
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

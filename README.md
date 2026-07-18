@@ -3,10 +3,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Manifest: v0.8.0](https://img.shields.io/badge/manifest-v0.8.0-blue.svg)](./manifest.yml)
 [![Skills: 19](https://img.shields.io/badge/skills-19_shipped-brightgreen.svg)](./docs/SKILLS_MAP.md)
-[![GitHub stars](https://img.shields.io/github/stars/bearded-illirian/framework?style=social)](https://github.com/bearded-illirian/framework/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/bearded-illirian/framework.svg)](https://github.com/bearded-illirian/framework/issues)
+[![GitHub stars](https://img.shields.io/github/stars/bearded-illirian/trailmark?style=social)](https://github.com/bearded-illirian/trailmark/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/bearded-illirian/trailmark.svg)](https://github.com/bearded-illirian/trailmark/issues)
 
-# The Framework
+# Trailmark
 
 **An artifact-first agent framework for driving multi-step engineering tasks
 through a disciplined skill chain — one block at a time, one commit at a
@@ -280,7 +280,7 @@ No services. No package managers beyond pip for Flow UI.
 
 ## Status
 
-**MVP release — 19 skills + 1 tool, manifest v0.8.0.**
+**Current release — 19 skills + 1 tool, manifest v0.8.0.**
 
 The 19 shipped skills (2 slash-commands + 4 protocol skills + 13 core skills)
 are functional and used daily on real production work. The Flow UI is a
@@ -295,7 +295,7 @@ tag are the last steps of the release roadmap.
 
 ## Star history
 
-[![Star History Chart](https://api.star-history.com/svg?repos=bearded-illirian/framework&type=Date)](https://star-history.com/#bearded-illirian/framework&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=bearded-illirian/trailmark&type=Date)](https://star-history.com/#bearded-illirian/trailmark&Date)
 
 ---
 
@@ -303,4 +303,4 @@ tag are the last steps of the release roadmap.
 
 Released under the MIT License — see [LICENSE](./LICENSE).
 
-Public mirror: [github.com/bearded-illirian/framework](https://github.com/bearded-illirian/framework)
+Public mirror: [github.com/bearded-illirian/trailmark](https://github.com/bearded-illirian/trailmark)

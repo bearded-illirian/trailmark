@@ -154,10 +154,10 @@ below for the incremental history.
 - Initial internal MVP: 13 skills (2 commands + 4 protocol + 7 core) +
   tooling scaffolding + `manifest.yml`.
 
-[Unreleased]: https://github.com/bearded-illirian/framework/compare/v1.0.0-mvp...HEAD
-[1.0.0-mvp]: https://github.com/bearded-illirian/framework/releases/tag/v1.0.0-mvp
-[0.5.0]: https://github.com/bearded-illirian/framework/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/bearded-illirian/framework/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/bearded-illirian/framework/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/bearded-illirian/framework/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/bearded-illirian/framework/releases/tag/v0.1.0
+[Unreleased]: https://github.com/bearded-illirian/trailmark/compare/v1.0.0-mvp...HEAD
+[1.0.0-mvp]: https://github.com/bearded-illirian/trailmark/releases/tag/v1.0.0-mvp
+[0.5.0]: https://github.com/bearded-illirian/trailmark/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/bearded-illirian/trailmark/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/bearded-illirian/trailmark/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/bearded-illirian/trailmark/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/bearded-illirian/trailmark/releases/tag/v0.1.0

@@ -161,10 +161,10 @@ Common per-step fixes:
 If none of the above fixes work:
 
 - **Search Discussions** — someone may have hit the same issue:
-  `https://github.com/bearded-illirian/framework/discussions`
+  `https://github.com/bearded-illirian/trailmark/discussions`
 - **File an Issue** — include: OS, Python version, exact command you ran,
   and the full error output:
-  `https://github.com/bearded-illirian/framework/issues/new`
+  `https://github.com/bearded-illirian/trailmark/issues/new`
 - **Read** [`docs/CONCEPTS.md`](./CONCEPTS.md) — many "it's not working"
   reports turn out to be a concept mismatch (task vs block vs chain)
 

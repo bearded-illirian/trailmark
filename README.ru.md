@@ -1,6 +1,6 @@
 [English](./README.md) · [Русский](./README.ru.md)
 
-# The Framework
+# Trailmark
 
 **Artifact-first agent-фреймворк для многоэтапных инженерных задач через
 дисциплинированную цепочку скиллов — один блок за раз, один коммит за раз,
@@ -264,4 +264,4 @@ CI workflow (`.github/workflows/verify-contract.yml`) и полный v1.0.0-mvp
 
 Выпущено под MIT License — см. [LICENSE](./LICENSE).
 
-Публичный зеркало: [github.com/bearded-illirian/framework](https://github.com/bearded-illirian/framework)
+Публичный зеркало: [github.com/bearded-illirian/trailmark](https://github.com/bearded-illirian/trailmark)

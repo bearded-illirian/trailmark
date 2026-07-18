@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
-  <!-- Background: GitHub native dark -->
-  <rect width="1200" height="600" fill="#0d1117"/>
+  <!-- Background: Flow UI brand bg #04070d -->
+  <rect width="1200" height="600" fill="#04070d"/>
 
   <!-- Subtle gradient overlay -->
   <defs>
     <linearGradient id="bg-fade" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#161b22" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#0a0f1a" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#04070d" stop-opacity="0"/>
     </linearGradient>
   </defs>
   <rect width="1200" height="600" fill="url(#bg-fade)"/>
@@ -15,92 +15,88 @@
   <!-- Header -->
   <text x="600" y="55"
         font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
-        font-size="26" font-weight="500" fill="#8b949e" text-anchor="middle"
-        letter-spacing="1">The artifact-first difference</text>
+        font-size="26" font-weight="500" fill="#9aa5b1" text-anchor="middle"
+        letter-spacing="1">Trailmark — the artifact-first difference</text>
 
-  <!-- Central divider -->
-  <line x1="600" y1="90" x2="600" y2="530" stroke="#30363d" stroke-width="1"/>
+  <!-- Central divider (subtle brand-tinted) -->
+  <line x1="600" y1="90" x2="600" y2="530" stroke="rgba(244, 163, 0, 0.18)" stroke-width="1"/>
 
-  <!-- ── LEFT column: Chat-only agent ─────────────────────────── -->
+  <!-- ── LEFT column: Chat-only agent (muted / dead) ─────────────────── -->
   <g font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
     <!-- Column title -->
-    <text x="300" y="115" font-size="24" font-weight="700" fill="#f85149" text-anchor="middle">
+    <text x="300" y="115" font-size="24" font-weight="700" fill="#9aa5b1" text-anchor="middle">
       Chat-only agent
     </text>
-    <text x="300" y="140" font-size="14" font-weight="400" fill="#7d8590" text-anchor="middle">
+    <text x="300" y="140" font-size="14" font-weight="400" fill="#9aa5b1" text-anchor="middle">
       ephemeral · trail-less
     </text>
 
-    <!-- Message bubbles -->
+    <!-- Message bubbles (muted, dim) -->
     <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="14">
-      <!-- msg 1 (agent) -->
-      <rect x="100" y="180" width="240" height="34" rx="17" fill="#21262d" stroke="#30363d" stroke-width="1"/>
-      <text x="220" y="202" fill="#c9d1d9" text-anchor="middle">agent: analyzing…</text>
+      <rect x="100" y="180" width="240" height="34" rx="12" fill="#0a0f1a" stroke="rgba(244, 163, 0, 0.18)" stroke-width="1"/>
+      <text x="220" y="202" fill="#9aa5b1" text-anchor="middle">agent: analyzing…</text>
 
-      <!-- msg 2 (user) -->
-      <rect x="180" y="228" width="240" height="34" rx="17" fill="#1f2d3d" stroke="#264f78" stroke-width="1"/>
-      <text x="300" y="250" fill="#c9d1d9" text-anchor="middle">user: try version B</text>
+      <rect x="180" y="228" width="240" height="34" rx="12" fill="#0a0f1a" stroke="rgba(244, 163, 0, 0.18)" stroke-width="1"/>
+      <text x="300" y="250" fill="#9aa5b1" text-anchor="middle">user: try version B</text>
 
-      <!-- msg 3 (agent) -->
-      <rect x="100" y="276" width="280" height="34" rx="17" fill="#21262d" stroke="#30363d" stroke-width="1"/>
-      <text x="240" y="298" fill="#c9d1d9" text-anchor="middle">agent: edited, moved on…</text>
+      <rect x="100" y="276" width="280" height="34" rx="12" fill="#0a0f1a" stroke="rgba(244, 163, 0, 0.18)" stroke-width="1"/>
+      <text x="240" y="298" fill="#9aa5b1" text-anchor="middle">agent: edited, moved on…</text>
 
-      <!-- msg 4 (agent) -->
-      <rect x="140" y="324" width="240" height="34" rx="17" fill="#21262d" stroke="#30363d" stroke-width="1"/>
-      <text x="260" y="346" fill="#c9d1d9" text-anchor="middle">agent: done ✓</text>
+      <rect x="140" y="324" width="240" height="34" rx="12" fill="#0a0f1a" stroke="rgba(244, 163, 0, 0.18)" stroke-width="1"/>
+      <text x="260" y="346" fill="#9aa5b1" text-anchor="middle">agent: done ✓</text>
     </g>
 
     <!-- Session ends -->
-    <text x="300" y="400" font-size="14" font-style="italic" fill="#6e7681" text-anchor="middle">
+    <text x="300" y="400" font-size="14" font-style="italic" fill="#9aa5b1" text-anchor="middle">
       (session ends)
     </text>
 
-    <!-- Fail state -->
+    <!-- Fail state (muted / dead) -->
     <g transform="translate(300, 460)">
-      <rect x="-155" y="-32" width="310" height="60" rx="8" fill="#3d1b1e" stroke="#f85149" stroke-width="1.5"/>
-      <text x="0" y="-6" font-size="18" font-weight="700" fill="#f85149" text-anchor="middle">
+      <rect x="-155" y="-32" width="310" height="60" rx="12" fill="#0a0f1a" stroke="#9aa5b1" stroke-width="1.5"/>
+      <text x="0" y="-6" font-size="18" font-weight="700" fill="#9aa5b1" text-anchor="middle">
         ✗ Nothing survived
       </text>
-      <text x="0" y="18" font-size="13" fill="#ffa198" text-anchor="middle">
+      <text x="0" y="18" font-size="13" fill="#9aa5b1" text-anchor="middle">
         no audit · no memory · no attribution
       </text>
     </g>
   </g>
 
-  <!-- ── RIGHT column: Artifact-first agent ─────────────────────── -->
+  <!-- ── RIGHT column: Artifact-first agent (brand orange glow) ──────── -->
   <g font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
-    <!-- Column title -->
-    <text x="900" y="115" font-size="24" font-weight="700" fill="#3fb950" text-anchor="middle">
+    <!-- Column title (brand orange) -->
+    <text x="900" y="115" font-size="24" font-weight="700" fill="#F4A300" text-anchor="middle">
       Artifact-first agent
     </text>
-    <text x="900" y="140" font-size="14" font-weight="400" fill="#7d8590" text-anchor="middle">
+    <text x="900" y="140" font-size="14" font-weight="400" fill="#9aa5b1" text-anchor="middle">
       persistent · auditable
     </text>
 
     <!-- File tree -->
-    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="14" fill="#c9d1d9">
-      <text x="720" y="185" font-weight="600" fill="#e6edf3">tasks/log/&#123;slug&#125;/</text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="14" fill="#e8edf5">
+      <text x="720" y="185" font-weight="600" fill="#e8edf5">tasks/log/&#123;slug&#125;/</text>
       <text x="740" y="212">├─ flow-first-1.md</text>
       <text x="740" y="234">├─ library-first-1.md</text>
       <text x="740" y="256">├─ plan-first-1.md</text>
       <text x="740" y="278">├─ report-1.md</text>
       <text x="740" y="300">└─ user-note-1.md</text>
-      <text x="720" y="332" font-weight="600" fill="#e6edf3">tasks/routing.db</text>
-      <text x="740" y="354" fill="#7d8590">  ↳ 5 artifact rows + 1 block row</text>
+      <text x="720" y="332" font-weight="600" fill="#e8edf5">tasks/routing.db</text>
+      <text x="740" y="354" fill="#9aa5b1">  ↳ 5 artifact rows + 1 block row</text>
     </g>
 
-    <!-- Arrow -->
-    <text x="900" y="400" font-size="14" font-style="italic" fill="#6e7681" text-anchor="middle">
+    <!-- Sub-text -->
+    <text x="900" y="400" font-size="14" font-style="italic" fill="#9aa5b1" text-anchor="middle">
       (survives forever)
     </text>
 
-    <!-- Success state -->
+    <!-- Success state (brand orange glow) -->
     <g transform="translate(900, 460)">
-      <rect x="-155" y="-32" width="310" height="60" rx="8" fill="#0d2818" stroke="#3fb950" stroke-width="1.5"/>
-      <text x="0" y="-6" font-size="18" font-weight="700" fill="#3fb950" text-anchor="middle">
+      <rect x="-155" y="-32" width="310" height="60" rx="12" fill="#10182a" stroke="#F4A300" stroke-width="1.5"/>
+      <text x="0" y="-6" font-size="18" font-weight="700" fill="#F4A300" text-anchor="middle">
         ✓ Full audit trail
       </text>
-      <text x="0" y="18" font-size="13" fill="#7ee787" text-anchor="middle">
+      <text x="0" y="18" font-size="13" fill="#FFB833" text-anchor="middle">
         every decision · every block · every session
       </text>
     </g>
@@ -109,7 +105,7 @@
   <!-- Footer punchline -->
   <text x="600" y="565"
         font-family="ui-monospace, 'SF Mono', Menlo, monospace"
-        font-size="16" font-weight="400" fill="#8b949e" text-anchor="middle">
+        font-size="16" font-weight="400" fill="#9aa5b1" text-anchor="middle">
     One rule turns chat log into engineering record.
   </text>
 </svg>

@@ -1,61 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
-  <!-- Background: GitHub native dark -->
-  <rect width="1280" height="640" fill="#0d1117"/>
+  <!-- Background: Flow UI brand bg #04070d -->
+  <rect width="1280" height="640" fill="#04070d"/>
 
-  <!-- Subtle gradient overlay for depth -->
+  <!-- Subtle surface gradient overlay for depth -->
   <defs>
     <linearGradient id="bg-fade" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#161b22" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#0a0f1a" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#04070d" stop-opacity="0"/>
     </linearGradient>
   </defs>
   <rect width="1280" height="640" fill="url(#bg-fade)"/>
 
-  <!-- Corner accent tick top-left -->
-  <path d="M 60 60 L 60 100 M 60 60 L 100 60" stroke="#00d4aa" stroke-width="2" stroke-linecap="square" opacity="0.5"/>
-  <!-- Corner accent tick bottom-right -->
-  <path d="M 1220 580 L 1220 540 M 1220 580 L 1180 580" stroke="#00d4aa" stroke-width="2" stroke-linecap="square" opacity="0.5"/>
+  <!-- Corner accent ticks (brand orange, subtle) -->
+  <path d="M 60 60 L 60 100 M 60 60 L 100 60" stroke="#F4A300" stroke-width="2" stroke-linecap="square" opacity="0.5"/>
+  <path d="M 1220 580 L 1220 540 M 1220 580 L 1180 580" stroke="#F4A300" stroke-width="2" stroke-linecap="square" opacity="0.5"/>
 
   <!-- Hero title -->
   <text x="640" y="240"
         font-family="system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
-        font-size="120"
-        font-weight="800"
-        fill="#ffffff"
+        font-size="140"
+        font-weight="700"
+        fill="#e8edf5"
         text-anchor="middle"
-        letter-spacing="-3">The Framework</text>
+        letter-spacing="-3">Trailmark</text>
 
-  <!-- Accent underline stripe (bright turquoise) -->
-  <rect x="380" y="270" width="520" height="4" fill="#00d4aa" rx="2"/>
+  <!-- Accent underline stripe (brand orange) -->
+  <rect x="440" y="270" width="400" height="4" fill="#F4A300" rx="2"/>
 
   <!-- Sub-title -->
   <text x="640" y="345"
         font-family="system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
         font-size="38"
         font-weight="400"
-        fill="#e6edf3"
+        fill="#e8edf5"
         text-anchor="middle">Artifact-first agent framework for Claude Code</text>
 
   <!-- Three concept chips row -->
   <g font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="500">
     <!-- Chip 1: Artifacts -->
     <g transform="translate(340, 420)">
-      <rect x="0" y="0" width="180" height="52" rx="26" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-      <circle cx="30" cy="26" r="6" fill="#00d4aa"/>
-      <text x="105" y="34" fill="#e6edf3" text-anchor="middle">Artifacts</text>
+      <rect x="0" y="0" width="180" height="52" rx="12" fill="#10182a" stroke="rgba(244, 163, 0, 0.45)" stroke-width="1"/>
+      <circle cx="30" cy="26" r="6" fill="#F4A300"/>
+      <text x="105" y="34" fill="#e8edf5" text-anchor="middle">Artifacts</text>
     </g>
     <!-- Chip 2: Chains -->
     <g transform="translate(550, 420)">
-      <rect x="0" y="0" width="180" height="52" rx="26" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-      <circle cx="30" cy="26" r="6" fill="#00d4aa"/>
-      <text x="105" y="34" fill="#e6edf3" text-anchor="middle">Chains</text>
+      <rect x="0" y="0" width="180" height="52" rx="12" fill="#10182a" stroke="rgba(244, 163, 0, 0.45)" stroke-width="1"/>
+      <circle cx="30" cy="26" r="6" fill="#F4A300"/>
+      <text x="105" y="34" fill="#e8edf5" text-anchor="middle">Chains</text>
     </g>
     <!-- Chip 3: Gates -->
     <g transform="translate(760, 420)">
-      <rect x="0" y="0" width="180" height="52" rx="26" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-      <circle cx="30" cy="26" r="6" fill="#00d4aa"/>
-      <text x="105" y="34" fill="#e6edf3" text-anchor="middle">Gates</text>
+      <rect x="0" y="0" width="180" height="52" rx="12" fill="#10182a" stroke="rgba(244, 163, 0, 0.45)" stroke-width="1"/>
+      <circle cx="30" cy="26" r="6" fill="#F4A300"/>
+      <text x="105" y="34" fill="#e8edf5" text-anchor="middle">Gates</text>
     </g>
   </g>
 
@@ -64,6 +63,6 @@
         font-family="ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace"
         font-size="22"
         font-weight="400"
-        fill="#8b949e"
-        text-anchor="middle">MIT  ·  v0.8.0-mvp  ·  github.com/bearded-illirian/framework</text>
+        fill="#9aa5b1"
+        text-anchor="middle">MIT  ·  v0.8.0  ·  github.com/bearded-illirian/trailmark</text>
 </svg>

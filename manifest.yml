@@ -1,4 +1,4 @@
-# Public release manifest for the VSCHK Framework.
+# Public release manifest for Trailmark — the artifact-first agent framework.
 # Whitelist of skills and commands to sync from aihub → framework-public.
 # Consumed by bin/sync-from-aihub.sh.
 #
