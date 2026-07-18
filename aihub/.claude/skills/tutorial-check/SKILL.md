@@ -1,6 +1,13 @@
 ---
 name: tutorial-check
-description: Homework validator — checks that user completed the QUICKSTART tutorial correctly (5 SQL/file checks + optional 6th self-audit)
+description: |
+  Homework validator — checks that user completed the QUICKSTART tutorial
+  correctly. Runs 5 SQL/file checks (routing.db populated, project registered,
+  demo workspace, skill invocations logged, task folder structure) plus an
+  optional 6th self-audit step. Reports ✅/❌ per check with remediation hints.
+
+  Use when: after completing QUICKSTART § 5 walkthrough, "/tutorial-check",
+  "check my setup", "проверь мою установку", "run homework checks".
 ---
 
 # Tutorial-Check Protocol
