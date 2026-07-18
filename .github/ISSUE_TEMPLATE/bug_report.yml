@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in the framework isn't behaving as documented.
+description: Something in Trailmark isn't behaving as documented.
 labels: ["bug"]
 body:
   - type: markdown
@@ -45,9 +45,9 @@ body:
   - type: input
     id: version
     attributes:
-      label: Framework version / commit
+      label: Trailmark version / commit
       description: Output of `git rev-parse --short HEAD` or the release tag.
-      placeholder: "v0.5.0 or a3f8c1d"
+      placeholder: "v0.8.0 or a3f8c1d"
     validations:
       required: true
 

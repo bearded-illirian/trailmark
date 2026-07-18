@@ -4,7 +4,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Ask any question about using the framework. Before posting, please
+        Ask any question about using Trailmark. Before posting, please
         check [FAQ.md](../blob/main/FAQ.md) — the answer might already be there.
 
   - type: textarea
@@ -26,7 +26,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Framework version
+      label: Trailmark version
       description: Release tag or short commit hash.
     validations:
       required: false

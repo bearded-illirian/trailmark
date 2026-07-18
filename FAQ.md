@@ -34,7 +34,7 @@ when you want the discipline without a process organisation to maintain it.
 
 Unix-first. The `bin/` scripts assume `bash 3.2+`, `sqlite3`, `python3`.
 WSL should work but hasn't been tested end-to-end. Windows-native support
-is out of scope for the MVP — patches welcome.
+is out of scope currently — patches welcome.
 
 ## Which AI models does it work with?
 
@@ -80,7 +80,7 @@ columns. Reference issues with `Closes #NN`. See
 
 ## What's on the roadmap?
 
-Post-MVP priorities in rough order:
+Post-launch priorities in rough order:
 
 1. **CI polish** — GitHub Actions workflow, drift detection, PR gating.
 2. **Skill authoring UX** — a scaffolding tool that generates a compliant

@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest a concrete enhancement to the framework.
+description: Suggest a concrete enhancement to Trailmark.
 labels: ["enhancement"]
 body:
   - type: markdown
@@ -38,7 +38,7 @@ body:
     id: area
     attributes:
       label: Area
-      description: Which part of the framework does this touch?
+      description: Which part of Trailmark does this touch?
       options:
         - Skill (protocol, core, or command)
         - Tooling (bin/ scripts)

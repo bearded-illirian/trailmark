@@ -1,5 +1,11 @@
 [English](./README.md) · [Русский](./README.ru.md)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Manifest: v0.8.0](https://img.shields.io/badge/manifest-v0.8.0-blue.svg)](./manifest.yml)
+[![Skills: 19](https://img.shields.io/badge/skills-19_shipped-brightgreen.svg)](./docs/SKILLS_MAP.md)
+[![GitHub stars](https://img.shields.io/github/stars/bearded-illirian/trailmark?style=social)](https://github.com/bearded-illirian/trailmark/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/bearded-illirian/trailmark.svg)](https://github.com/bearded-illirian/trailmark/issues)
+
 # Trailmark
 
 **Artifact-first agent-фреймворк для многоэтапных инженерных задач через
@@ -7,25 +13,30 @@
 каждое решение зафиксировано в файле.**
 
 Каждый шаг AI-агента пишет файл. Каждый файл регистрируется в локальной
-базе. Каждый блок закрывается отчётом. Ничего не живёт только в чате.
+базе. Каждый **блок** *(единица работы внутри задачи)* закрывается
+**отчётом** *(markdown-сводка после выполнения)*. Ничего не живёт только
+в чате.
+
+![Chat-only agent vs Artifact-first agent — the difference](docs/assets/before-after.png)
 
 ---
 
 ## Почему artifact-first
 
-Обычная работа с AI-агентом не оставляет следов. Агент думает, решает,
-правит код — и эти решения испаряются в момент закрытия сессии. Ревьюер
-не может проверить, что было рассмотрено и отклонено. Регрессии не
-атрибутируются. Следующая сессия начинается с нуля.
+**Без artifact-first:**
 
-Фреймворк решает это на уровне протокола. Каждый скилл (`flow-first`,
-`library-first`, `plan-first`, ...) контрактно обязан произвести first-class
-файл — таблицу landscape, оценку LOC, decision-документ, отчёт — и
-зарегистрировать его в `routing.db`. Если шаг не создал артефакт — шага
-не было.
+- Решения испаряются в момент закрытия сессии
+- Ревьюер не может проверить, что было рассмотрено vs отклонено
+- Регрессии не отслеживаются до конкретного изменения
+- Следующая сессия начинается с нуля — без cross-block памяти
 
-Одно это правило превращает работу с AI из чата в аудируемую инженерную
-запись.
+**С artifact-first — правило этого фреймворка:**
+
+- Каждый **скилл** *(переиспользуемый протокол типа `flow-first` или `plan-first`)* обязан создать first-class файл (landscape-таблицу, LOC-оценку, decision-документ, отчёт)
+- Каждый файл регистрируется в `routing.db`
+- Если шаг не создал артефакт — **шага не было**
+
+Чат-лог → аудируемая инженерная запись. **Одно правило, enforced by protocol.**
 
 ---
 
@@ -37,7 +48,7 @@
 | **Артефакты как first-class** | ❌ Только проза | ⚠️ Опционально / ad-hoc trace | ❌ Эфемерный чат | ✅ Каждый шаг пишет tracked-файл |
 | **Cross-block память** | ❌ На человеке | ⚠️ Зависит от вашей обвязки | ❌ Per-session | ✅ Реестр переживает сессии |
 | **Approval gates** | ❌ Этикет / prose-правила | ⚠️ Callback-хуки, которые вы вешаете | ❌ Доверие модели | ✅ Enforced протокольными скиллами |
-| **Онбординг** | Часы чтения доков → применение | Изучение API + сборка workflow | Копирование rules → надежда | `git clone → bin/init → bin/new-project → bin/flow-ui/serve` |
+| **Онбординг** | Часы чтения доков → применение | Изучение API + сборка workflow | Копирование rules → надежда | `git clone → bin/init → bin/new-project → bin/flow-ui/bin/serve` |
 | **Lock-in** | Ноль — это книга | Рантайм + vendor SDK | Editor-specific | Plain markdown + bash + sqlite |
 | **Язык скиллов** | Domain-жаргон | Python | Промпты модели | Обычный markdown, редактируется |
 
@@ -76,7 +87,7 @@ _Note: этот фреймворк работает поверх Claude Code (и
 workspace-root/
 ├── aihub/               # Центральный реестр скиллов — один источник, много потребителей
 │   └── .claude/
-│       ├── skills/      # 12 скиллов (protocol + core)
+│       ├── skills/      # 17 скиллов (protocol + core)
 │       └── commands/    # 2 slash-команды (/go-start, /go-fast)
 ├── projects/            # Твои проекты — каждый symlink'ит скиллы из aihub
 │   ├── my-app/.claude/skills → ../../aihub/.claude/skills
@@ -90,7 +101,7 @@ workspace-root/
 │   ├── sync-from-aihub.sh    # Pull обновлений скиллов из upstream
 │   └── flow-ui/         # Локальный веб-браузер над routing.db
 ├── docs/                # Документация фреймворка
-└── manifest.yml         # Что shipping (15 entries: 2 cmd + 4 protocol + 8 core + 1 tool)
+└── manifest.yml         # Что shipping (20 entries: 2 cmd + 4 protocol + 13 core + 1 tool)
 ```
 
 **Hub-and-spoke скиллы.** Все проекты шарят один `aihub/.claude/skills/`
@@ -125,10 +136,12 @@ graph TD
     APP -.human ok<br/>or auto-approve.-> G
 ```
 
-Каждый блок двигается слева направо через цепочку. Каждый узел с меткой
-«produces» пишет артефакт в `routing.db`. Gate останавливает цепочку до
-момента, когда Approval её откроет — от человека, или от `dev-auto-first`,
-который валидирует предыдущий артефакт по чек-листу и auto-approve'ит.
+Каждый блок двигается слева направо через **цепочку** *(фиксированная
+последовательность скиллов на блок)*. Каждый узел с меткой «produces»
+пишет артефакт в `routing.db`. **Gate** *(approval checkpoint перед
+выполнением)* останавливает цепочку до момента, когда Approval её
+откроет — от человека, или от `dev-auto-first`, который валидирует
+предыдущий артефакт по чек-листу и auto-approve'ит.
 
 ---
 
@@ -139,9 +152,9 @@ graph TD
 read-only против БД, без auth, без облака.
 
 ```bash
-bash bin/flow-ui/serve    # старт (idempotent, в фоне)
-bash bin/flow-ui/status   # проверить
-bash bin/flow-ui/stop     # остановить
+bash bin/flow-ui/bin/serve    # старт (idempotent, в фоне)
+bash bin/flow-ui/bin/status   # проверить
+bash bin/flow-ui/bin/stop     # остановить
 ```
 
 Затем открываешь `http://127.0.0.1:8765/`. Видишь: проекты, задачи
@@ -163,16 +176,21 @@ bash bin/flow-ui/stop     # остановить
 git clone <this-repo> framework
 cd framework
 bash bin/init                        # 3-вопросный wizard пишет framework.yml
-bash bin/new-project my-first-app    # регистрация проекта
-bash bin/init-sample                 # опционально: populated demo-tour
+bash bin/init-demo                   # рекомендуется: 3 проекта × 2 задачи populated tour
+bash bin/new-project my-first-app    # регистрация своего проекта
 ```
 
-Четыре команды (пять с demo). `bin/init` спрашивает 3 значения: расположение
+Три команды, ~1 минута. `bin/init` спрашивает 3 значения: расположение
 aihub (по умолчанию: bundled `./aihub`), опциональный deploy-сервер,
-опциональный Telegram-relay. Пустой ввод оставляет дефолт. `bin/init-sample`
-опциональный — добавляет проект `sample-app` с одной завершённой задачей и
-полной цепочкой артефактов, чтобы Flow UI показал реальный контент с первого
-serve. Удалить позже: `bash bin/archive-sample`.
+опциональный Telegram-relay. Пустой ввод оставляет дефолт.
+
+`bin/init-demo` заполняет workspace **3 демо-проектами × 2 задачи × 5
+артефактов каждая** (123 rows + 6 folders), чтобы Flow UI показал
+реалистичный контент с первого serve. Каждый row помечен `is_demo=1`
+и tracked в `tasks/.demo-manifest.json`. Удаляется чисто позже:
+`bash bin/archive-demo` (3-marker safety — твои реальные данные никогда
+не тронуты). См. [`docs/DEMO_DATA.md`](./docs/DEMO_DATA.md) для full
+safety guarantee.
 
 `bin/new-project <id>` создаёт `projects/<id>/.claude/skills` как symlink
 на `aihub/.claude/skills` и дописывает запись в `aihub/projects.yml`.
@@ -184,16 +202,31 @@ serve. Удалить позже: `bash bin/archive-sample`.
 ```bash
 cd projects/my-first-app
 claude                               # или любой агент, поддерживающий Skill('name')
-/go-fast "fix the null-check in email_service.py"
+/go-start
+/go-fast "добавить hello-функцию в greetings.py"
 ```
 
 Следуй цепочке — `flow-first` спросит anchors, `library-first` покажет
 LOC-таблицу с тем, что переиспользуется vs новое, `plan-first` покажет
-план до касания кода. Одобряешь — агент выполняет. Каждый артефакт
-приземляется в `tasks/log/<slug>/`.
+план до касания кода. Одобряй каждый gate (`ok` на flow-first, `ok` на
+library-first, `1` на plan-first для autopilot). Агент выполняет.
+Каждый артефакт приземляется в `tasks/log/<slug>/`.
 
 Открой `http://127.0.0.1:8765/` в другом окне терминала — увидишь, как
 артефакты появляются по мере выполнения блока.
+
+### Проверить через /tutorial-check
+
+После завершения первой real-задачи запусти:
+
+```
+/tutorial-check
+```
+
+Shipped-скилл `tutorial-check` валидирует твой setup через 5-6 SQL и
+file-проверок — рапортует ✅/❌ по каждому шагу так что знаешь ровно
+что легло правильно, а что требует внимания. Полный homework
+walkthrough: [`docs/QUICKSTART.md`](./docs/QUICKSTART.md) § 5.
 
 ---
 
@@ -206,8 +239,14 @@ LOC-таблицу с тем, что переиспользуется vs нов�
 - [`docs/SKILL_CONTRACT.md`](./docs/SKILL_CONTRACT.md) — стандарт написания
   файлов скиллов. Обязательное чтение при добавлении или изменении скилла.
 - [`docs/PROJECTS_GUIDE.md`](./docs/PROJECTS_GUIDE.md) — паттерн
-  hub-and-spoke по проектам в деталях.
-- [`docs/QUICKSTART.md`](./docs/QUICKSTART.md) — walkthrough из 5 шагов.
+  hub-and-spoke по проектам в деталях (включая Advanced: project-local
+  skill overrides).
+- [`docs/QUICKSTART.md`](./docs/QUICKSTART.md) — walkthrough из 5 шагов
+  с homework.
+- [`docs/DEMO_DATA.md`](./docs/DEMO_DATA.md) — гайд по demo-датасету
+  (init-demo, archive-demo, 3-marker safety guarantees).
+- [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) — топ failure
+  modes и fixes.
 - [`docs/AUTO_DEPLOY_RECIPE.md`](./docs/AUTO_DEPLOY_RECIPE.md) — opt-in
   git-push auto-deploy паттерн (bare repo + post-receive + snapshot backups).
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — как добавить / изменить скилл,
@@ -241,22 +280,29 @@ Flow UI дополнительно требует Python-пакеты: `fastapi`
 - `bin/sync-from-aihub.sh` — pull обновлений скиллов из upstream aihub источника.
 - `bin/gen-skills-map.sh` — регенерация `docs/SKILLS_MAP.md` из манифеста.
 - `bin/verify-contract.sh` — линт каждого скилла по `docs/SKILL_CONTRACT.md`.
-- `bin/flow-ui/serve|status|stop` — локальный веб-браузер.
+- `bin/flow-ui/bin/serve|status|stop` — локальный веб-браузер.
 
 ---
 
 ## Статус
 
-**MVP-релиз — 14 скиллов + 1 tool, manifest v0.5.0.**
+**Текущий релиз — 19 скиллов + 1 tool, manifest v0.8.0.**
 
-14 shipping скиллов (2 slash-команды + 4 протокольных скилла + 8 core-скиллов)
-функциональны и используются ежедневно на реальной production-работе.
-Flow UI — sibling-инструмент, синкающийся из upstream-репо через tier
-`tool`. Обвязка (contract verifier, skills map generator, init wizard,
-sync script, Discussions/Issue templates) стабильна для публичного релиза.
+19 shipping скиллов (2 slash-команды + 4 протокольных скилла + 13
+core-скиллов) функциональны и используются ежедневно на реальной
+production-работе. Flow UI — sibling-инструмент, синкающийся из
+upstream-репо через tier `tool`. Обвязка (contract verifier, skills
+map generator, init wizard, sync script, Discussions/Issue templates)
+стабильна для публичного релиза.
 
-CI workflow (`.github/workflows/verify-contract.yml`) и полный v1.0.0-mvp
-тэг — последние шаги release roadmap'а.
+CI workflow (`.github/workflows/verify-contract.yml`) активен + tag
+v1.0.0 — финальные шаги release roadmap'а.
+
+---
+
+## Star history
+
+[![Star History Chart](https://api.star-history.com/svg?repos=bearded-illirian/trailmark&type=Date)](https://star-history.com/#bearded-illirian/trailmark&Date)
 
 ---
 

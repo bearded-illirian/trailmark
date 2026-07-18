@@ -12,7 +12,7 @@ body:
     id: problem
     attributes:
       label: The problem or opportunity
-      description: What's the situation you'd like the framework to handle differently?
+      description: What's the situation you'd like Trailmark to handle differently?
     validations:
       required: true
 
