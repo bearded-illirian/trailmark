@@ -104,10 +104,10 @@ Targeted agents (research, parallel audit, security scan) will be added as **opt
 | **Cross-block memory** | ❌ Human's responsibility | ⚠️ Depends on your setup | ❌ Per-session | ✅ Registry survives sessions |
 | **Approval gates** | ❌ Etiquette / prose rules | ⚠️ Callback hooks you wire | ❌ Trust the model | ✅ Enforced by protocol skills |
 | **Onboarding** | Hours reading docs → apply | Learn API + build workflow | Copy rules → hope | `git clone → bin/init → bin/new-project → bin/flow-ui/bin/serve` |
-| **Lock-in** | Zero — it's a book | Runtime + vendor SDK | Editor-specific | Plain markdown + bash + sqlite |
+| **Lock-in** | Just documentation (no runtime) | Runtime + vendor SDK | Editor-specific | Plain markdown + bash + sqlite |
 | **Language of skills** | Domain jargon | Python | Model prompts | Plain markdown, editable |
 | **Architecture** | Prose only | Runtime + agent graph | Rule files in editor | Skills-first in main context, agents on demand (post-launch) |
-| **Cost per typical task** | N/A (human labor) | Medium (custom code, varies) | Low (single-turn prompts) | **Low ($0.15-2/block)** vs $5-10 in agent-heavy frameworks |
+| **Cost per typical task** | N/A (human labor) | Medium (custom code, varies) | Low (single-turn prompts) | **Low — $0.15-2/block** |
 
 Different tools for different problems. If you're formalising a large team's
 process, prescriptive frameworks fit. If you're building autonomous agents at
@@ -129,10 +129,12 @@ runtime we build on, not a competitor._
 | Solo or small-team engineers using Claude Code (or any agent that supports named skills) | Enterprise teams with a dedicated process organisation — a prescriptive framework will match your language better |
 | People who want an **audit trail** across many blocks, weeks, and sessions | People who want a **hosted runtime** and prebuilt agent graphs — LangChain / CrewAI fit better |
 | People who prefer plain markdown + bash + git over new SDKs | People who need Windows-first bash tooling out of the box (Unix-first here) |
+| **Devs paying per token** who value predictable costs (~$5-10/week vs $60/micro-feature elsewhere) | Teams with unlimited API budgets who don't mind agent-heavy validator overhead |
 
-If you're one person or a small team shipping engineering work with an agent,
-and you keep wishing "there was a record of why we did this" — you're in the
-target audience.
+If you're one person or a small team shipping engineering work with an agent —
+and you care about **an audit trail across sessions**, **predictable API costs**
+(~$5-10/week, not $60/micro-feature), and **debuggable workflow** (skills in your
+main context, not black-box subagents) — you're in the target audience.
 
 ---
 
@@ -182,8 +184,12 @@ natively.
 ```mermaid
 graph TD
     T["Task<br/><i>user request / feature / fix</i>"]
-    T --> DS["arch-first · audit-first · idea-first<br/><i>task → N pre-planned blocks</i>"]
-    DS --> B["Blocks<br/><i>N atomic units</i>"]
+    T --> IF["idea-first<br/><i>new products</i>"]
+    T --> AF["arch-first<br/><i>new features</i>"]
+    T --> AUD["audit-first<br/><i>bug fixes</i>"]
+    IF --> B["Blocks<br/><i>N atomic units</i>"]
+    AF --> B
+    AUD --> B
     B --> CD["cadence-first<br/><i>Tier 1/2/3 per block</i>"]
     CD --> C[Skill Chain per Block]
     C --> F["flow-first<br/><i>landscape · problem · solution · result</i>"]
