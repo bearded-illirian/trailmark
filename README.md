@@ -13,25 +13,30 @@ through a disciplined skill chain — one block at a time, one commit at a
 time, every decision written down.**
 
 Every step your AI agent takes writes a file. Every file registers in a local
-database. Every block closes with a report. Nothing lives only in chat.
+database. Every **block** *(one unit of work inside a task)* closes with a
+**report** *(the markdown summary written after execution)*. Nothing lives
+only in chat.
+
+![Chat-only agent vs Artifact-first agent — the difference](docs/assets/before-after.png)
 
 ---
 
 ## Why artifact-first
 
-Most AI-driven coding leaves no trail. The agent thinks, decides, edits, and
-those decisions evaporate the moment the session ends. Reviewers can't audit
-what was considered and rejected. Regressions can't be attributed. The next
-session starts from zero.
+**Without artifact-first:**
 
-This framework fixes that at the protocol level. Each skill (`flow-first`,
-`library-first`, `plan-first`, ...) is contractually required to produce a
-first-class file — a landscape table, a LOC estimate, a decision doc, a
-report — and register it in `routing.db`. If a step didn't produce an
-artifact, it didn't happen.
+- Decisions evaporate the moment the session ends
+- Reviewers can't audit what was considered and rejected
+- Regressions can't be traced to a specific change
+- Next session starts from zero — no cross-block memory
 
-That single rule turns AI collaboration from a chat log into an auditable
-engineering record.
+**With artifact-first — this framework's rule:**
+
+- Each **skill** *(a reusable protocol like `flow-first` or `plan-first`)* must produce a first-class file (landscape table, LOC estimate, decision doc, report)
+- Every file registers in `routing.db`
+- If a step didn't produce an artifact — **it didn't happen**
+
+Chat log → auditable engineering record. **One rule, enforced by protocol.**
 
 ---
 
@@ -131,10 +136,11 @@ graph TD
     APP -.human ok<br/>or auto-approve.-> G
 ```
 
-Each block moves left-to-right through the chain. Every node marked
-"produces" writes an artifact to `routing.db`. The Gate stops the chain
-until an Approval opens it — from a human, or from `dev-auto-first` which
-validates the previous artifact against a checklist and auto-approves.
+Each block moves left-to-right through the **chain** *(fixed sequence of
+skills per block)*. Every node marked "produces" writes an artifact to
+`routing.db`. The **Gate** *(approval checkpoint before execution)* stops
+the chain until an Approval opens it — from a human, or from `dev-auto-first`
+which validates the previous artifact against a checklist and auto-approves.
 
 ---
 
