@@ -144,29 +144,41 @@ natively.
 
 ```mermaid
 graph TD
-    T[Task] --> B[Blocks]
-    B --> C[Skill Chain per Block]
+    T["Task<br/><i>user request / feature / fix</i>"]
+    T --> DS["arch-first · audit-first · idea-first<br/><i>task → N pre-planned blocks</i>"]
+    DS --> B["Blocks<br/><i>N atomic units</i>"]
+    B --> CD["cadence-first<br/><i>Tier 1/2/3 per block</i>"]
+    CD --> C[Skill Chain per Block]
     C --> F["flow-first<br/><i>landscape · problem · solution · result</i>"]
     F --> L["library-first<br/><i>code volume + reused vs from-scratch</i>"]
     L --> P["plan-first<br/><i>7-15 steps + risks + out-of-scope</i>"]
-    P --> G{"Gate<br/><i>approval before execute</i>"}
-    G -->|approval| E["Execute<br/><i>code per plan</i>"]
+    P --> G{"Gate<br/><i>human ok / dev-auto-first</i>"}
+    G --> E["Execute<br/><i>code per plan</i>"]
     E --> R["Report<br/><i>what got done + observations</i>"]
+    R -->|next block| C
+    R -->|all blocks done| SF["ship-first<br/><i>final task summary + close</i>"]
     R --> A[Artifacts]
+    SF --> A
     A --> DB[(routing.db)]
     F -.produces.-> A
     L -.produces.-> A
     P -.produces.-> A
-    R -.produces.-> A
-    G -.opens on.-> APP[Approval]
-    APP -.human ok<br/>or auto-approve.-> G
 ```
 
-Each block moves left-to-right through the **chain** *(fixed sequence of
-skills per block)*. Every node marked "produces" writes an artifact to
-`routing.db`. The **Gate** *(approval checkpoint before execution)* stops
-the chain until an Approval opens it — from a human, or from `dev-auto-first`
-which validates the previous artifact against a checklist and auto-approves.
+A Task first goes through a **decomposition skill** — `arch-first` for
+features, `audit-first` for fixes, `idea-first` for new products — which
+carves it into N pre-planned Blocks. `cadence-first` then assigns each
+block a Tier (1/2/3) to right-size the skill chain.
+
+Per block: the chain runs left-to-right — `flow-first` → `library-first`
+→ `plan-first`. The **Gate** stops execution until it's opened, either
+by a human `ok` or by `dev-auto-first` which validates the previous
+artifact against a checklist and auto-approves.
+
+After Execute + Report, the loop returns to the next block. When all
+blocks are done, `ship-first` writes the final task summary and closes
+the task. Every artifact — from decomposition through ship-first — lands
+in `routing.db`.
 
 ---
 

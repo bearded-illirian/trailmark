@@ -144,30 +144,41 @@ workspace-root/
 
 ```mermaid
 graph TD
-    T[Task] --> B[Blocks]
-    B --> C[Skill Chain per Block]
+    T["Task<br/><i>user request / feature / fix</i>"]
+    T --> DS["arch-first · audit-first · idea-first<br/><i>task → N pre-planned blocks</i>"]
+    DS --> B["Blocks<br/><i>N atomic units</i>"]
+    B --> CD["cadence-first<br/><i>Tier 1/2/3 per block</i>"]
+    CD --> C[Skill Chain per Block]
     C --> F["flow-first<br/><i>landscape · problem · solution · result</i>"]
     F --> L["library-first<br/><i>сколько кода + что переиспользуем</i>"]
     L --> P["plan-first<br/><i>7-15 шагов + risks + out-of-scope</i>"]
-    P --> G{"Gate<br/><i>approval перед execute</i>"}
-    G -->|approval| E["Execute<br/><i>код по плану</i>"]
+    P --> G{"Gate<br/><i>human ok / dev-auto-first</i>"}
+    G --> E["Execute<br/><i>код по плану</i>"]
     E --> R["Report<br/><i>что сделали + observations</i>"]
+    R -->|next block| C
+    R -->|all blocks done| SF["ship-first<br/><i>финальный отчёт + закрытие</i>"]
     R --> A[Artifacts]
+    SF --> A
     A --> DB[(routing.db)]
     F -.produces.-> A
     L -.produces.-> A
     P -.produces.-> A
-    R -.produces.-> A
-    G -.opens on.-> APP[Approval]
-    APP -.human ok<br/>or auto-approve.-> G
 ```
 
-Каждый блок двигается слева направо через **цепочку** *(фиксированная
-последовательность скиллов на блок)*. Каждый узел с меткой «produces»
-пишет артефакт в `routing.db`. **Gate** *(approval checkpoint перед
-выполнением)* останавливает цепочку до момента, когда Approval её
-откроет — от человека, или от `dev-auto-first`, который валидирует
+Task сначала проходит через **decomposition-скилл** — `arch-first` для
+features, `audit-first` для fixes, `idea-first` для new products —
+который режет её на N предспланированных Blocks. `cadence-first` затем
+назначает каждому блоку Tier (1/2/3) чтобы right-size skill chain.
+
+На блок: цепочка идёт слева направо — `flow-first` → `library-first`
+→ `plan-first`. **Gate** останавливает execution пока его не откроет
+либо человек через `ok`, либо `dev-auto-first`, который валидирует
 предыдущий артефакт по чек-листу и auto-approve'ит.
+
+После Execute + Report цикл возвращается к next block. Когда все blocks
+готовы, `ship-first` пишет финальный task summary и закрывает задачу.
+Каждый артефакт — от decomposition до ship-first — приземляется в
+`routing.db`.
 
 ---
 
