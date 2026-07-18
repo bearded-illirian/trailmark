@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 Nothing yet.
 
+## [0.7.0] — 2026-07-18
+
+### Added
+
+- **INFO.md pattern** — 16 EN `INFO.md` files (~44 lines each) ship
+  alongside every `SKILL.md` in the manifest. Frontmatter contains
+  `title`, `pitch`, `icon`, `category`, `works_with`. Body has four
+  sections: What problem it solves / How it works / Result of the
+  work / Skills it works with. Public consumers now see per-skill
+  positioning without opening `SKILL.md`.
+- **Two new INFO.md** for `cadence-first` and `decision-first` — these
+  skills previously had no INFO. Now aligned with the rest of the
+  MVP set.
+- **v2.1 `info` profile** in `skill-public-check` — accepts
+  `target_file=INFO.public.md`, skips pre-gate C8 (anti-patterns)
+  and C10 (Step 99) since INFO is descriptive metadata, not a
+  protocol with a bash template. Full 8-D scoring unchanged.
+
+### Changed
+
+- `bin/sync-from-aihub.sh` — added a second rename pass
+  (`INFO.public.md → INFO.md`) parallel to the existing SKILL pass.
+  External users see canonical `INFO.md`; internal RU `INFO.md` stays
+  upstream only.
+- `manifest.yml` `sync_rules.exclude_patterns` — added `INFO.md` so
+  the internal RU metadata doesn't leak into the public tree during
+  rsync.
+- `skill-public-check` (`SKILL.md`) — Step 1 documents `target_file`
+  parameter; Step 2 adds source-file mapping table; Step 4 report
+  header carries `Profile: standard|info`.
+
 ## [0.6.0] — 2026-07-17
 
 ### Added

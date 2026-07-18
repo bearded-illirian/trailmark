@@ -8,8 +8,17 @@
 #   - Change `sync_rules` → re-run full sync + review diff
 
 meta:
-  version: 0.6.0
+  version: 0.7.0
   description: |
+    v0.7.0 — INFO.md extension: 16 EN INFO.md files (frontmatter + pitch +
+    4 sections) shipped alongside every SKILL.md. Added `INFO.public.md`
+    → `INFO.md` rename pattern to `bin/sync-from-aihub.sh` (parallel to
+    SKILL pattern). Added `INFO.md` to `sync_rules.exclude_patterns` so
+    internal RU INFO.md source is not synced. Extended `skill-public-check`
+    with `target_file` parameter and v2.1 `info` profile (skips C8/C10 —
+    INFO is descriptive, not a protocol). Two new INFO.md created for
+    `cadence-first` and `decision-first` (previously without INFO).
+
     v0.6.0 — MVP extension +4 skills: `cadence-first` (meta-orchestrator
     assigning Tier 1/2/3 per block), `arch-map` (auto-link artifact ↔
     architecture elements), `check-first` (coverage validation before
@@ -40,6 +49,8 @@ meta:
 
     v0.5.0 release — 15 items (2 commands + 4 protocol skills + 8 core skills + 1 tool).
     v0.6.0 release — 19 items (2 commands + 4 protocol skills + 12 core skills + 1 tool).
+    v0.7.0 release — same 19 items + 16 EN INFO.md descriptions (no manifest count change,
+    per-item metadata layer added).
   updated_at: 2026-07-17
 
 source:
