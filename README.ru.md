@@ -353,7 +353,7 @@ claude                               # или любой агент, подде�
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — как добавить / изменить
   скилл, соответствие контракту, поток PR.
 - [`CHANGELOG.md`](./CHANGELOG.md) — история релизов по semver.
-- [`FAQ.md`](./FAQ.md) — 10 частых вопросов с честными ответами.
+- [`FAQ.ru.md`](./FAQ.ru.md) — 12 частых вопросов с честными ответами.
 - [`SECURITY.md`](./SECURITY.md) — политика раскрытия уязвимостей.
 - [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) — Contributor Covenant v2.1.
 - [`docs/ANTI_PATTERNS.md`](./docs/ANTI_PATTERNS.md) — что artifact-first
