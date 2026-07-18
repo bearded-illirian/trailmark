@@ -49,7 +49,13 @@ Something worked last week, fails today. Git blame shows "fix bug" without conte
 
 **Trailmark's answer:** every artifact registers in `routing.db` with timestamp, block_num, task_id. On regression: `SELECT` blocks that touched the file → read `plan-first-N.md` for rationale → `git blame` for commit hash. **Regression → block → decision → source code in 30 seconds.**
 
-**Result:** your AI-driven engineering becomes stable and predictable — every decision auditable, every regression traceable, every session continues where the last one left off.
+### 4. Cost bleed — "AI costs as much as the developer"
+
+Agent-heavy frameworks spawn 5-10 validator subagents per task. Each subagent reloads full context (30-40k tokens per invocation), runs its check, returns a summary. Multiply by 3 fix iterations — one micro-feature burns $10-20 in API costs before any code is written.
+
+**Trailmark's answer:** all skills run in your main Claude context — no fresh-context subagent bloat. `cadence-first` assigns Tier 1/2/3 per block: trivial fixes run Plan-only (~$0.15), complex refactors run the full chain (~$1-2). **Typical block cost: $0.15-2. Typical week of daily use: $5-10. 5-10x cheaper than agent-heavy frameworks for the same work.**
+
+**Result:** your AI-driven engineering becomes stable and predictable — every decision auditable, every regression traceable, every session continues where the last one left off, and you don't burn $60 on a micro-feature.
 
 ---
 
@@ -70,6 +76,17 @@ Something worked last week, fails today. Git blame shows "fix bug" without conte
 
 Chat log → auditable engineering record. **One rule, enforced by protocol.**
 
+### Skills-first, not agent-heavy
+
+Trailmark ships 19 skills that run in **your main Claude context** — not as isolated subagents that reload 30-40k tokens each invocation. This is a deliberate design choice, not a missing feature:
+
+- **Cost per task drops 5-10x** — no subagent bloat on trivial work (Tier 3 block ≈ $0.15)
+- **Everything is debuggable** — all tool calls, all edits, all validation checks visible in the chat
+- **Simpler onboarding** — one abstraction to learn (skills), not two (skills + agents)
+- **Right-sized cadence** — `cadence-first` picks Tier 1/2/3 per block instead of running one heavy pipeline for everything
+
+Targeted agents (research, parallel audit, security scan) will be added as **opt-in power tools** in later releases — for the 10% of work where genuine parallelism or context isolation wins. Not as mandatory overhead on every task.
+
 **See where AI time actually goes — no manual audit needed.**
 
 ![Task breakdown analytics in Flow UI](docs/assets/flow-ui-tasks-breakdown.png)
@@ -89,6 +106,8 @@ Chat log → auditable engineering record. **One rule, enforced by protocol.**
 | **Onboarding** | Hours reading docs → apply | Learn API + build workflow | Copy rules → hope | `git clone → bin/init → bin/new-project → bin/flow-ui/bin/serve` |
 | **Lock-in** | Zero — it's a book | Runtime + vendor SDK | Editor-specific | Plain markdown + bash + sqlite |
 | **Language of skills** | Domain jargon | Python | Model prompts | Plain markdown, editable |
+| **Architecture** | Prose only | Runtime + agent graph | Rule files in editor | Skills-first in main context, agents on demand (post-launch) |
+| **Cost per typical task** | N/A (human labor) | Medium (custom code, varies) | Low (single-turn prompts) | **Low ($0.15-2/block)** vs $5-10 in agent-heavy frameworks |
 
 Different tools for different problems. If you're formalising a large team's
 process, prescriptive frameworks fit. If you're building autonomous agents at

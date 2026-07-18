@@ -30,6 +30,31 @@ executable skills that already encode the discipline. Prescriptive
 frameworks fit when you're formalising a team process; this framework fits
 when you want the discipline without a process organisation to maintain it.
 
+## How does Trailmark affect my API costs?
+
+**Typical block cost: $0.15-2. Typical week of daily use: $5-10. That's 5-10x cheaper than agent-heavy frameworks for equivalent work.**
+
+Three mechanisms drive the difference:
+
+1. **All skills run in your main Claude context.** No fresh-context subagent bloat that reloads 30-40k tokens per invocation. Agent-heavy frameworks with 5 mandatory validators × 3 fix iterations burn 600k tokens per feature spec alone — before writing any code.
+
+2. **Cadence tiering.** `cadence-first` picks Tier 1/2/3 per block. Trivial fixes run Plan-only (~$0.15). Sibling-mirror UI changes run Library+Plan (~$0.60). Complex refactors run the full chain (~$1-2). You pay proportional to complexity, not for one-heavy-pipeline-fits-all overhead.
+
+3. **Artifact-first as cache.** Coming back to a task two weeks later? Read `report-N.md` (2-3k tokens) instead of re-loading full context (30-50k tokens). 15-25x savings on session resumption.
+
+See [Why artifact-first § Skills-first, not agent-heavy](./README.md#skills-first-not-agent-heavy) for the full argument.
+
+## Why no agents like other frameworks?
+
+Skills-first is a deliberate architectural choice, not a missing feature:
+
+- **Cost per task drops 5-10x** (skills reuse main context, no per-validator subagent load)
+- **Everything is debuggable** — tool calls, edits, validation checks all visible in the chat
+- **Simpler onboarding** — one abstraction to learn (skills), not two (skills + agents)
+- **Right-sized cadence** — Tier 1/2/3 per block instead of running the same heavy pipeline for a 1-line color change
+
+Targeted agents (research, parallel audit, security scan) are on the roadmap as **opt-in power tools** for the 10% of work where genuine parallelism or context isolation wins. Not as mandatory overhead on every task. You'll pay for agent capabilities only when you actually invoke them.
+
 ## Does it work on Windows?
 
 Unix-first. The `bin/` scripts assume `bash 3.2+`, `sqlite3`, `python3`.
