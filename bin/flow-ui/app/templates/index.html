@@ -24,9 +24,14 @@
   <header class="topbar">
     <div class="logo">flow<span class="dot">·</span>ui</div>
     <select id="project-selector" aria-label="Project"></select>
-    <div class="stats-badge" title="Habit tracker">
-      <span class="streak">🔥 {{ stats.streak_days }}d</span>
+    <div class="stats-badge" title="Open global statistics">
+      <span class="badge-label">Statistics</span>
       <span class="today">· {{ stats.today_count }} today</span>
+    </div>
+    <div class="locale-switcher" aria-label="Language">
+      <button class="locale-btn" data-locale="en">EN</button>
+      <span class="locale-sep">|</span>
+      <button class="locale-btn" data-locale="ru">RU</button>
     </div>
   </header>
 

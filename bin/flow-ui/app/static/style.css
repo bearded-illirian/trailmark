@@ -82,14 +82,37 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 6px 14px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 12px;
   font-size: 13px;
+  transition: border-color 0.15s ease;
 }
-.stats-badge .streak { font-weight: 600; color: var(--brand); }
+.stats-badge:hover { border-color: var(--brand); }
+.stats-badge .badge-label { font-weight: 600; color: var(--brand); }
 .stats-badge .today { color: var(--muted); }
+
+.locale-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+  font-size: 12px;
+}
+.locale-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 12px;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+.locale-btn:hover { color: var(--fg); }
+.locale-btn.active { color: var(--brand); font-weight: 700; }
+.locale-sep { color: var(--border); user-select: none; }
 
 /* ── Split layout ───────────────────────────────────────── */
 

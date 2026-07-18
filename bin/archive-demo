@@ -65,8 +65,8 @@ for table, id_col, rowids in [
 # Verify no real (is_demo=0/NULL) rows would be touched
 for table in ("artifacts", "task_blocks", "task_artifacts", "skill_invocations", "deploys"):
     n = c.execute(f"SELECT COUNT(*) FROM {table} WHERE is_demo=1 AND (project IS NULL OR project NOT LIKE 'demo-%')").fetchone()[0] if table != "task_blocks" and table != "task_artifacts" and table != "skill_invocations" else 0
-    # task_blocks/task_artifacts/skill_invocations use task_id join to artifacts, но is_demo уже filter
-    # Simplified: assume is_demo=1 rows are all demo (init-demo только их создаёт)
+    # task_blocks/task_artifacts/skill_invocations use task_id join to artifacts, is_demo already filters
+    # Simplified: assume is_demo=1 rows are all demo (init-demo creates only those)
 
 if errors:
     print("\n".join(errors))
