@@ -30,13 +30,13 @@ executable skills that already encode the discipline. Prescriptive
 frameworks fit when you're formalising a team process; this framework fits
 when you want the discipline without a process organisation to maintain it.
 
-## How does Trailmark affect my API costs?
+## How does Trailmark affect token consumption and API costs?
 
-**Typical block cost: $0.15-2. Typical week of daily use: $5-10. That's 5-10x cheaper than agent-heavy frameworks for equivalent work.**
+**5-10x less token consumption than agent-heavy frameworks.** For per-token users that's typical block cost $0.15-2 and week of daily use $5-10 (vs $60+ per micro-feature on agent-heavy setups). For subscription users that's not hitting weekly rate limits after a few real features.
 
 Three mechanisms drive the difference:
 
-1. **All skills run in your main Claude context.** No fresh-context subagent bloat that reloads 30-40k tokens per invocation. Agent-heavy frameworks with 5 mandatory validators × 3 fix iterations burn 600k tokens per feature spec alone — before writing any code.
+1. **All skills run in your main Claude context.** No fresh-context subagent bloat that reloads 30-40k tokens per invocation. Agent-heavy frameworks with 5 mandatory validators × 3 fix iterations burn 600k tokens per feature spec alone — before writing any code. That matters whether you're paying per token or watching your subscription rate limit tick down.
 
 2. **Cadence tiering.** `cadence-first` picks Tier 1/2/3 per block. Trivial fixes run Plan-only (~$0.15). Sibling-mirror UI changes run Library+Plan (~$0.60). Complex refactors run the full chain (~$1-2). You pay proportional to complexity, not for one-heavy-pipeline-fits-all overhead.
 
@@ -48,7 +48,7 @@ See [Why artifact-first § Skills-first, not agent-heavy](./README.md#skills-fir
 
 Skills-first is a deliberate architectural choice, not a missing feature:
 
-- **Cost per task drops 5-10x** (skills reuse main context, no per-validator subagent load)
+- **5-10x less token consumption** (skills reuse main context, no per-validator subagent load) — matters whether you're hitting subscription rate limits or paying per token
 - **Everything is debuggable** — tool calls, edits, validation checks all visible in the chat
 - **Simpler onboarding** — one abstraction to learn (skills), not two (skills + agents)
 - **Right-sized cadence** — Tier 1/2/3 per block instead of running the same heavy pipeline for a 1-line color change

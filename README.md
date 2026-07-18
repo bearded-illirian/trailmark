@@ -51,11 +51,11 @@ Something worked last week, fails today. Git blame shows "fix bug" without conte
 
 ### 4. Cost bleed — "AI costs as much as the developer"
 
-Agent-heavy frameworks spawn 5-10 validator subagents per task. Each subagent reloads full context (30-40k tokens per invocation), runs its check, returns a summary. Multiply by 3 fix iterations — one micro-feature burns $10-20 in API costs before any code is written.
+Agent-heavy frameworks spawn 5-10 validator subagents per task. Each subagent reloads full context (30-40k tokens per invocation), runs its check, returns a summary. Multiply by 3 fix iterations — one micro-feature burns hundreds of thousands of tokens before any code is written. **On a Claude subscription that eats your weekly rate limits fast. Paying per token, that costs $10-20 per micro-feature.**
 
-**Trailmark's answer:** all skills run in your main Claude context — no fresh-context subagent bloat. `cadence-first` assigns Tier 1/2/3 per block: trivial fixes run Plan-only (~$0.15), complex refactors run the full chain (~$1-2). **Typical block cost: $0.15-2. Typical week of daily use: $5-10. 5-10x cheaper than agent-heavy frameworks for the same work.**
+**Trailmark's answer:** all skills run in your main Claude context — no fresh-context subagent bloat. `cadence-first` assigns Tier 1/2/3 per block: trivial fixes run Plan-only (~$0.15 or minimal tokens), complex refactors run the full chain (~$1-2 or ~50k tokens). **5-10x less token consumption than agent-heavy frameworks — no burning through rate limits, no $60/micro-feature bills.**
 
-**Result:** your AI-driven engineering becomes stable and predictable — every decision auditable, every regression traceable, every session continues where the last one left off, and you don't burn $60 on a micro-feature.
+**Result:** your AI-driven engineering becomes stable and predictable — every decision auditable, every regression traceable, every session continues where the last one left off, and you don't hit rate limits or burn $60 on a micro-feature.
 
 ---
 
@@ -129,11 +129,12 @@ runtime we build on, not a competitor._
 | Solo or small-team engineers using Claude Code (or any agent that supports named skills) | Enterprise teams with a dedicated process organisation — a prescriptive framework will match your language better |
 | People who want an **audit trail** across many blocks, weeks, and sessions | People who want a **hosted runtime** and prebuilt agent graphs — LangChain / CrewAI fit better |
 | People who prefer plain markdown + bash + git over new SDKs | People who need Windows-first bash tooling out of the box (Unix-first here) |
-| **Devs paying per token** who value predictable costs (~$5-10/week vs $60/micro-feature elsewhere) | Teams with unlimited API budgets who don't mind agent-heavy validator overhead |
+| **Devs who value engineering efficiency** — whether hitting rate limits on a Claude subscription or paying per token | Devs shipping small features where efficiency doesn't matter, or those with unlimited API token budgets |
 
 If you're one person or a small team shipping engineering work with an agent —
-and you care about **an audit trail across sessions**, **predictable API costs**
-(~$5-10/week, not $60/micro-feature), and **debuggable workflow** (skills in your
+and you care about **an audit trail across sessions**, **engineering efficiency**
+(5-10x less token consumption vs agent-heavy frameworks — no burning through plan
+rate limits or per-token budgets), and **debuggable workflow** (skills in your
 main context, not black-box subagents) — you're in the target audience.
 
 ---
