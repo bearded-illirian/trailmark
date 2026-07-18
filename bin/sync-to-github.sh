@@ -15,6 +15,13 @@
 #   bash bin/sync-to-github.sh                                  # default commit message with timestamp
 #   bash bin/sync-to-github.sh --message "custom message"       # custom commit message
 #   GH_REPO_SLUG="user/repo" bash bin/sync-to-github.sh          # override target repo
+#
+# Recommended commit message style:
+#   - Keep under 60 chars (renders cleanly in GitHub file tree)
+#   - Conventional prefix (feat/fix/docs/chore) followed by short subject
+#   - NO internal task numbers, NO mixed languages, NO parenthetical asides
+#   - Good:  "feat: init-demo lifecycle"
+#   - Bad:   "polish: 594 blocks 9430+9440 — Russian README v0.8.0 parity + FAQ/templates brand cleanup"
 
 set -e
 

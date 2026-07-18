@@ -1,7 +1,7 @@
 [English](./README.md) · [Русский](./README.ru.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Manifest: v0.8.0](https://img.shields.io/badge/manifest-v0.8.0-blue.svg)](./manifest.yml)
+[![Manifest: v1.0.0](https://img.shields.io/badge/manifest-v1.0.0-blue.svg)](./manifest.yml)
 [![Skills: 19](https://img.shields.io/badge/skills-19_shipped-brightgreen.svg)](./docs/SKILLS_MAP.md)
 [![GitHub stars](https://img.shields.io/github/stars/bearded-illirian/trailmark?style=social)](https://github.com/bearded-illirian/trailmark/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/bearded-illirian/trailmark.svg)](https://github.com/bearded-illirian/trailmark/issues)
@@ -18,6 +18,32 @@ database. Every **block** *(one unit of work inside a task)* closes with a
 only in chat.
 
 ![Chat-only agent vs Artifact-first agent — the difference](docs/assets/before-after.png)
+
+---
+
+## What Trailmark solves
+
+Three pains every Claude Code developer hits — and how Trailmark structurally prevents each.
+
+### 1. Session amnesia — "what did we decide yesterday?"
+
+Chat sessions are ephemeral. Every new window = context reset. Two weeks later you can't recall why you chose approach X over Y, or what alternatives you considered.
+
+**Trailmark's answer:** every decision writes a file — `flow-first-N.md` (landscape), `library-first-N.md` (LOC + reused vs from-scratch), `plan-first-N.md` (7-15 step plan), `report-N.md` (what got done + observations), `decision-N.md` (any non-trivial choice with alternatives). Grep the archive in seconds. **Don't remember — read.**
+
+### 2. Unpredictable output quality — "lucky or not"
+
+You ask the AI "build X" and hope. Sometimes gold, sometimes shallow. No repeatable pre-work — the agent decides its own approach every time.
+
+**Trailmark's answer:** enforced skill chain. Every block **must** pass through `flow-first` (understanding table) → `library-first` (LOC estimate) → `plan-first` (7-15 steps) **before touching code**. If the agent tried to skip — the block isn't closed. **Predictable quality per block, every time.**
+
+### 3. Regression archaeology — "broke, but when and why?"
+
+Something worked last week, fails today. Git blame shows "fix bug" without context. Which decision led here?
+
+**Trailmark's answer:** every artifact registers in `routing.db` with timestamp, block_num, task_id. On regression: `SELECT` blocks that touched the file → read `plan-first-N.md` for rationale → `git blame` for commit hash. **Regression → block → decision → source code in 30 seconds.**
+
+**Result:** your AI-driven engineering becomes stable and predictable — every decision auditable, every regression traceable, every session continues where the last one left off.
 
 ---
 
@@ -120,12 +146,12 @@ natively.
 graph TD
     T[Task] --> B[Blocks]
     B --> C[Skill Chain per Block]
-    C --> F[flow-first]
-    F --> L[library-first]
-    L --> P[plan-first]
-    P --> G{Gate}
-    G -->|approval| E[Execute]
-    E --> R[Report]
+    C --> F["flow-first<br/><i>landscape · problem · solution · result</i>"]
+    F --> L["library-first<br/><i>code volume + reused vs from-scratch</i>"]
+    L --> P["plan-first<br/><i>7-15 steps + risks + out-of-scope</i>"]
+    P --> G{"Gate<br/><i>approval before execute</i>"}
+    G -->|approval| E["Execute<br/><i>code per plan</i>"]
+    E --> R["Report<br/><i>what got done + observations</i>"]
     R --> A[Artifacts]
     A --> DB[(routing.db)]
     F -.produces.-> A
@@ -159,12 +185,6 @@ bash bin/flow-ui/bin/stop     # stop
 Then open `http://127.0.0.1:8765/`. You see: projects, tasks per project,
 blocks per task, artifacts per block, deploys, and skill-usage analytics.
 No YAML editing. No CLI queries. Point and read.
-
-<!-- TODO: swap TBD for the real Loom share URL after recording block 50.
-     Optional: uncomment the gif preview once docs/assets/loom-preview.gif is uploaded. -->
-▶️ **[Watch the 90-sec demo on Loom](https://www.loom.com/share/TBD)**
-
-<!-- ![90-sec demo of /go-fast in action](docs/assets/loom-preview.gif) -->
 
 ---
 
@@ -280,7 +300,7 @@ No services. No package managers beyond pip for Flow UI.
 
 ## Status
 
-**Current release — 19 skills + 1 tool, manifest v0.8.0.**
+**Current release — 19 skills + 1 tool, manifest v1.0.0.**
 
 The 19 shipped skills (2 slash-commands + 4 protocol skills + 13 core skills)
 are functional and used daily on real production work. The Flow UI is a
@@ -288,14 +308,8 @@ sibling tool synced from an upstream repo via the `tool` tier. Surrounding
 tooling (contract verifier, skills map generator, init wizard, sync script,
 Discussions/Issue templates) is stable for the public release.
 
-A CI workflow (`.github/workflows/verify-contract.yml`) and full v1.0.0-mvp
-tag are the last steps of the release roadmap.
-
----
-
-## Star history
-
-[![Star History Chart](https://api.star-history.com/svg?repos=bearded-illirian/trailmark&type=Date)](https://star-history.com/#bearded-illirian/trailmark&Date)
+CI workflow verifies contracts on every push. First stable release v1.0.0
+tagged — see [Releases](../../releases/tag/v1.0.0).
 
 ---
 

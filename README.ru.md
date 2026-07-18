@@ -1,7 +1,7 @@
 [English](./README.md) · [Русский](./README.ru.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Manifest: v0.8.0](https://img.shields.io/badge/manifest-v0.8.0-blue.svg)](./manifest.yml)
+[![Manifest: v1.0.0](https://img.shields.io/badge/manifest-v1.0.0-blue.svg)](./manifest.yml)
 [![Skills: 19](https://img.shields.io/badge/skills-19_shipped-brightgreen.svg)](./docs/SKILLS_MAP.md)
 [![GitHub stars](https://img.shields.io/github/stars/bearded-illirian/trailmark?style=social)](https://github.com/bearded-illirian/trailmark/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/bearded-illirian/trailmark.svg)](https://github.com/bearded-illirian/trailmark/issues)
@@ -18,6 +18,32 @@
 в чате.
 
 ![Chat-only agent vs Artifact-first agent — the difference](docs/assets/before-after.png)
+
+---
+
+## Какие проблемы решает Trailmark
+
+Три боли каждого разработчика на Claude Code — и как Trailmark structurally предотвращает каждую.
+
+### 1. Session amnesia — «а что мы вчера решали?»
+
+Chat-сессии эфемерны. Каждое новое окно = context reset. Через две недели ты не помнишь почему выбрал подход X, какие альтернативы рассматривал, что вчерашний агент сделал и зачем.
+
+**Ответ Trailmark:** каждое решение пишет файл — `flow-first-N.md` (landscape), `library-first-N.md` (LOC + reused vs from-scratch), `plan-first-N.md` (7-15 шагов плана), `report-N.md` (что сделано + observations), `decision-N.md` (любой non-trivial выбор с alternatives). Грепаешь архив за секунды. **Не нужно помнить — читаешь.**
+
+### 2. Unpredictable output quality — «повезло или нет»
+
+Бросаешь агенту «сделай X» и надеешься. Иногда gold, иногда халтура. Нет обязательного pre-work — агент каждый раз сам решает как подойти.
+
+**Ответ Trailmark:** enforced skill chain. Каждый блок **обязан** пройти `flow-first` (understanding table) → `library-first` (LOC estimate) → `plan-first` (7-15 шагов) **до касания кода**. Если агент попытался пропустить — блок не считается закрытым. **Predictable quality per block, каждый раз.**
+
+### 3. Regression archaeology — «сломалось, но когда и почему?»
+
+Что-то работало неделю назад, сегодня падает. Git blame показывает «fix bug» без контекста. Какое решение AI привело к regression?
+
+**Ответ Trailmark:** каждый артефакт регистрируется в `routing.db` с timestamp, block_num, task_id. При regression: `SELECT` блоков, которые касались файла → читаешь `plan-first-N.md` для контекста → `git blame` показывает commit hash. **Regression → block → decision → source code за 30 секунд.**
+
+**Результат:** работа с AI становится стабильной и предсказуемой — каждое решение аудируемо, каждая регрессия трассируется, каждая сессия продолжается с того места, где закончилась предыдущая.
 
 ---
 
@@ -120,12 +146,12 @@ workspace-root/
 graph TD
     T[Task] --> B[Blocks]
     B --> C[Skill Chain per Block]
-    C --> F[flow-first]
-    F --> L[library-first]
-    L --> P[plan-first]
-    P --> G{Gate}
-    G -->|approval| E[Execute]
-    E --> R[Report]
+    C --> F["flow-first<br/><i>landscape · problem · solution · result</i>"]
+    F --> L["library-first<br/><i>сколько кода + что переиспользуем</i>"]
+    L --> P["plan-first<br/><i>7-15 шагов + risks + out-of-scope</i>"]
+    P --> G{"Gate<br/><i>approval перед execute</i>"}
+    G -->|approval| E["Execute<br/><i>код по плану</i>"]
+    E --> R["Report<br/><i>что сделали + observations</i>"]
     R --> A[Artifacts]
     A --> DB[(routing.db)]
     F -.produces.-> A
@@ -161,12 +187,6 @@ bash bin/flow-ui/bin/stop     # остановить
 по проектам, блоки по задачам, артефакты по блокам, деплои и аналитику
 использования скиллов. Никакого редактирования YAML. Никаких CLI-запросов.
 Открыл и смотришь.
-
-<!-- TODO: swap TBD for the real Loom share URL after recording block 50.
-     Optional: uncomment the gif preview once docs/assets/loom-preview.gif is uploaded. -->
-▶️ **[Посмотреть 90-сек демо на Loom](https://www.loom.com/share/TBD)**
-
-<!-- ![90-сек демо /go-fast в действии](docs/assets/loom-preview.gif) -->
 
 ---
 
@@ -286,7 +306,7 @@ Flow UI дополнительно требует Python-пакеты: `fastapi`
 
 ## Статус
 
-**Текущий релиз — 19 скиллов + 1 tool, manifest v0.8.0.**
+**Текущий релиз — 19 скиллов + 1 tool, manifest v1.0.0.**
 
 19 shipping скиллов (2 slash-команды + 4 протокольных скилла + 13
 core-скиллов) функциональны и используются ежедневно на реальной
@@ -295,14 +315,8 @@ upstream-репо через tier `tool`. Обвязка (contract verifier, ski
 map generator, init wizard, sync script, Discussions/Issue templates)
 стабильна для публичного релиза.
 
-CI workflow (`.github/workflows/verify-contract.yml`) активен + tag
-v1.0.0 — финальные шаги release roadmap'а.
-
----
-
-## Star history
-
-[![Star History Chart](https://api.star-history.com/svg?repos=bearded-illirian/trailmark&type=Date)](https://star-history.com/#bearded-illirian/trailmark&Date)
+CI workflow валидирует контракты на каждом push. Первый stable release
+v1.0.0 tagged — см. [Releases](../../releases/tag/v1.0.0).
 
 ---
 
