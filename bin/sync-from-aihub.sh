@@ -190,14 +190,29 @@ echo "── Config resolver (sync-time inject) ──" | tee -a "$LOG_FILE"
 SUBST_SUMMARY=$(FRAMEWORK_PUBLIC="$FRAMEWORK_PUBLIC" python3 <<'PYEOF'
 import os, re
 
-LITERAL_TO_TOKEN = {
+HOME = os.environ.get("HOME", "~")
+
+# Framework-relative patterns (tilde form — portable across users)
+FRAMEWORK_PATH_TOKENS = {
     "~/Projects/vschk-platform/tasks/routing.db":   "{{ config.paths.routing_db }}",
     "~/Projects/vschk-platform/framework-public":   "{{ config.paths.framework_public_root }}",
     "~/Projects/vschk-platform/tasks/log":          "{{ config.paths.log_dir_base }}",
     "~/Projects/vschk-platform/tasks":              "{{ config.paths.tasks_root }}",
-    "/Users/viktor/Projects/aihub":                 "{{ config.paths.aihub_root }}",
     "~/Projects/aihub":                             "{{ config.paths.aihub_root }}",
 }
+
+# Absolute-form variant: catches pre-tilde-expansion leaks that occur when
+# skill files reference ${HOME}/... rendered as literal /Users/{user}/...
+# HOME resolves dynamically per user — no hardcoded author path.
+AUTHOR_HOME_TOKENS = {
+    f"{HOME}/Projects/vschk-platform/tasks/routing.db":   "{{ config.paths.routing_db }}",
+    f"{HOME}/Projects/vschk-platform/framework-public":   "{{ config.paths.framework_public_root }}",
+    f"{HOME}/Projects/vschk-platform/tasks/log":          "{{ config.paths.log_dir_base }}",
+    f"{HOME}/Projects/vschk-platform/tasks":              "{{ config.paths.tasks_root }}",
+    f"{HOME}/Projects/aihub":                             "{{ config.paths.aihub_root }}",
+}
+
+LITERAL_TO_TOKEN = {**FRAMEWORK_PATH_TOKENS, **AUTHOR_HOME_TOKENS}
 ordered = sorted(LITERAL_TO_TOKEN.items(), key=lambda kv: -len(kv[0]))
 
 root = os.environ["FRAMEWORK_PUBLIC"]
@@ -242,10 +257,10 @@ HARDCODE_PATTERNS=(
   "31\.130\.148\.26"                 # MSK VDS
   "89\.19\.214\.51"                  # NL VDS (Telegram)
   "\.vschk\.online"                  # vschk-specific domains (may match legitimate examples)
-  "/Users/viktor/Desktop/"           # legacy Desktop paths (pre-task-507)
+  "${HOME}/Desktop/"                 # absolute Desktop paths (per-user)
   "~/Desktop/"                       # tilde-based Desktop paths
   # AUDIT §3 — vschk-platform workspace paths (post-task-507 migration)
-  "/Users/viktor/Projects/"          # absolute Projects paths
+  "${HOME}/Projects/"                # absolute Projects paths (per-user, HOME-resolved)
   "~/Projects/vschk-platform/"       # tilde-based vschk-platform paths
 )
 

@@ -64,10 +64,14 @@ meta:
 
 source:
   repo: aihub
-  base_path: /Users/viktor/Projects/aihub/.claude
+  # base_path is documentation-only — bin/sync-from-aihub.sh auto-detects
+  # AIHUB_ROOT via ENV override → workspace/aihub subdir → $HOME/Projects/aihub fallback.
+  base_path: "${AIHUB_ROOT}/.claude"
 
 destination:
-  base_path: /Users/viktor/Projects/vschk-platform/framework-public
+  # base_path is documentation-only — bin/sync-from-aihub.sh derives from
+  # SCRIPT_DIR/.. (script's parent directory).
+  base_path: "${FRAMEWORK_PUBLIC_ROOT}"
 
 sync_rules:
   # When source_path is a directory, these patterns are excluded from the copy.

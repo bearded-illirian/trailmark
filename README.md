@@ -1,5 +1,11 @@
 [English](./README.md) · [Русский](./README.ru.md)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Manifest: v0.8.0](https://img.shields.io/badge/manifest-v0.8.0-blue.svg)](./manifest.yml)
+[![Skills: 19](https://img.shields.io/badge/skills-19_shipped-brightgreen.svg)](./docs/SKILLS_MAP.md)
+[![GitHub stars](https://img.shields.io/github/stars/bearded-illirian/framework?style=social)](https://github.com/bearded-illirian/framework/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/bearded-illirian/framework.svg)](https://github.com/bearded-illirian/framework/issues)
+
 # The Framework
 
 **An artifact-first agent framework for driving multi-step engineering tasks
@@ -278,6 +284,12 @@ Discussions/Issue templates) is stable for the public release.
 
 A CI workflow (`.github/workflows/verify-contract.yml`) and full v1.0.0-mvp
 tag are the last steps of the release roadmap.
+
+---
+
+## Star history
+
+[![Star History Chart](https://api.star-history.com/svg?repos=bearded-illirian/framework&type=Date)](https://star-history.com/#bearded-illirian/framework&Date)
 
 ---
 
