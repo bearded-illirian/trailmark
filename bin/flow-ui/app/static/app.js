@@ -1,43 +1,45 @@
 // vschk-flow-ui — SPA hash router + tree navigation
 // Consumes Block 3 endpoints; POST /api/access on file/artifact opens.
 
-// ── i18n ─────────────────────────────────────────────────
-const SUPPORTED_LOCALES = ["en", "ru"];
-const DEFAULT_LOCALE = "en";
-window.__I18N = {};
-window.__LOCALE = DEFAULT_LOCALE;
+// ── i18n (namespace object — immune to variable shadowing) ────────────
+window.i18n = {
+  SUPPORTED: ["en", "ru"],
+  DEFAULT: "en",
+  dict: {},
+  locale: "en",
 
-function detectLocale() {
-  const stored = localStorage.getItem("flow_ui_locale");
-  if (stored && SUPPORTED_LOCALES.includes(stored)) return stored;
-  const browser = (navigator.language || "").toLowerCase();
-  return browser.startsWith("ru") ? "ru" : "en";
-}
+  detect() {
+    const stored = localStorage.getItem("flow_ui_locale");
+    if (stored && this.SUPPORTED.includes(stored)) return stored;
+    const browser = (navigator.language || "").toLowerCase();
+    return browser.startsWith("ru") ? "ru" : "en";
+  },
 
-async function loadLocale(locale) {
-  const res = await fetch(`/static/i18n/${locale}.json`);
-  window.__I18N = await res.json();
-  window.__LOCALE = locale;
-  document.documentElement.lang = locale;
-}
+  async load(locale) {
+    const res = await fetch(`/static/i18n/${locale}.json`);
+    this.dict = await res.json();
+    this.locale = locale;
+    document.documentElement.lang = locale;
+  },
 
-function t(key, vars) {
-  let s = window.__I18N[key] ?? key;
-  if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
-  return s;
-}
+  t(key, vars) {
+    let s = this.dict[key] ?? key;
+    if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
+    return s;
+  },
 
-async function setLocale(locale) {
-  if (!SUPPORTED_LOCALES.includes(locale)) return;
-  localStorage.setItem("flow_ui_locale", locale);
-  await loadLocale(locale);
-  document.querySelectorAll(".locale-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.locale === locale);
-  });
-  const badge = document.querySelector(".stats-badge");
-  if (badge) badge.title = t("badge.tooltip");
-  if (typeof applyHash === "function") applyHash();
-}
+  async set(locale) {
+    if (!this.SUPPORTED.includes(locale)) return;
+    localStorage.setItem("flow_ui_locale", locale);
+    await this.load(locale);
+    document.querySelectorAll(".locale-btn").forEach(b => {
+      b.classList.toggle("active", b.dataset.locale === locale);
+    });
+    const badge = document.querySelector(".stats-badge");
+    if (badge) badge.title = this.t("badge.tooltip");
+    if (typeof applyHash === "function") applyHash();
+  },
+};
 
 const ARTIFACT_CATEGORIES = {
   protocol: new Set([
@@ -109,8 +111,8 @@ async function refreshStats() {
     const s = await api("/api/stats");
     const label = document.querySelector(".stats-badge .badge-label");
     const today = document.querySelector(".stats-badge .today");
-    if (label) label.textContent = t("badge.label");
-    if (today) today.textContent = `· ${t("badge.today", { n: s.today_count })}`;
+    if (label) label.textContent = i18n.t("badge.label");
+    if (today) today.textContent = `· ${i18n.t("badge.today", { n: s.today_count })}`;
   } catch (e) {
     console.warn("stats refresh failed:", e);
   }
@@ -191,7 +193,7 @@ function renderCrumbs() {
   // 📊 stats icon on the right — for project or task context
   const statsBtn = el("button", {
     class: "stats-icon-btn",
-    title: state.taskId ? t("title.task_stats", { id: state.taskId }) : t("title.project_stats", { id: state.project.id }),
+    title: state.taskId ? i18n.t("title.task_stats", { id: state.taskId }) : i18n.t("title.project_stats", { id: state.project.id }),
     on: { click: () => {
       if (state.taskId) location.hash = `#/${state.project.id}/tasks/${state.taskId}/stats`;
       else location.hash = `#/${state.project.id}/stats`;
@@ -287,8 +289,8 @@ async function onFileClick(entry) {
 function renderChips() {
   const row = el("div", { class: "filter-chips" });
   const chips = [
-    ["all", t("filter.all")], ["protocol", t("filter.protocol")],
-    ["thoughts", t("filter.thoughts")], ["audits", t("filter.audits")],
+    ["all", i18n.t("filter.all")], ["protocol", i18n.t("filter.protocol")],
+    ["thoughts", i18n.t("filter.thoughts")], ["audits", i18n.t("filter.audits")],
   ];
   for (const [key, label] of chips) {
     row.append(el("button", {
@@ -333,7 +335,7 @@ async function renderTasks() {
         },
           el("span", { class: "task-pin-icon" }, "📋"),
           el("span", { class: "task-pin-title" }, taskMdName),
-          el("span", { class: "task-pin-meta" }, t("task.description")),
+          el("span", { class: "task-pin-meta" }, i18n.t("task.description")),
         ));
       }
       t.append(renderChips());
@@ -476,7 +478,7 @@ async function renderDeploys() {
       tree.append(el("div", { class: "deploy-unlinked-separator" }));
       const unlinkedGroup = {
         id: "__unlinked__",
-        title: t("task.no_task"),
+        title: i18n.t("task.no_task"),
         count: data.unlinked.length,
         deploys: data.unlinked,
       };
@@ -559,7 +561,7 @@ function renderTopNumbers(nums, order) {
 }
 
 function renderBars(bars, opts = {}) {
-  if (!bars || !bars.length) return el("div", { class: "muted" }, t("empty.no_data"));
+  if (!bars || !bars.length) return el("div", { class: "muted" }, i18n.t("empty.no_data"));
   const max = Math.max(...bars.map(b => b.value));
   const wrap = el("div", { class: "stats-bars" });
   const rows = opts.limit ? bars.slice(0, opts.limit) : bars;
@@ -603,7 +605,7 @@ function renderHeatmap(cells) {
 function renderRecent(tasks) {
   const list = el("div", { class: "stats-recent" });
   if (!tasks || !tasks.length) {
-    list.append(el("div", { class: "muted" }, t("empty.no_tasks")));
+    list.append(el("div", { class: "muted" }, i18n.t("empty.no_tasks")));
     return list;
   }
   for (const t of tasks) {
@@ -640,49 +642,49 @@ function renderStats(data) {
   const v = el("div", { class: "stats-view" });
 
   if (data.scope === "global") {
-    v.append(el("h2", { class: "stats-h" }, t("stats.global_title")));
+    v.append(el("h2", { class: "stats-h" }, i18n.t("stats.global_title")));
     v.append(renderTopNumbers(data.top_numbers, [
-      ["tasks_total", t("stats.tasks_total")],
-      ["tasks_open", t("stats.tasks_open")],
-      ["tasks_closed", t("stats.tasks_closed")],
+      ["tasks_total", i18n.t("stats.tasks_total")],
+      ["tasks_open", i18n.t("stats.tasks_open")],
+      ["tasks_closed", i18n.t("stats.tasks_closed")],
       ["streak_days", "🔥 streak"],
-      ["artifacts_total", t("stats.artifacts_total")],
-      ["week_calendar", t("stats.week_calendar")],
-      ["week_views", t("stats.week_views")],
-      ["today_count", t("stats.today_count")],
+      ["artifacts_total", i18n.t("stats.artifacts_total")],
+      ["week_calendar", i18n.t("stats.week_calendar")],
+      ["week_views", i18n.t("stats.week_views")],
+      ["today_count", i18n.t("stats.today_count")],
     ]));
     if (data.deploys && Object.keys(data.deploys).length) {
       v.append(renderTopNumbers(data.deploys, [
-        ["deploys_total", t("deploys.total")],
-        ["deploys_week_calendar", t("deploys.week_calendar")],
-        ["deploys_week_views", t("deploys.week_views")],
-        ["deploys_today", t("deploys.today")],
+        ["deploys_total", i18n.t("deploys.total")],
+        ["deploys_week_calendar", i18n.t("deploys.week_calendar")],
+        ["deploys_week_views", i18n.t("deploys.week_views")],
+        ["deploys_today", i18n.t("deploys.today")],
       ]));
     }
-    v.append(el("h3", { class: "stats-h3" }, t("stats.year_activity")));
+    v.append(el("h3", { class: "stats-h3" }, i18n.t("stats.year_activity")));
     v.append(renderHeatmap(data.heatmap));
     const grid = el("div", { class: "stats-grid" });
     grid.append(el("div", { class: "stats-panel" },
-      el("h3", { class: "stats-h3" }, t("stats.top_projects")),
+      el("h3", { class: "stats-h3" }, i18n.t("stats.top_projects")),
       renderBars(data.top_projects)));
     grid.append(el("div", { class: "stats-panel" },
-      el("h3", { class: "stats-h3" }, t("stats.task_types")),
+      el("h3", { class: "stats-h3" }, i18n.t("stats.task_types")),
       renderBars(data.types_tasks)));
     grid.append(el("div", { class: "stats-panel" },
-      el("h3", { class: "stats-h3" }, t("stats.artifact_types")),
+      el("h3", { class: "stats-h3" }, i18n.t("stats.artifact_types")),
       renderBars(data.types_artifacts, { limit: 10 })));
     grid.append(el("div", { class: "stats-panel" },
-      el("h3", { class: "stats-h3" }, t("stats.frequently_opened")),
+      el("h3", { class: "stats-h3" }, i18n.t("stats.frequently_opened")),
       renderBars(data.top_accessed, { limit: 10 })));
     v.append(grid);
-    v.append(el("h3", { class: "stats-h3" }, t("stats.recent_tasks")));
+    v.append(el("h3", { class: "stats-h3" }, i18n.t("stats.recent_tasks")));
     v.append(renderRecent(data.recent));
 
     // Skills analytics section (block 405) — only for global scope
     if (data.skills_stats) {
       const s = data.skills_stats;
       const skillsSection = el("div", { class: "skills-analytics-section" });
-      skillsSection.append(el("h3", { class: "stats-h3" }, t("methodology.title")));
+      skillsSection.append(el("h3", { class: "stats-h3" }, i18n.t("methodology.title")));
 
       // 4th top_numbers row — skills coverage
       skillsSection.append(renderTopNumbers({
@@ -691,10 +693,10 @@ function renderStats(data) {
         unused_90d: s.unused_90d,
         domain_count: (s.domain_coverage || []).length,
       }, [
-        ["total_registered", t("methodology.total_registered")],
-        ["used_30d", t("methodology.used_30d")],
-        ["unused_90d", t("methodology.unused_90d")],
-        ["domain_count", t("methodology.domain_count")],
+        ["total_registered", i18n.t("methodology.total_registered")],
+        ["used_30d", i18n.t("methodology.used_30d")],
+        ["unused_90d", i18n.t("methodology.unused_90d")],
+        ["domain_count", i18n.t("methodology.domain_count")],
       ]));
 
       // Two-column: top-10 bars + unused list
@@ -705,7 +707,7 @@ function renderStats(data) {
         value: t.count,
       }));
       grid2.append(el("div", { class: "stats-panel" },
-        el("h3", { class: "stats-h3" }, t("methodology.top_30d")),
+        el("h3", { class: "stats-h3" }, i18n.t("methodology.top_30d")),
         renderBars(topBars, { limit: 10 })));
 
       // Unused skills — take from usage_map inference: catalog names NOT in top_used_30d, up to first 15
@@ -713,9 +715,9 @@ function renderStats(data) {
       const domainList = s.domain_coverage || [];
       const unusedCount = s.unused_90d;
       const unusedPanel = el("div", { class: "stats-panel" });
-      unusedPanel.append(el("h3", { class: "stats-h3" }, t("methodology.dormant_skills", { n: unusedCount })));
+      unusedPanel.append(el("h3", { class: "stats-h3" }, i18n.t("methodology.dormant_skills", { n: unusedCount })));
       unusedPanel.append(el("div", { class: "muted", style: "font-size:11px; padding: 0 4px 8px" },
-        t("methodology.dormant_desc")));
+        i18n.t("methodology.dormant_desc")));
       grid2.append(unusedPanel);
 
       skillsSection.append(grid2);
@@ -725,7 +727,7 @@ function renderStats(data) {
         label: `${d.domain} (${d.used}/${d.total})`,
         value: d.used,
       }));
-      skillsSection.append(el("h3", { class: "stats-h3" }, t("methodology.domain_coverage")));
+      skillsSection.append(el("h3", { class: "stats-h3" }, i18n.t("methodology.domain_coverage")));
       skillsSection.append(renderBars(coverageBars, { limit: 15 }));
 
       v.append(skillsSection);
@@ -735,32 +737,32 @@ function renderStats(data) {
   }
 
   if (data.scope === "project") {
-    v.append(el("h2", { class: "stats-h" }, t("title.project_stats_full", { id: data.project_id })));
+    v.append(el("h2", { class: "stats-h" }, i18n.t("title.project_stats_full", { id: data.project_id })));
     v.append(renderTopNumbers(data.top_numbers, [
-      ["tasks_total", t("project.tasks_total")],
-      ["tasks_open", t("project.tasks_open")],
-      ["tasks_closed", t("project.tasks_closed")],
-      ["artifacts_total", t("project.artifacts_total")],
+      ["tasks_total", i18n.t("project.tasks_total")],
+      ["tasks_open", i18n.t("project.tasks_open")],
+      ["tasks_closed", i18n.t("project.tasks_closed")],
+      ["artifacts_total", i18n.t("project.artifacts_total")],
     ]));
     if (data.deploys && Object.keys(data.deploys).length) {
       v.append(renderTopNumbers(data.deploys, [
-        ["deploys_total", t("deploys.total")],
-        ["deploys_week_calendar", t("deploys.week_calendar")],
-        ["deploys_week_views", t("deploys.week_views")],
-        ["deploys_today", t("deploys.today")],
+        ["deploys_total", i18n.t("deploys.total")],
+        ["deploys_week_calendar", i18n.t("deploys.week_calendar")],
+        ["deploys_week_views", i18n.t("deploys.week_views")],
+        ["deploys_today", i18n.t("deploys.today")],
       ]));
     }
-    v.append(el("h3", { class: "stats-h3" }, t("stats.year_activity")));
+    v.append(el("h3", { class: "stats-h3" }, i18n.t("stats.year_activity")));
     v.append(renderHeatmap(data.heatmap));
     const grid = el("div", { class: "stats-grid" });
     grid.append(el("div", { class: "stats-panel" },
-      el("h3", { class: "stats-h3" }, t("stats.task_types")),
+      el("h3", { class: "stats-h3" }, i18n.t("stats.task_types")),
       renderBars(data.types_tasks)));
     grid.append(el("div", { class: "stats-panel" },
-      el("h3", { class: "stats-h3" }, t("stats.artifact_types")),
+      el("h3", { class: "stats-h3" }, i18n.t("stats.artifact_types")),
       renderBars(data.types_artifacts, { limit: 10 })));
     v.append(grid);
-    v.append(el("h3", { class: "stats-h3" }, t("stats.recent_project_tasks")));
+    v.append(el("h3", { class: "stats-h3" }, i18n.t("stats.recent_project_tasks")));
     v.append(renderRecent(data.recent));
     return v;
   }
@@ -768,18 +770,18 @@ function renderStats(data) {
   // task scope
   v.append(el("h2", { class: "stats-h" }, `#${data.task.number ?? "-"} ${data.task.title || data.task.id}`));
   v.append(renderTopNumbers(data.top_numbers, [
-    ["blocks_total", t("task_stats.blocks_total")],
-    ["blocks_done", t("task_stats.blocks_done")],
-    ["blocks_pending", t("task_stats.blocks_pending")],
-    ["artifacts_total", t("task_stats.artifacts_total")],
-    ["commits_total", t("task_stats.commits_total")],
+    ["blocks_total", i18n.t("task_stats.blocks_total")],
+    ["blocks_done", i18n.t("task_stats.blocks_done")],
+    ["blocks_pending", i18n.t("task_stats.blocks_pending")],
+    ["artifacts_total", i18n.t("task_stats.artifacts_total")],
+    ["commits_total", i18n.t("task_stats.commits_total")],
   ]));
-  v.append(el("h3", { class: "stats-h3" }, t("task_stats.blocks_timeline")));
+  v.append(el("h3", { class: "stats-h3" }, i18n.t("task_stats.blocks_timeline")));
   v.append(renderBlocksTimeline(data.blocks_timeline));
-  v.append(el("h3", { class: "stats-h3" }, t("task_stats.artifact_types")));
+  v.append(el("h3", { class: "stats-h3" }, i18n.t("task_stats.artifact_types")));
   v.append(renderBars(data.artifacts_by_type));
   if (data.commits.length) {
-    v.append(el("h3", { class: "stats-h3" }, t("task_stats.commits")));
+    v.append(el("h3", { class: "stats-h3" }, i18n.t("task_stats.commits")));
     const commitsWrap = el("div", { class: "stats-commits" });
     for (const c of data.commits) commitsWrap.append(el("code", { class: "commit" }, c));
     v.append(commitsWrap);
@@ -791,7 +793,7 @@ async function loadStats(scope, id, taskId) {
   let url = "/api/stats/global";
   if (scope === "project") url = `/api/stats/project/${encodeURIComponent(id)}`;
   if (scope === "task") url = `/api/stats/task/${encodeURIComponent(taskId)}`;
-  setContent(`<div class="muted center">${t("state.loading_stats")}</div>`);
+  setContent(`<div class="muted center">${i18n.t("state.loading_stats")}</div>`);
   try {
     // Global scope also fetches skills analytics (block 405) — parallel for speed
     if (scope === "global") {
@@ -803,7 +805,7 @@ async function loadStats(scope, id, taskId) {
       setContent(renderStats(data));
     }
   } catch (e) {
-    setContent(`<div class="muted center">${t("state.error_loading", { msg: e.message })}</div>`);
+    setContent(`<div class="muted center">${i18n.t("state.error_loading", { msg: e.message })}</div>`);
   }
 }
 
@@ -888,12 +890,12 @@ async function applyHash() {
 
 async function init() {
   // Load i18n dictionary before any render
-  await loadLocale(detectLocale());
+  await i18n.load(i18n.detect());
 
   // Locale switcher wiring (buttons in header)
   document.querySelectorAll(".locale-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.locale === window.__LOCALE);
-    b.addEventListener("click", () => setLocale(b.dataset.locale));
+    b.classList.toggle("active", b.dataset.locale === i18n.locale);
+    b.addEventListener("click", () => i18n.set(b.dataset.locale));
   });
 
   try {
@@ -921,7 +923,7 @@ async function init() {
   const badge = document.querySelector(".stats-badge");
   if (badge) {
     badge.style.cursor = "pointer";
-    badge.title = t("badge.tooltip");
+    badge.title = i18n.t("badge.tooltip");
     badge.addEventListener("click", () => { location.hash = "#/stats"; });
   }
 
@@ -943,11 +945,11 @@ function skillDomain(item) {
 
 function renderSkillChips(catalog) {
   const domains = ["all", ...Array.from(new Set(catalog.map(skillDomain))).sort()];
-  const usage = [["all", t("filter.usage_all")], ["used30d", t("filter.usage_used30d")], ["unused90d", t("filter.usage_unused90d")]];
+  const usage = [["all", i18n.t("filter.usage_all")], ["used30d", i18n.t("filter.usage_used30d")], ["unused90d", i18n.t("filter.usage_unused90d")]];
 
   const domainRow = el("div", { class: "filter-chips" });
   domains.forEach(d => {
-    const label = d === "all" ? t("filter.all_domains") : d;
+    const label = d === "all" ? i18n.t("filter.all_domains") : d;
     domainRow.append(el("button", {
       class: `chip${state.skillFilter.domain === d ? " active" : ""}`,
       on: { click: () => { state.skillFilter.domain = d; renderSkills(); } },
@@ -998,7 +1000,7 @@ async function renderSkills() {
     const domainOrder = Object.keys(groups).sort();
 
     if (!domainOrder.length) {
-      t.append(el("div", { class: "muted", style: "padding:12px" }, t("empty.no_skills")));
+      t.append(el("div", { class: "muted", style: "padding:12px" }, i18n.t("empty.no_skills")));
     }
 
     for (const domain of domainOrder) {
@@ -1024,11 +1026,11 @@ async function renderSkills() {
     if (state.selectedSkill) {
       renderSkillDetail(state.selectedSkill);
     } else {
-      setContent(el("div", { class: "muted center" }, t("empty.select_skill")));
+      setContent(el("div", { class: "muted center" }, i18n.t("empty.select_skill")));
     }
   } catch (e) {
     console.warn(e);
-    t.replaceChildren(el("div", { class: "muted", style: "padding:12px" }, t("state.error", { msg: e.message })));
+    t.replaceChildren(el("div", { class: "muted", style: "padding:12px" }, i18n.t("state.error", { msg: e.message })));
   }
 }
 
@@ -1073,10 +1075,10 @@ async function renderSkillDetail(name) {
     // Usage box
     const usageBox = el("div", { class: "skill-usage-box" });
     const cells = [
-      [t("skill.total"), skill.usage_total ?? 0],
-      [t("skill.30days"), skill.usage_30d ?? 0],
-      [t("skill.7days"), skill.usage_7d ?? 0],
-      [t("skill.last_used"), formatDateRu(skill.last_used_at)],
+      [i18n.t("skill.total"), skill.usage_total ?? 0],
+      [i18n.t("skill.30days"), skill.usage_30d ?? 0],
+      [i18n.t("skill.7days"), skill.usage_7d ?? 0],
+      [i18n.t("skill.last_used"), formatDateRu(skill.last_used_at)],
     ];
     cells.forEach(([label, value]) => {
       usageBox.append(el("div", { class: "skill-usage-cell" },
@@ -1096,7 +1098,7 @@ async function renderSkillDetail(name) {
 
     // Works with
     if (skill.works_with && skill.works_with.length) {
-      const wwHeader = el("div", { class: "skill-section-header" }, t("skill.works_together"));
+      const wwHeader = el("div", { class: "skill-section-header" }, i18n.t("skill.works_together"));
       const wwBox = el("div", { class: "skill-works-with" });
       skill.works_with.forEach(item => wwBox.append(worksWithPill(item)));
       box.append(wwHeader, wwBox);
@@ -1104,7 +1106,7 @@ async function renderSkillDetail(name) {
 
     // Examples
     if (examples.items && examples.items.length) {
-      box.append(el("div", { class: "skill-section-header" }, t("skill.recent_uses")));
+      box.append(el("div", { class: "skill-section-header" }, i18n.t("skill.recent_uses")));
       const list = el("div", { class: "skill-examples-list" });
       examples.items.forEach(ex => {
         const item = el("div", {
@@ -1114,7 +1116,7 @@ async function renderSkillDetail(name) {
               const data = await api(`/api/artifacts/read?path=${encodeURIComponent(ex.file_path)}`);
               setContent(renderContent(data.content, ex.file_name));
             } catch (e) {
-              setContent(`<div class="muted center">${t("state.error", { msg: e.message })}</div>`);
+              setContent(`<div class="muted center">${i18n.t("state.error", { msg: e.message })}</div>`);
             }
           }},
         },
@@ -1128,7 +1130,7 @@ async function renderSkillDetail(name) {
 
     setContent(box);
   } catch (e) {
-    setContent(`<div class="muted center">${t("state.error", { msg: e.message })}</div>`);
+    setContent(`<div class="muted center">${i18n.t("state.error", { msg: e.message })}</div>`);
   }
 }
 

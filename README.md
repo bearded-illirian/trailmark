@@ -19,6 +19,10 @@ only in chat.
 
 ![Chat-only agent vs Artifact-first agent — the difference](docs/assets/before-after.png)
 
+![One task in Flow UI — every artifact of the skill chain is a first-class file](docs/assets/flow-ui-task.png)
+
+![Global statistics — Trailmark running on a real production instance (18k artifacts, 5.5k deploys, 6 domains)](docs/assets/flow-ui-global.png)
+
 ---
 
 ## What Trailmark solves
@@ -63,6 +67,8 @@ Something worked last week, fails today. Git blame shows "fix bug" without conte
 - If a step didn't produce an artifact — **it didn't happen**
 
 Chat log → auditable engineering record. **One rule, enforced by protocol.**
+
+![Task breakdown in Flow UI — top projects, task types, artifact type distribution](docs/assets/flow-ui-tasks-breakdown.png)
 
 ---
 
@@ -138,6 +144,8 @@ invocation. No per-project duplication, no drift.
 `routing.db`. Cross-project queries ("what did we touch this week?") work
 natively.
 
+![Deploys tab in Flow UI — every commit linked to task + block + artifact](docs/assets/flow-ui-deploys.png)
+
 ---
 
 ## One-page flow
@@ -197,6 +205,8 @@ bash bin/flow-ui/bin/stop     # stop
 Then open `http://127.0.0.1:8765/`. You see: projects, tasks per project,
 blocks per task, artifacts per block, deploys, and skill-usage analytics.
 No YAML editing. No CLI queries. Point and read.
+
+![Skills methodology in Flow UI — which skills are actively used, dormant, domain coverage](docs/assets/flow-ui-skills.png)
 
 ---
 
