@@ -348,7 +348,7 @@ Discussions/Issue templates) is stable for the public release.
 
 ![Global statistics from a live Trailmark production instance](docs/assets/flow-ui-global.png)
 
-<p align="center"><em>18k artifacts, 1276 tasks, 5.5k deploys, 6 domains, 72 skills active. Trailmark runs daily engineering on real projects. Every design decision baked in survived stress-testing at this scale.</em></p>
+<p align="center"><em>3 months of daily use → 18k artifacts, 1276 tasks, 5.5k deploys, 6 domains, 72 skills active. Trailmark runs daily engineering on real projects. Every design decision baked in survived stress-testing at this scale.</em></p>
 
 CI workflow verifies contracts on every push. First stable release v1.0.0
 tagged — see [Releases](../../releases/tag/v1.0.0).
