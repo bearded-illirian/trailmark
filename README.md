@@ -120,6 +120,9 @@ _Note: this framework runs on top of Claude Code (or any agent supporting
 methodology, not against the underlying agent harness — Claude Code is the
 runtime we build on, not a competitor._
 
+For detailed side-by-side comparisons vs specific frameworks (BMAD-Method,
+Superpowers, and others) → see [docs/COMPARISON.md](docs/COMPARISON.md).
+
 ---
 
 ## Who this is for
