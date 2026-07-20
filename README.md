@@ -123,6 +123,10 @@ runtime we build on, not a competitor._
 For detailed side-by-side comparisons vs specific frameworks (BMAD-Method,
 Superpowers, and others) → see [docs/COMPARISON.md](docs/COMPARISON.md).
 
+If you already use ADR files, Obsidian, `git log`, or other single-purpose
+tools for parts of what Trailmark does → see [docs/ALTERNATIVES.md](docs/ALTERNATIVES.md)
+for how the registry differs from tool-level solutions.
+
 ---
 
 ## Who this is for

@@ -8,6 +8,10 @@ framework wins.
 If you're evaluating alternatives, start with the **Reader guide** below to jump
 straight to the framework you're considering.
 
+> **Note:** this document covers full frameworks. For tool-level alternatives
+> to specific practices (ADR files, Obsidian, `git log`, chat history), see
+> [ALTERNATIVES.md](ALTERNATIVES.md) instead.
+
 ---
 
 ## Reader guide
