@@ -1,0 +1,10 @@
+# What must be true after plan-first runs on 001-add-endpoint.
+# Shape only — no prose is compared.
+skill: plan-first
+artifact: "plan-first-*.md"
+artifact_type: plan-first
+sections:
+  - "## Plan"
+  - "## Risks"
+  - "## Out of scope"
+min_table_rows: 7

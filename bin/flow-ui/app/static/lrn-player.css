@@ -1,0 +1,45 @@
+/* lrn-player.css — Radar custom video player styles.
+ * Ported from kb-os/app/m/lrn.css (34 .rp-* rules).
+ * Task radar-os--666-client-portals-mode block 20020.
+ *
+ * Uses CSS var --accent (fallback #7c3aed if theme doesn't define it).
+ */
+
+:root {
+  --accent: var(--accent, #7c3aed);
+}
+
+.rp-wrap { position: relative; display: flex; flex-direction: column; background: #000; border-radius: 12px; overflow: hidden; margin: 16px 0; user-select: none; }
+.rp-video { width: 100%; display: block; max-height: 480px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
+.rp-click-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); width: 72px; height: 72px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; pointer-events: none; will-change: transform; opacity: 0; transition: opacity .18s, transform .18s; z-index: 4; }
+.rp-click-hint.is-visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.rp-bar { background: linear-gradient(transparent, rgba(0, 0, 0, .72)); padding: 4px 12px 6px; flex-shrink: 0; transition: opacity .3s; }
+.rp-progress-wrap { padding: 0 2px 6px; }
+.rp-progress-bar { position: relative; height: 3px; background: rgba(255, 255, 255, .22); border-radius: 2px; cursor: pointer; transition: height .15s; }
+.rp-progress-bar:hover { height: 5px; }
+.rp-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--accent); border-radius: 2px; pointer-events: none; }
+.rp-progress-thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 13px; height: 13px; background: #fff; border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .15s; }
+.rp-progress-bar:hover .rp-progress-thumb { opacity: 1; }
+.rp-ctrl-row { display: flex; align-items: center; gap: 2px; }
+.rp-btn { background: none; border: none; color: #fff; cursor: pointer; width: 36px; height: 36px; padding: 6px; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .15s; flex-shrink: 0; border-radius: 4px; }
+.rp-btn:hover { opacity: 1; background: rgba(255, 255, 255, .08); }
+.rp-time { font-size: 12px; color: rgba(255, 255, 255, .85); white-space: nowrap; font-variant-numeric: tabular-nums; padding: 2px 8px; background: rgba(0, 0, 0, .35); border-radius: 4px; margin: 0 4px; }
+.rp-vol-wrap { position: relative; display: flex; align-items: center; gap: 0; }
+.rp-vol-range { width: 0; opacity: 0; height: 3px; cursor: pointer; accent-color: var(--accent); transition: width .2s, opacity .2s; }
+.rp-vol-wrap:hover .rp-vol-range { width: 68px; opacity: 1; }
+.rp-speed-wrap { position: relative; }
+.rp-speed-btn { font-size: 11px; font-weight: 600; min-width: 28px; }
+.rp-speed-menu { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #141F33; border: 1px solid rgba(255, 255, 255, .12); border-radius: 8px; padding: 4px; min-width: 70px; z-index: 10; }
+.rp-speed-menu button { display: block; width: 100%; background: none; border: none; color: #DCE4F0; padding: 5px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; text-align: center; }
+.rp-speed-menu button:hover { background: rgba(255, 255, 255, .07); }
+.rp-speed-menu button.is-active { color: var(--accent); font-weight: 600; }
+.rp-poster { width: 100%; display: block; aspect-ratio: 16 / 9; object-fit: cover; }
+.rp-poster--blank { width: 100%; aspect-ratio: 16 / 9; background: #111; }
+.rp-thumb-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; padding-left: 5px; pointer-events: none; transition: transform .15s, background .15s; }
+.rp-wrap:hover .rp-thumb-play { background: rgba(0, 0, 0, .8); transform: translate(-50%, -50%) scale(1.08); }
+.rp-wrap:fullscreen { border-radius: 0; display: flex; flex-direction: column; width: 100vw; height: 100vh; }
+.rp-wrap:fullscreen .rp-video { flex: 1; max-height: none; min-height: 0; }
+.rp-wrap:fullscreen .rp-bar { flex-shrink: 0; }
+.rp-wrap:-webkit-full-screen { border-radius: 0; display: flex; flex-direction: column; width: 100vw; height: 100vh; }
+.rp-wrap:-webkit-full-screen .rp-video { flex: 1; max-height: none; min-height: 0; }
+.rp-wrap:-webkit-full-screen .rp-bar { flex-shrink: 0; }

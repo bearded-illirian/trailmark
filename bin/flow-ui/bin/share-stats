@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""
+bin/share-stats — CLI for viewing analytics of a specific external share.
+
+Usage:
+  bin/share-stats --code=my-course [--limit=10]
+
+Shows total visits/downloads + recent events + top referers.
+"""
+
+import argparse
+import sqlite3
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from app.config import load_config
+
+
+def main():
+    p = argparse.ArgumentParser(description="Show stats for an external share.")
+    p.add_argument("--code", required=True, help="Share code (slug)")
+    p.add_argument("--limit", type=int, default=10, help="Number of recent events to show (default: 10)")
+    args = p.parse_args()
+
+    cfg_path = _ROOT / "config.yml"
+    if not cfg_path.exists():
+        cfg_path = _ROOT / "config.example.yml"
+    cfg = load_config(cfg_path)
+
+    if not cfg.paths.external_shares_db:
+        print("ERROR: external_shares_db not configured", file=sys.stderr)
+        sys.exit(1)
+
+    db = Path(cfg.paths.external_shares_db)
+    if not db.exists():
+        print(f"ERROR: DB not found: {db}", file=sys.stderr)
+        sys.exit(1)
+
+    conn = sqlite3.connect(str(db))
+    conn.row_factory = sqlite3.Row
+
+    # Basic metadata
+    share = conn.execute(
+        "SELECT id, code, title, token, is_active, view_count, download_count, created_at, expires_at "
+        "FROM external_shares WHERE code = ?",
+        (args.code,),
+    ).fetchone()
+
+    if not share:
+        print(f"ERROR: Share not found: {args.code}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"═══ Share: {share['code']} ═══")
+    print(f"Title:          {share['title']}")
+    print(f"Active:         {'yes' if share['is_active'] else 'NO (deactivated)'}")
+    print(f"Created:        {share['created_at']}")
+    print(f"Expires:        {share['expires_at'] or 'never'}")
+    print(f"Total visits:   {share['view_count']}")
+    print(f"Total downloads:{share['download_count']}")
+    print()
+
+    # Unique IPs
+    uniq_ips = conn.execute(
+        "SELECT COUNT(DISTINCT ip_address) FROM external_share_visits WHERE share_id = ?",
+        (share["id"],),
+    ).fetchone()[0]
+    print(f"Unique IPs (visits): {uniq_ips}")
+    print()
+
+    # Recent visits
+    print(f"━━━ Recent {args.limit} visits ━━━")
+    visits = conn.execute(
+        "SELECT visited_at, ip_address, user_agent, referer FROM external_share_visits "
+        "WHERE share_id = ? ORDER BY visited_at DESC LIMIT ?",
+        (share["id"], args.limit),
+    ).fetchall()
+    if not visits:
+        print("  (no visits yet)")
+    for v in visits:
+        ua_short = (v["user_agent"] or "-")[:40]
+        ref_short = (v["referer"] or "direct")[:40]
+        print(f"  {v['visited_at']}  {v['ip_address'] or '-':15}  {ua_short:40}  {ref_short}")
+    print()
+
+    # Recent downloads
+    print(f"━━━ Recent {args.limit} downloads ━━━")
+    dls = conn.execute(
+        "SELECT downloaded_at, ip_address, user_agent, referer FROM external_share_downloads "
+        "WHERE share_id = ? ORDER BY downloaded_at DESC LIMIT ?",
+        (share["id"], args.limit),
+    ).fetchall()
+    if not dls:
+        print("  (no downloads yet)")
+    for d in dls:
+        ua_short = (d["user_agent"] or "-")[:40]
+        ref_short = (d["referer"] or "direct")[:40]
+        print(f"  {d['downloaded_at']}  {d['ip_address'] or '-':15}  {ua_short:40}  {ref_short}")
+    print()
+
+    # Top referers
+    print("━━━ Top referers (visits) ━━━")
+    refs = conn.execute(
+        "SELECT COALESCE(referer, 'direct') AS ref, COUNT(*) AS c FROM external_share_visits "
+        "WHERE share_id = ? GROUP BY ref ORDER BY c DESC LIMIT 10",
+        (share["id"],),
+    ).fetchall()
+    if not refs:
+        print("  (no data)")
+    for r in refs:
+        print(f"  {r['c']:5}  {r['ref']}")
+
+    conn.close()
+
+
+if __name__ == "__main__":
+    main()

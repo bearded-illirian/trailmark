@@ -105,7 +105,7 @@ itself is missing.
 |---|---|
 | Agent launched outside project dir | `cd projects/<your-project>` first, then launch the agent |
 | `.claude/skills/` symlink broken | `ls -la projects/<name>/.claude/skills` — should resolve to `aihub/.claude/skills/`. Fix: `bin/new-project` (safe, idempotent) or recreate symlink manually |
-| Agent doesn't support Skill() invocation | Framework requires Claude Code (or any agent that supports `Skill('name')` calls). Standard chat agents don't work. |
+| Agent can't invoke a skill by name | The framework needs a runtime that loads a skill tree and invokes skills by name — Claude Code via `Skill('name')`, Codex via `$name`. Standard chat agents don't work. Full requirements: [`AGENT_CONTRACT.md`](./AGENT_CONTRACT.md). |
 | Skills folder empty | `ls aihub/.claude/skills/` — should show 18+ folders. If empty, run `bash bin/sync-from-aihub.sh` (or clone repo again). |
 
 ---

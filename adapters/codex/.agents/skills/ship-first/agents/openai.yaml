@@ -1,0 +1,5 @@
+# This skill deploys, pushes or takes over the execution loop. It runs only
+# when asked for by name ($ship-first) — never picked up implicitly from a
+# description match. See docs/AGENT_CONTRACT.md capability O2.
+policy:
+  allow_implicit_invocation: false

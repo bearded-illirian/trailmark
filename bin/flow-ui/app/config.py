@@ -29,6 +29,16 @@ class Paths:
     access_log: Path
     platform_db: Optional[Path] = None
     aihub_api_url: Optional[str] = None
+    partners_db: Optional[Path] = None
+    partner_content_root: Optional[Path] = None
+    # portals_root — новый корень для portals/{type}/{code}/ layout.
+    # Если задан, partners_api резолвит через portals_root/portal_type/folder_path.
+    # Fallback на partner_content_root если None (legacy dev setup).
+    portals_root: Optional[Path] = None
+    # External shares — public magic-link engine (task 664).
+    # Separate from partners: partners = trusted personal, shares = public wide-audience.
+    external_shares_db: Optional[Path] = None
+    external_shares_root: Optional[Path] = None
 
 
 @dataclass
@@ -116,6 +126,23 @@ def load_config(path: str | Path = "config.yml") -> Config:
     aihub_api_url_raw = paths_raw.get("aihub_api_url")
     aihub_api_url = aihub_api_url_raw or None  # empty string → None
 
+    partners_db_raw = paths_raw.get("partners_db")
+    partners_db = _expand(partners_db_raw) if partners_db_raw else None
+
+    partner_content_root_raw = paths_raw.get("partner_content_root")
+    partner_content_root = (
+        _expand(partner_content_root_raw) if partner_content_root_raw else None
+    )
+
+    portals_root_raw = paths_raw.get("portals_root")
+    portals_root = _expand(portals_root_raw) if portals_root_raw else None
+
+    external_shares_db_raw = paths_raw.get("external_shares_db")
+    external_shares_db = _expand(external_shares_db_raw) if external_shares_db_raw else None
+
+    external_shares_root_raw = paths_raw.get("external_shares_root")
+    external_shares_root = _expand(external_shares_root_raw) if external_shares_root_raw else None
+
     return Config(
         paths=Paths(
             routing_db=_expand(paths_raw["routing_db"]),
@@ -124,6 +151,11 @@ def load_config(path: str | Path = "config.yml") -> Config:
             access_log=_expand(paths_raw["access_log"]),
             platform_db=platform_db,
             aihub_api_url=aihub_api_url,
+            partners_db=partners_db,
+            partner_content_root=partner_content_root,
+            portals_root=portals_root,
+            external_shares_db=external_shares_db,
+            external_shares_root=external_shares_root,
         ),
         server=Server(
             host=server_raw.get("host", "127.0.0.1"),

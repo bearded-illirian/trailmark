@@ -30,6 +30,50 @@ Local usage is the default. If you want git-push auto-deploy to a VDS
 [`../../docs/AUTO_DEPLOY_RECIPE.md`](../../docs/AUTO_DEPLOY_RECIPE.md)
 in the framework workspace. Nothing here binds you to a specific host.
 
+## External Shares Engine (task 664)
+
+Public magic-link URLs for sharing folders of documents + assets
+externally, no auth required. Separate from partner portal.
+
+**Difference from partners:** partners = trusted personal (Sansan, Kirill),
+each with own portal + Flow Task engine kit. Shares = wide public audience
+(courses, guides, docs) — one-click magic URL, no personality, download-first.
+
+**Storage:**
+- `data/external_shares.db` — SQLite with 3 tables: `external_shares`
+  (id, code, title, token, folder_path, view_count, download_count),
+  `external_share_visits` (audit log per visit), `external_share_downloads`
+- `external-shares/{code}/` — folder with course/doc content (MD + assets)
+
+**Public URL:** `/share/{token}/` — HTML shell with sidebar tree + main
+pane rendering .md (marked.js) or inline image preview + «⬇ Скачать zip»
+button. Path rewriter: `![alt](./screens/x.png)` in MD → served via
+`/api/shares/{token}/asset?path=screens/x.png`.
+
+**API:**
+```
+GET /share/{token}/                         → HTML shell (+ log_visit)
+GET /api/shares/{token}/info                → metadata (title, counters)
+GET /api/shares/{token}/tree?path=X         → JSON file tree
+GET /api/shares/{token}/file?path=X         → text content (.md/.txt)
+GET /api/shares/{token}/asset?path=X        → binary (PNG/JPG/PDF/etc)
+GET /api/shares/{token}/zip                 → StreamingResponse zip (+ log_download)
+```
+
+**CLI:**
+```bash
+bin/create-share --code=my-course --title="My Course" \
+                 [--description=...] [--folder=...] [--expires-days=30]
+                 [--base-url=https://flow.vschk.online]
+
+bin/share-stats --code=my-course
+# → total counters + unique IPs + top-10 recent events + top referers
+```
+
+**Live:** https://flow.vschk.online/share/{token}/ — first record:
+«Как собрать свой VPN за 1 час» (course VPN from task
+vschk-platform--622-vpn-via-ai-coder-course).
+
 ## Endpoints
 
 ```

@@ -1,0 +1,18 @@
+{
+  "generated_by": "vschk-lab/scripts/sync-{kit,theme}.sh",
+  "kits": {
+    "task-engine": {
+      "version": "1.4.0",
+      "stack": "python-fastapi",
+      "synced_at": "2026-07-31T18:39:06Z",
+      "source_commit": "be44b1f"
+    }
+  },
+  "themes": {
+    "saffron-graphite": {
+      "version": "1.0.0",
+      "synced_at": "2026-07-31T10:49:19Z",
+      "source_commit": "0554621"
+    }
+  }
+}

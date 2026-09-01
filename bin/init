@@ -78,11 +78,26 @@ printf "  server_telegram_relay []: "
 read -r SERVER_TG_RELAY
 echo ""
 
+# 4. default_agent
+echo "── default agent ──"
+echo "  Which runtime new projects are wired for by default."
+echo "  claude — the only runtime the framework has been run on."
+echo "  codex  — experimental adapter, see adapters/codex/README.md."
+printf "  default_agent [claude]: "
+read -r DEFAULT_AGENT
+[ -z "$DEFAULT_AGENT" ] && DEFAULT_AGENT="claude"
+case "$DEFAULT_AGENT" in
+  claude|codex) ;;
+  *) echo "  Unknown agent '$DEFAULT_AGENT' — falling back to claude."; DEFAULT_AGENT="claude";;
+esac
+echo ""
+
 # ── Summary ──────────────────────────────────────────────────────────────
 echo "── Summary ──"
 echo "  paths.aihub_root         = $AIHUB_ROOT"
 echo "  env.server_primary       = ${SERVER_PRIMARY:-null}"
 echo "  env.server_telegram_relay = ${SERVER_TG_RELAY:-null}"
+echo "  defaults.agent           = $DEFAULT_AGENT"
 echo ""
 
 printf "Write to %s? [Y/n]: " "$TARGET"
@@ -94,6 +109,7 @@ esac
 # ── Compose and dump framework.yml ───────────────────────────────────────
 AIHUB_ROOT_ENV="$AIHUB_ROOT" SERVER_PRIMARY_ENV="$SERVER_PRIMARY" \
 SERVER_TG_RELAY_ENV="$SERVER_TG_RELAY" EXAMPLE_ENV="$EXAMPLE" \
+DEFAULT_AGENT_ENV="$DEFAULT_AGENT" \
 TARGET_ENV="$TARGET" python3 <<'PYEOF'
 import yaml, os
 
@@ -105,6 +121,7 @@ result = {
         "server_primary": os.environ["SERVER_PRIMARY_ENV"] or None,
         "server_telegram_relay": os.environ["SERVER_TG_RELAY_ENV"] or None,
     },
+    "defaults": {"agent": os.environ["DEFAULT_AGENT_ENV"]},
 }
 with open(os.environ["TARGET_ENV"], "w") as f:
     yaml.safe_dump(result, f, sort_keys=False, default_flow_style=False)

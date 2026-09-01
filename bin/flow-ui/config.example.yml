@@ -27,6 +27,26 @@ paths:
   # Access log SQLite (habit tracking — created on first write, per-user).
   access_log: ~/.flow-ui/access.db
 
+  # Partner registry SQLite (magic-link portal for partners — task 624).
+  # Created on first partner INSERT. Separate from routing.db (read-only).
+  partners_db: ~/.flow-ui/partners.db
+
+  # Root directory containing per-partner content folders (partner_code/*.md).
+  # Partners see only files inside their subfolder via magic-link URL.
+  partner_content_root: ../partner-content
+
+  # External shares — public magic-link engine (task 664, separate from partners).
+  # partners = trusted personal, shares = public wide-audience (courses, docs).
+  # DB tracks shares/visits/downloads. Folder contains per-share content.
+  external_shares_db: ../data/external_shares.db
+  external_shares_root: ../external-shares
+
+  # portals_root — new layout portals/{partners,school,client}/{code}/
+  # (task 651 block 500 portals refactor). When set, partners_api resolves
+  # per-partner folder via portals_root/portal_type/folder_path. Falls back
+  # to partner_content_root if null. Enable on prod after fs migration.
+  portals_root: null  # ../portals
+
   # Platform SSO DB (auth_sessions + platform_users). Optional. Left null,
   # the SSO middleware in app/auth.py does not activate. Middleware activates
   # only when both AUTH_MODE=platform env AND this path is set. See AUTH.md.

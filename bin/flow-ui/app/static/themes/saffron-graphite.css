@@ -1,0 +1,58 @@
+/*
+ * saffron-graphite.css — theme for vschk-lab
+ * v1.0.0 · 2026-07-31
+ *
+ * Palette:
+ *   brand = #F4A300 (saffron)
+ *   bg    = #0f1117 (graphite dark)
+ *
+ * Consumers:
+ *   - vschk-ai (aihub, blog, academy, vasechka umbrella)
+ *   - flow-ui  (партнёрский портал, задачи, файлы)
+ *
+ * Contract: THEMES_MANIFEST v1.0 — 11 mandatory vars + surface набор.
+ */
+
+:root {
+  /* Background */
+  --bg:                 #0f1117;
+  --bg-2:               #161b26;
+  --surface-elevated:   #1e2432;
+  --surface-sunken:     #0a0d14;
+
+  /* Text */
+  --text:               #e8eaf0;
+  --text-muted:         #8b93a8;
+
+  /* Brand */
+  --brand:              #F4A300;
+  --brand-hover:        #ffb833;
+
+  /* Semantic state */
+  --border:             #252b3a;
+  --danger:             #dc4a4a;
+  --success:            #22c55e;
+  --warning:            #f59e0b;
+  --link:               #3aa7e2;
+}
+
+/* Optional light-mode override — базовый инверт bg/text.
+   Подробная тонкая настройка light — планируется отдельно после MVP. */
+[data-theme="light"] {
+  --bg:                 #fafaf9;
+  --bg-2:               #ffffff;
+  --surface-elevated:   #ffffff;
+  --surface-sunken:     #f4f4f2;
+
+  --text:               #1a1a19;
+  --text-muted:         #6b7280;
+
+  --brand:              #F4A300;   /* saffron консистентен в обоих режимах */
+  --brand-hover:        #d68a00;
+
+  --border:             #e4e4e7;
+  --danger:             #dc2626;
+  --success:            #16a34a;
+  --warning:            #d97706;
+  --link:               #2563eb;
+}

@@ -233,3 +233,43 @@ class SkillsStatsOut(BaseModel):
     unused_90d: int
     top_used_30d: list[TopUsedItem]
     domain_coverage: list[DomainCoverage]
+
+
+# ── Galaxy graph (task vschk-flow-ui--649 block 1) ─────────────────────
+
+class GalaxyNodeOut(BaseModel):
+    id: str
+    label: str
+    type: str
+    project: Optional[str] = None
+    color: str
+    size: int
+    level: int
+    meta: dict[str, Any] = {}
+
+
+class GalaxyEdgeOut(BaseModel):
+    source: str
+    target: str
+    edge_type: str
+    color: str
+
+
+class GalaxyProjectOut(BaseModel):
+    id: str
+    name: str
+    color: str
+
+
+class GalaxyMetaOut(BaseModel):
+    level: int
+    node_count: int
+    edge_count: int
+    project_count: int
+    projects: list[GalaxyProjectOut] = []
+
+
+class GalaxyGraphOut(BaseModel):
+    nodes: list[GalaxyNodeOut]
+    edges: list[GalaxyEdgeOut]
+    meta: GalaxyMetaOut

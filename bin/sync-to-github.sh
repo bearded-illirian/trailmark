@@ -35,6 +35,22 @@ SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_SLUG="${GH_REPO_SLUG:-bearded-illirian/trailmark}"
 REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO_SLUG}.git"
 
+# ── Pre-flight: generated trees must match their source ──────────────────
+# Runs before the clone, so a refusal leaves no temp directory behind.
+# The adapter tree is generated; publishing a stale or hand-edited one ships
+# skills that differ from the source they claim to come from.
+if [ -x "$SCRIPT_DIR/build-codex-adapter.sh" ]; then
+  if ! bash "$SCRIPT_DIR/build-codex-adapter.sh" --check > /dev/null 2>&1; then
+    echo "❌ Codex adapter tree is stale or edited by hand — refusing to publish."
+    echo ""
+    bash "$SCRIPT_DIR/build-codex-adapter.sh" --check || true
+    echo ""
+    echo "Rebuild, review the diff, then publish:"
+    echo "  bash bin/build-codex-adapter.sh"
+    exit 1
+  fi
+fi
+
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 TEMP_DIR="/tmp/framework-mirror-${TS//[:]/}"
 

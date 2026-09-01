@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""
+bin/create-share — CLI for creating a new external share.
+
+Usage:
+  bin/create-share --code=my-course --title="My Course" [--description=...] [--folder=...] [--expires-days=30]
+
+Prints the public share URL on success.
+"""
+
+import argparse
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+# Add project root to path so we can import app.*
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from app.config import load_config
+from app.shares import create_share
+
+
+def main():
+    p = argparse.ArgumentParser(description="Create a new external share (magic-link).")
+    p.add_argument("--code", required=True, help="URL-safe slug (a-z0-9-)")
+    p.add_argument("--title", required=True, help="Human-readable title")
+    p.add_argument("--description", default=None, help="Short description (optional)")
+    p.add_argument("--folder", default=None, help="Folder name under external-shares/ (default: same as code)")
+    p.add_argument("--expires-days", type=int, default=None, help="Expiry in days (default: never)")
+    p.add_argument("--base-url", default="http://localhost:8765", help="Base URL for output")
+    args = p.parse_args()
+
+    cfg_path = _ROOT / "config.yml"
+    if not cfg_path.exists():
+        cfg_path = _ROOT / "config.example.yml"
+    cfg = load_config(cfg_path)
+
+    if not cfg.paths.external_shares_db:
+        print("ERROR: external_shares_db not configured in config.yml", file=sys.stderr)
+        sys.exit(1)
+
+    expires_at = None
+    if args.expires_days:
+        expires_at = (datetime.utcnow() + timedelta(days=args.expires_days)).strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        share = create_share(
+            db_path=cfg.paths.external_shares_db,
+            code=args.code,
+            title=args.title,
+            description=args.description,
+            folder_path=args.folder or args.code,
+            expires_at=expires_at,
+        )
+    except Exception as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"✅ Share created: {args.code}")
+    print(f"   Title:       {share['title']}")
+    print(f"   Token:       {share['token']}")
+    print(f"   Folder:      {share['folder_path']}")
+    if expires_at:
+        print(f"   Expires at:  {expires_at} UTC")
+    print()
+    print(f"   URL: {args.base_url}/share/{share['token']}/")
+    print()
+    print(f"   Don't forget to populate the folder:")
+    if cfg.paths.external_shares_root:
+        target = Path(cfg.paths.external_shares_root) / share["folder_path"]
+        print(f"   → {target}")
+    else:
+        print(f"   (external_shares_root not configured)")
+
+
+if __name__ == "__main__":
+    main()

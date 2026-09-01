@@ -28,6 +28,15 @@ jobs:
       - name: Run verify-contract.sh
         run: bash bin/verify-contract.sh
 
+      # The Codex adapter tree under adapters/ is generated from the skills,
+      # not maintained by hand. Committing it keeps the port browsable and
+      # usable where the bash generator cannot run (see issue #2), but a
+      # committed build output drifts unless something checks. A hand edit
+      # there would otherwise survive until the next rebuild and then vanish
+      # without a trace — the loudest place to catch that is here.
+      - name: Verify Codex adapter tree is current
+        run: bash bin/build-codex-adapter.sh --check
+
       - name: Verify manifest.yml is parseable
         run: |
           python3 -c "

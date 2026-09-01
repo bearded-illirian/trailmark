@@ -1,0 +1,125 @@
+#!/bin/bash
+# parity-run — check that a completed run satisfies a fixture's contract.
+#
+#   bash bin/parity-run <fixture-dir> <log-dir> [routing-db]
+#
+# The runner does NOT drive the agent. A shell script cannot make Claude Code
+# or Codex execute a protocol — that part is yours. Hand `input.md` to the
+# agent under test, let the chain run, then point this at the log directory
+# the run produced.
+#
+# Assertions are structural: a file exists, the sections it must carry, the row
+# it registered, the gate it offered. Prose is never compared, because two
+# runtimes never word an artifact the same way and a fixture that compares text
+# is red from day one.
+#
+# Exit 0 — every assertion passed. Exit 1 — at least one failed.
+#
+# See fixtures/README.md for the expect.yml keys.
+
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+FIXTURE="${1:-}"
+LOG_DIR="${2:-}"
+ROUTING_DB="${3:-$ROOT/tasks/routing.db}"
+
+if [ -z "$FIXTURE" ] || [ -z "$LOG_DIR" ]; then
+  echo "usage: bash bin/parity-run <fixture-dir> <log-dir> [routing-db]"
+  echo "example: bash bin/parity-run fixtures/plan-first/001-add-endpoint tasks/log/2026-01-15-demo-cms--001-post-editor-fix"
+  exit 2
+fi
+
+[ -f "$FIXTURE/expect.yml" ] || { echo "❌ no expect.yml in $FIXTURE"; exit 2; }
+[ -d "$LOG_DIR" ] || { echo "❌ log dir not found: $LOG_DIR"; exit 2; }
+
+FIXTURE="$FIXTURE" LOG_DIR="$LOG_DIR" ROUTING_DB="$ROUTING_DB" python3 <<'PYEOF'
+import os, re, glob, sqlite3, sys
+
+fixture = os.environ["FIXTURE"]
+log_dir = os.environ["LOG_DIR"]
+routing_db = os.environ["ROUTING_DB"]
+
+# expect.yml is a flat mapping with one nested list — parsed directly rather
+# than pulling in PyYAML, which the framework does not otherwise require.
+expect, key = {}, None
+for raw in open(os.path.join(fixture, "expect.yml"), encoding="utf-8"):
+    line = raw.rstrip("\n")
+    if not line.strip() or line.lstrip().startswith("#"):
+        continue
+    if line.startswith("  - "):
+        expect.setdefault(key, []).append(line[4:].strip().strip('"'))
+        continue
+    if ":" in line:
+        key, _, value = line.partition(":")
+        key, value = key.strip(), value.strip().strip('"')
+        expect[key] = value if value else []
+
+results = []
+def check(name, ok, detail=""):
+    results.append((name, ok, detail))
+
+# ── artifact_exists ──────────────────────────────────────────────────────
+pattern = expect.get("artifact", "")
+matches = sorted(glob.glob(os.path.join(log_dir, pattern))) if pattern else []
+check("artifact_exists", bool(matches),
+      os.path.basename(matches[-1]) if matches else f"no file matching {pattern!r}")
+
+body = ""
+if matches:
+    body = open(matches[-1], encoding="utf-8").read()
+
+# ── sections ─────────────────────────────────────────────────────────────
+for section in expect.get("sections", []):
+    check(f"section {section!r}", section in body,
+          "present" if section in body else "missing")
+
+# ── gate ─────────────────────────────────────────────────────────────────
+gate = expect.get("gate", "")
+if isinstance(gate, str) and gate:
+    check("approval_gate", gate.lower() in body.lower(),
+          "found" if gate.lower() in body.lower() else f"no {gate!r} in artifact")
+
+# ── min_table_rows ───────────────────────────────────────────────────────
+if expect.get("min_table_rows"):
+    minimum = int(expect["min_table_rows"])
+    rows = [l for l in body.splitlines()
+            if l.startswith("|") and not re.match(r"^\|[\s|:-]+\|$", l)]
+    data_rows = max(len(rows) - 1, 0)          # minus the header row
+    check(f"table has >= {minimum} rows", data_rows >= minimum, f"{data_rows} rows")
+
+# ── db_row ───────────────────────────────────────────────────────────────
+atype = expect.get("artifact_type", "")
+if atype:
+    if not os.path.exists(routing_db):
+        check("db_row", False, f"routing.db not found at {routing_db}")
+    else:
+        con = sqlite3.connect(f"file:{routing_db}?mode=ro", uri=True)
+        task_id = os.path.basename(os.path.normpath(log_dir))
+        task_id = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", task_id)
+        n = con.execute(
+            "SELECT COUNT(*) FROM task_artifacts "
+            "WHERE task_id = ? AND artifact_type = ?", (task_id, atype)).fetchone()[0]
+        con.close()
+        check("db_row", n > 0,
+              f"{n} row(s) for artifact_type={atype!r}" if n
+              else f"no row for {task_id!r} / {atype!r}")
+
+# ── report ───────────────────────────────────────────────────────────────
+print("════════════════════════════════════════════")
+print(f"parity-run  fixture: {fixture}")
+print(f"            log dir: {log_dir}")
+print("════════════════════════════════════════════")
+failed = 0
+for name, ok, detail in results:
+    mark = "✅" if ok else "❌"
+    print(f"{mark} {name:<34} {detail}")
+    failed += 0 if ok else 1
+print("── Summary ──")
+print(f"Assertions:  {len(results)}")
+print(f"Failed:      {failed}")
+print("✅ parity holds" if failed == 0 else "❌ parity broken")
+sys.exit(1 if failed else 0)
+PYEOF

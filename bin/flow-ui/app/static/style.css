@@ -64,6 +64,546 @@ button {
 }
 .topbar .logo .dot { color: var(--fg); margin: 0 2px; }
 
+/* Print button — right side of topbar */
+/* Обе кнопки прижимает вправо контейнер, а не каждая сама: с margin-left:auto
+   на каждой первая уезжала в середину строки, вторая к краю. */
+.topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.print-btn {
+  background: rgba(244, 163, 0, 0.15);
+  color: var(--brand, #F4A300);
+  border: 1px solid rgba(244, 163, 0, 0.45);
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+/* Кнопка «Скачать» — это ссылка, а не button: скачивание делает браузер по
+   атрибуту download, наш код в этом не участвует. Приводим её к виду соседних
+   кнопок (блок 71050 задачи 695). display задан здесь, чтобы показ через
+   style.display = "" возвращал именно inline-block, а не inline. */
+a.print-btn { text-decoration: none; display: inline-block; }
+
+/* Ожидание при открытии материала (блок 71060 задачи 695).
+   Своего спиннера у портала не было — ожидание показывалось словом «Загрузка…».
+   Стало заметно: файл тянется из облака через нас, документ ещё и превращается
+   в текст на лету.
+   Слово рядом с кругом оставлено намеренно: молчащий круг на медленном
+   соединении читается как «сломалось». */
+.load-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+}
+.load-spin {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(244, 163, 0, 0.25);
+  border-top-color: var(--brand, #F4A300);
+  border-radius: 50%;
+  animation: load-spin 0.7s linear infinite;
+  flex: none;
+}
+@keyframes load-spin { to { transform: rotate(360deg); } }
+
+/* У части людей вращение вызывает физический дискомфорт. Оставляем знак, но
+   без движения. */
+@media (prefers-reduced-motion: reduce) {
+  .load-spin { animation: none; border-top-color: rgba(244, 163, 0, 0.6); }
+}
+
+.print-btn:hover { background: rgba(244, 163, 0, 0.28); }
+.print-btn:active { background: rgba(244, 163, 0, 0.4); }
+
+/* ─── Навигация узкого экрана: пилюля + шторка ─────────────────────────────
+   Задача 718, блок 20130. Форма и материал — из утверждённой схемы задачи 704
+   (ui-scheme.md, раздел «Спецификация 1 в 1»). Цвета НЕ оттуда: там синяя
+   гамма neuro, здесь остаётся шафрановая гамма Экстранета, ни один
+   существующий токен не тронут.
+
+   Почему пилюля, а не полоса впритык — цитата из той же схемы: «у полосы,
+   прижатой к трём краям, нет границ — мозг читает её как рамку приложения,
+   а не как предмет поверх контента. Размытие без отделения от краёв не
+   работает». Полоса тут и была до этой правки.
+
+   На десктопе всё скрыто — см. правило ниже в @media.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Стекло на шафрановой основе: подложка от --bg #04070d, кромка и блик от
+     брендового шафрана. Значения из neuro glass.css сознательно не копируем —
+     там другой фон и синяя кромка. */
+  --glass:      rgba(10, 15, 26, 0.72);
+  --glass-solid: #0d1420;                    /* запасной вид без размытия */
+  --pill-line:  rgba(244, 163, 0, 0.30);
+  --pill-spec:  rgba(244, 163, 0, 0.55);     /* блик по кромке */
+  --pill-shadow: 0 8px 26px rgba(0, 0, 0, 0.34);
+}
+
+#mobile-nav-bar { display: none; }
+
+#mobile-nav-pill,
+#mobile-nav-sheet {
+  background: var(--glass-solid);
+  border: 1px solid var(--pill-line);
+  box-shadow: var(--pill-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Размытие — только там, где браузер его умеет. Без @supports панель на
+   старом движке осталась бы полупрозрачной, и текст под ней слился бы
+   с текстом на ней. Префикс -webkit- обязателен: Safari без него не
+   применяет фильтр вовсе. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  #mobile-nav-pill,
+  #mobile-nav-sheet {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+  }
+}
+
+/* Блик по кромке — псевдоэлементом и НЕ во всю ширину: поля 14px, иначе
+   линия упирается в углы и читается как рамка. */
+#mobile-nav-pill::before,
+#mobile-nav-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pill-spec) 28%, var(--pill-spec) 72%, transparent);
+  pointer-events: none;
+}
+
+#mobile-nav-pill {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 26px;
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+#mobile-nav-pill:active { border-color: var(--border-strong); }
+
+.mobile-nav-current {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 6px;
+}
+
+.mobile-nav-caret {
+  flex: none;
+  width: 10px;
+  height: 7px;
+  margin-right: 8px;
+  background: var(--brand);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transition: transform 0.18s ease;
+}
+#mobile-nav-pill[aria-expanded="true"] .mobile-nav-caret { transform: rotate(180deg); }
+
+#mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  background: rgba(0, 0, 0, 0.45);
+  /* Затемнение перехватывало клики, но пропускало сквозь себя тач-жест, и
+     страница ехала под открытой шторкой. Задача 718, блок 20140. */
+  touch-action: none;
+}
+#mobile-nav-backdrop[hidden],
+#mobile-nav-sheet[hidden] { display: none; }
+
+#mobile-nav-sheet {
+  position: fixed;
+  z-index: 25;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  /* 70vh, а не 58vh: семь записей при 58vh обрывались ровно на второй группе,
+     и договор со счётом становились недоступны с телефона. Ограничение всё же
+     остаётся — без него шторка на длинном списке закрыла бы пилюлю, и закрыть
+     её стало бы нечем. Задача 718, блок 20140. */
+  max-height: 70vh;
+  padding: 8px;
+  border-radius: 26px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Жест не протекает наружу ни на краях списка, ни когда скроллить нечего. */
+  overscroll-behavior: contain;
+}
+
+/* Список продолжается за нижней кромкой — тем же приёмом, что блик на кромке
+   пилюли выше. Класс ставит markSheetOverflow в partner.js, поэтому на коротком
+   списке градиента нет и лишней тени не появляется. */
+/* Кромка «список обрезан здесь». Градиент ниже гасит текст обрезанной строки,
+   но сам невидим — он цвета самой шторки. Линия существующим токеном делает
+   обрыв различимым, не вводя нового цвета. */
+#mobile-nav-sheet.has-more {
+  box-shadow: inset 0 -1px 0 var(--pill-line);
+}
+
+#mobile-nav-sheet.has-more::after {
+  content: "";
+  position: sticky;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  display: block;
+  height: 28px;
+  margin: -28px -8px -8px;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--glass-solid), transparent);
+  border-bottom-left-radius: 26px;
+  border-bottom-right-radius: 26px;
+}
+
+.mobile-nav-list { display: flex; flex-direction: column; gap: 2px; }
+
+/* Папка — заголовок группы, не строка выбора: содержимое уже раскрыто. */
+.mobile-nav-group {
+  padding: 10px 14px 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Активный — скруглённой пилюлей, а не подсветкой во всю ширину. */
+.mobile-nav-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.mobile-nav-item.is-active {
+  background: rgba(244, 163, 0, 0.14);
+  border-color: var(--pill-line);
+  font-weight: 600;
+}
+.mobile-nav-item:active { background: rgba(244, 163, 0, 0.08); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-caret { transition: none; }
+}
+
+/* Mobile layout — max-width: 768px covers phones + iPad portrait */
+@media (max-width: 768px) {
+  /* Ширина в процентах, а не в 100vw. В Chromium единица vw считается ВКЛЮЧАЯ
+     вертикальную полосу прокрутки: на вьюпорте 390 это давало 399, документ
+     оказывался на 9px шире клиентской области, и страница ёрзала вбок.
+     Проценты берут ширину родителя без полосы. Задача 718, блок 20130. */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  main.split, .right-panel, .content, .md-content {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Force text wrapping — no more cut-off strings on the right */
+  .md-content, .md-content * {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+  }
+  .md-content pre, .md-content code {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .md-content img { max-width: 100%; height: auto; }
+
+  /* Hide desktop-only shell parts */
+  aside.left-panel, .print-btn, .tabs { display: none !important; }
+
+  /* Single column stack */
+  .split {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+  .right-panel {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Compact topbar */
+  .topbar { padding: 0 10px; gap: 8px; }
+  .topbar .logo { font-size: 13px; }
+  #partner-name { font-size: 13px; margin-left: 10px !important; }
+
+  /* Плавающая пилюля — зона большого пальца сохранена, но панель больше не
+     прижата к трём краям: поля 12px по бокам и 14px снизу делают её предметом
+     поверх контента, а не рамкой приложения (схема задачи 704). Вырез экрана
+     учитывается через env() — как и в прежней полосе. */
+  #mobile-nav-bar {
+    display: block !important;
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    /* Выше подложки (24) и шторки (25): иначе затемнение накрывает пилюлю, её
+       собственный обработчик недостижим, и каретка вверх-вниз врёт. Спатиально
+       пилюля и шторка не пересекаются, поэтому конфликта нет. Блок 20140. */
+    z-index: 26;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Шторка поднимается над пилюлей и тоже учитывает вырез. */
+  #mobile-nav-sheet {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Контент уходит ПОД панель — 78px снизу по схеме 704 (было 90 у полосы,
+     которая занимала больше места). Верх не трогаем: шапка тут не плавающая. */
+  .right-panel, .content { padding-bottom: 78px !important; }
+
+  /* Content padding + readable font sizes */
+  .content, .md-content { padding: 12px !important; }
+  body { font-size: 15px; }
+  .md-content { font-size: 15px; line-height: 1.5; }
+  .md-content h1 { font-size: 22px; line-height: 1.3; }
+  .md-content h2 { font-size: 18px; line-height: 1.3; }
+  .md-content h3 { font-size: 16px; line-height: 1.3; }
+  .md-content ul, .md-content ol { padding-left: 24px; }
+
+  /* Tables — wrap long cell text, keep min-width so columns stay readable.
+     Horizontal scroll kicks in only when total min-width exceeds viewport. */
+  .md-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: normal;
+  }
+  .md-content table th, .md-content table td {
+    font-size: 13px;
+    padding: 6px 8px;
+    min-width: 88px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    vertical-align: top;
+  }
+  /* First column often used for #/id — keep it narrow */
+  .md-content table th:first-child, .md-content table td:first-child {
+    min-width: 32px;
+  }
+  .md-content pre { overflow-x: auto; }
+
+  /* Media viewers — mobile-friendly adjustments (task 677 block 3) */
+  .media-pdf {
+    min-height: 60vh;
+  }
+  .media-image {
+    max-height: 70vh;
+  }
+  .media-video {
+    max-height: 70vh;
+  }
+  .media-download {
+    padding: 1.5em 1em;
+  }
+  .media-download-btn {
+    padding: 0.8em 1.6em;
+    font-size: 15px;
+    min-width: 60vw;
+  }
+}
+
+/* Print mode — hide shell UI, show only file content on white paper */
+@media print {
+  header.topbar,
+  aside.left-panel,
+  #tasks-sidebar,
+  #tasks-panel,
+  #mobile-nav-bar { display: none !important; }
+  body, main.split, section.right-panel {
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  section.right-panel { padding: 0 !important; width: 100% !important; }
+  #content,
+  .md-content, .markdown-body, .material-md {
+    background: #fff !important;
+    color: #000 !important;
+    padding: 20px !important;
+    max-width: 100% !important;
+    font-size: 11.5pt !important;
+    line-height: 1.5 !important;
+  }
+  :is(.md-content, .markdown-body, .material-md) :is(p, ul, ol, blockquote) {
+    max-width: 100% !important;
+  }
+  :is(.md-content, .markdown-body, .material-md) :is(h1, h2, h3, h4, h5, h6) {
+    color: #000 !important;
+    border-color: #999 !important;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  :is(.md-content, .markdown-body, .material-md) h1 { font-size: 20pt !important; }
+  :is(.md-content, .markdown-body, .material-md) h2 { font-size: 15pt !important; }
+  :is(.md-content, .markdown-body, .material-md) h3 { font-size: 13pt !important; }
+  :is(.md-content, .markdown-body, .material-md) table {
+    display: table !important;
+    width: 100% !important;
+    overflow: visible !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border-collapse: collapse;
+    border-radius: 0 !important;
+    font-size: 10pt !important;
+  }
+  :is(.md-content, .markdown-body, .material-md) :is(th, td) {
+    border: 1px solid #333 !important;
+    padding: 6px 10px !important;
+    color: #000 !important;
+    background: transparent !important;
+  }
+  :is(.md-content, .markdown-body, .material-md) th {
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-size: 10pt !important;
+  }
+  :is(.md-content, .markdown-body, .material-md) blockquote {
+    border-left: 3px solid #666 !important;
+    padding-left: 12px !important;
+    color: #000 !important;
+    background: transparent !important;
+    page-break-inside: avoid;
+  }
+  :is(.md-content, .markdown-body, .material-md) :is(pre, img) {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  :is(.md-content, .markdown-body, .material-md) :is(pre, code) {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+    border-color: #ccc !important;
+  }
+  :is(.md-content, .markdown-body, .material-md) a {
+    color: #000 !important;
+    text-decoration: underline;
+    border-bottom: none !important;
+  }
+  :is(.md-content, .markdown-body, .material-md) a[href^="http"]:after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+    color: #444;
+  }
+  :is(.md-content, .markdown-body, .material-md) li::marker { color: #000 !important; }
+
+  /* Библиотека блоков документа (task 698 block 2) */
+  .doc-page { --doc-gap: 22px; color: #000 !important; font-size: 11.5pt !important; }
+  .doc-page :is(.doc-hero__title, .doc-section__title, .doc-cards__title,
+                .doc-criteria__name, .doc-stage__when, .doc-steps__title,
+                .doc-zone__name, .doc-table__title) {
+    color: #000 !important; page-break-after: avoid; break-after: avoid;
+  }
+  .doc-hero__title { font-size: 20pt !important; }
+  .doc-section__title { font-size: 15pt !important; }
+  .doc-hero { border-bottom-color: #999 !important; }
+  .doc-hero__kicker, .doc-section__eyebrow, .doc-hero__chip,
+  .doc-kpi__label, .doc-stage__label, .doc-files__meta,
+  .doc-image__caption, .doc-table__caption, .doc-quote__author,
+  .doc-zone__where, .doc-zones__link-text { color: #444 !important; }
+  .doc-hero__lead, .doc-cards__body, .doc-criteria__why, .doc-steps__body { color: #222 !important; }
+
+  /* Сетки разворачиваем в одну колонку — на A4 три карточки в ряд нечитаемы */
+  .doc-cards, .doc-criteria, .doc-kpi, .doc-stages {
+    display: block !important; border: none !important; background: none !important;
+  }
+  .doc-cards__item, .doc-criteria__item, .doc-kpi__item, .doc-stage {
+    background: none !important; border: 1px solid #999 !important;
+    margin-bottom: 8px !important; border-radius: 0 !important;
+    page-break-inside: avoid; break-inside: avoid;
+  }
+  .doc-kpi__value { color: #000 !important; font-size: 16pt !important; }
+
+  .doc-zone, .doc-zone__step, .doc-files__item, .doc-steps__item {
+    page-break-inside: avoid; break-inside: avoid;
+    background: none !important; border-color: #999 !important;
+  }
+  .doc-zone__head, .doc-stage__head { background: none !important; border-bottom: 1px solid #999 !important; }
+  .doc-zone__tag, .doc-stage__n, .doc-steps__item::before { color: #000 !important; }
+  .doc-zone__foot { color: #333 !important; border-top: 1px solid #999 !important; }
+  .doc-zones__bar { background: #999 !important; }
+
+  .doc-callout {
+    background: none !important; border-left: 3px solid #666 !important;
+    border-radius: 0 !important; page-break-inside: avoid;
+  }
+  .doc-callout__label { color: #000 !important; }
+  .doc-quote { border-left-color: #999 !important; page-break-inside: avoid; }
+  .doc-image, .doc-table { page-break-inside: avoid; break-inside: avoid; }
+  .doc-image img { border-color: #999 !important; }
+  .doc-table__wrap { overflow: visible !important; border: none !important; border-radius: 0 !important; }
+  .doc-table__wrap :is(th, td) { border: 1px solid #333 !important; color: #000 !important; background: none !important; }
+  .doc-table__wrap th { text-transform: none !important; letter-spacing: 0 !important; }
+  .doc-meta {
+    display: block !important; border: none !important; background: none !important;
+    page-break-inside: avoid; break-inside: avoid;
+  }
+  .doc-meta__item {
+    background: none !important; border: none !important;
+    display: inline-block; width: 32%; vertical-align: top;
+    padding: 4px 8px 4px 0 !important;
+  }
+  .doc-meta__label { color: #444 !important; }
+  .doc-meta__value { color: #000 !important; }
+  .doc-cards__list li { color: #222 !important; }
+  .doc-cards__list li::before { background: #666 !important; }
+  .doc-steps--plain .doc-steps__item::before { background: #000 !important; }
+  .doc-next {
+    background: none !important; border: 1px solid #999 !important;
+    border-left: 3px solid #666 !important; box-shadow: none !important;
+    page-break-inside: avoid; break-inside: avoid;
+  }
+  .doc-next__label { color: #000 !important; }
+  .doc-next__when { color: #000 !important; font-size: 14pt !important; }
+  .doc-next__body { color: #222 !important; }
+  .doc-switch, #copy-btn { display: none !important; }
+  .doc-stale { border-left: 3px solid #666 !important; background: none !important; }
+  .doc-divider { border-top-color: #999 !important; }
+}
+
 #project-selector {
   background: var(--surface-2);
   color: var(--fg);
@@ -77,8 +617,24 @@ button {
 #project-selector:hover { border-color: var(--border-strong); }
 #project-selector:focus { outline: none; border-color: var(--brand); }
 
-.stats-badge {
+.galaxy-badge {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 13px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.galaxy-badge:hover { border-color: #F4A300; background: rgba(244, 163, 0, 0.08); }
+.galaxy-badge .badge-label { font-weight: 600; color: #F4A300; letter-spacing: 0.02em; }
+
+.stats-badge {
+  margin-left: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -130,10 +686,29 @@ button {
   min-height: 0;
 }
 
+/* 60065: hide tree + breadcrumb под Аналитикой/Настройками (Personal Flow) */
+.left-panel.no-tree .tree,
+.left-panel.no-tree .breadcrumb {
+  display: none;
+}
+
 .right-panel {
   background: var(--bg);
   overflow: auto;
   min-height: 0;
+  /* min-width: 0 обязателен: панель это элемент grid-раскладки, а у такого
+     элемента по умолчанию min-width: auto — он отказывается сжиматься уже
+     ниже минимальной ширины своего содержимого. Широкая таблица внутри
+     документа тянула панель за собой (замерено: 492px при вьюпорте 393), и
+     текст уходил за правый край. Заметно это не было, потому что
+     overflow-x: hidden на html/body молча обрезает вылезшее — ни полосы
+     прокрутки, ни намёка, просто отсутствующие слова.
+
+     С нулём панель остаётся по ширине экрана, а таблица скроллится внутри
+     своей обёртки .doc-table__wrap, у которой overflow-x: auto и был для
+     этого предусмотрен. Найдено 26.08 на тезисах эфира с таблицей прайса из
+     трёх колонок (задача 718, блок 20110). */
+  min-width: 0;
 }
 
 /* ── Tabs ───────────────────────────────────────────────── */
@@ -217,6 +792,37 @@ button {
 .crumbs a:hover { color: var(--brand); }
 .crumbs .sep { color: var(--muted); opacity: 0.5; }
 
+/* ── Breadcrumb (partner portal navigation) ─────────────── */
+
+.breadcrumb {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.breadcrumb a {
+  color: var(--brand);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+.breadcrumb a:hover {
+  background: var(--surface-2);
+  text-decoration: underline;
+}
+.breadcrumb-sep {
+  color: var(--muted);
+  padding: 0 2px;
+}
+.breadcrumb:empty {
+  display: none;
+}
+
 /* ── Tree ───────────────────────────────────────────────── */
 
 .tree {
@@ -224,6 +830,13 @@ button {
   padding: 4px 0;
   flex: 1;
   min-height: 0;
+}
+
+.tree-item.is-dir {
+  font-weight: 600;
+}
+.tree-item.is-dir:hover {
+  border-left-color: var(--brand);
 }
 
 .tree-item {
@@ -246,6 +859,12 @@ button {
   border-left-color: var(--brand);
   color: var(--brand);
 }
+/* Раскрытая папка. Отступ вложенности ставится из кода — глубина известна
+   только при обходе дерева (задача 706, блок 232). */
+.tree-item.is-open > .tree-icon { opacity: 1; }
+.tree-item[data-depth="1"] .tree-name,
+.tree-item[data-depth="2"] .tree-name { color: var(--fg-muted, inherit); }
+
 .tree-item[data-type="dir"] { font-weight: 600; }
 .tree-item[data-type="dir"] .icon::before { content: "📁 "; }
 .tree-item[data-type="file"] .icon::before { content: "📄 "; }
@@ -272,80 +891,190 @@ button {
   line-height: 1.5;
 }
 
+/* ── Full-width override for media viewers (task 677 block 5.6) ────────
+   .content обычно max-width 900px + padding 40px для оптимальной читаемости
+   .md текста. Для PDF/img/audio/video это избыточно — им нужна вся ширина
+   панели чтобы iframe/img не был зажат до 820px посреди пустоты.
+   :has() browser support — Chrome 105+ / Safari 15.4+ / Firefox 121+ (все 2022-2023).
+*/
+.content:has(.media-pdf),
+.content:has(.media-image),
+.content:has(.media-video),
+.content:has(.media-audio) {
+  max-width: none;
+  padding: 8px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Media elements fill full container height (round 2 of block 5.6).
+   Override existing `.media-pdf { min-height: 70vh }` from block 3
+   with `min-height: 0` so `height: 100%` actually applies.
+   .media-audio not overridden — native player is 40px, стретч не нужен.
+
+   Пол высоты вернули 26.08 (задача 718). Ноль здесь ставился, чтобы заработал
+   height: 100%, но у панели на узком экране высота НЕОПРЕДЕЛЁННАЯ — она сама
+   растёт по содержимому. Для текста это нормально, а встраиваемому объекту
+   заполнять нечего: 100% не разрешается, страховки нет, и счёт открывался
+   окошком 156px при экране 852, с 636 пикселями пустоты под ним.
+   Замерено: с полом 70vh iframe становится 602px. На широком экране, где
+   высота панели определена, height: 100% по-прежнему выигрывает у пола. */
+.content:has(.media-pdf) .media-pdf,
+.content:has(.media-video) .media-video {
+  height: 100%;
+  min-height: 70vh;
+  max-height: none;
+}
+.content:has(.media-image) .media-image {
+  max-height: 100%;
+}
+
 /* ── Markdown rendered content ──────────────────────────── */
+/* Селектор покрывает три обёртки: .md-content (Экстранет + Flow UI),
+   .markdown-body (Personal Flow), .material-md (материалы портала).
+   До 2026-08-19 стили были только у первой — task 698 block 1. */
 
-.md-content {
-  font-size: 15px;
-  line-height: 1.65;
+:root {
+  --doc-display: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --doc-body: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --doc-mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --doc-measure: 68ch;
+}
+
+.md-content,
+.markdown-body,
+.material-md {
+  font-family: var(--doc-body);
+  font-size: 16.5px;
+  line-height: 1.7;
   color: var(--fg);
 }
-.md-content > *:first-child { margin-top: 0; }
-.md-content > *:last-child { margin-bottom: 0; }
+.md-content > *:first-child,
+.markdown-body > *:first-child,
+.material-md > *:first-child { margin-top: 0; }
+.md-content > *:last-child,
+.markdown-body > *:last-child,
+.material-md > *:last-child { margin-bottom: 0; }
 
-.md-content h1,
-.md-content h2,
-.md-content h3,
-.md-content h4,
-.md-content h5,
-.md-content h6 {
-  margin: 28px 0 12px;
+/* Заголовки — шкала 1.25, дисплейная гарнитура */
+:is(.md-content, .markdown-body, .material-md) :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--doc-display);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+  text-wrap: balance;
+  margin: 2em 0 0.6em;
+}
+:is(.md-content, .markdown-body, .material-md) h1 {
+  font-size: 34px;
   font-weight: 700;
-  line-height: 1.25;
-  color: var(--fg);
+  letter-spacing: -0.025em;
+  color: var(--brand);
+  margin-top: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
-.md-content h1 { font-size: 28px; color: var(--brand); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-.md-content h2 { font-size: 22px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-.md-content h3 { font-size: 18px; }
-.md-content h4 { font-size: 16px; }
-.md-content h5 { font-size: 15px; color: var(--muted); }
-.md-content h6 { font-size: 14px; color: var(--muted); }
+:is(.md-content, .markdown-body, .material-md) h2 {
+  font-size: 25px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+:is(.md-content, .markdown-body, .material-md) h3 { font-size: 20px; }
+:is(.md-content, .markdown-body, .material-md) h4 { font-size: 17.5px; }
+:is(.md-content, .markdown-body, .material-md) h5 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+:is(.md-content, .markdown-body, .material-md) h6 {
+  font-size: 13px;
+  color: var(--muted);
+}
 
-.md-content p { margin: 12px 0; }
+/* Ритм текста */
+:is(.md-content, .markdown-body, .material-md) p {
+  margin: 0 0 1.1em;
+  max-width: var(--doc-measure);
+}
+:is(.md-content, .markdown-body, .material-md) :is(ul, ol, blockquote) {
+  max-width: var(--doc-measure);
+}
+:is(.md-content, .markdown-body, .material-md) :is(ul, ol) {
+  margin: 1.1em 0;
+  padding-left: 1.6em;
+}
+:is(.md-content, .markdown-body, .material-md) li { margin: 0.45em 0; }
+:is(.md-content, .markdown-body, .material-md) li > p { margin: 0.4em 0; }
+:is(.md-content, .markdown-body, .material-md) :is(ul, ol) :is(ul, ol) { margin: 0.45em 0; }
+:is(.md-content, .markdown-body, .material-md) li::marker { color: var(--brand); }
 
-.md-content a {
+:is(.md-content, .markdown-body, .material-md) a {
   color: var(--brand);
   text-decoration: none;
-  border-bottom: 1px dashed transparent;
-  transition: border-color 0.15s;
+  border-bottom: 1px solid rgba(244, 163, 0, 0.35);
+  transition: border-color 0.15s, color 0.15s;
 }
-.md-content a:hover { color: var(--brand-hover); border-bottom-color: var(--brand-hover); }
+:is(.md-content, .markdown-body, .material-md) a:hover {
+  color: var(--brand-hover);
+  border-bottom-color: var(--brand-hover);
+}
 
-.md-content ul, .md-content ol { margin: 12px 0; padding-left: 28px; }
-.md-content li { margin: 4px 0; }
-.md-content li > p { margin: 4px 0; }
+:is(.md-content, .markdown-body, .material-md) strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+:is(.md-content, .markdown-body, .material-md) em { color: var(--muted); }
 
-.md-content blockquote {
-  margin: 16px 0;
-  padding: 8px 16px;
+:is(.md-content, .markdown-body, .material-md) hr {
+  margin: 2.4em 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+:is(.md-content, .markdown-body, .material-md) img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.2em 0;
+}
+
+/* Цитата / врезка */
+:is(.md-content, .markdown-body, .material-md) blockquote {
+  margin: 1.5em 0;
+  padding: 14px 20px;
   border-left: 3px solid var(--brand);
   background: rgba(244, 163, 0, 0.06);
   color: var(--muted);
   border-radius: 0 8px 8px 0;
+  font-size: 0.97em;
 }
-.md-content blockquote > *:first-child { margin-top: 0; }
-.md-content blockquote > *:last-child { margin-bottom: 0; }
+:is(.md-content, .markdown-body, .material-md) blockquote > *:first-child { margin-top: 0; }
+:is(.md-content, .markdown-body, .material-md) blockquote > *:last-child { margin-bottom: 0; }
 
-.md-content code {
-  font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: 0.9em;
+/* Код */
+:is(.md-content, .markdown-body, .material-md) code {
+  font-family: var(--doc-mono);
+  font-size: 0.86em;
   padding: 2px 6px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--brand);
 }
-
-.md-content pre {
+:is(.md-content, .markdown-body, .material-md) pre {
   background: var(--surface);
   border: 1px solid var(--border);
-  padding: 16px;
+  padding: 18px;
   border-radius: 12px;
-  overflow: auto;
-  margin: 16px 0;
-  font-size: 13px;
-  line-height: 1.5;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  font-size: 13.5px;
+  line-height: 1.55;
 }
-.md-content pre code {
+:is(.md-content, .markdown-body, .material-md) pre code {
   padding: 0;
   background: none;
   border: none;
@@ -353,34 +1082,406 @@ button {
   font-size: inherit;
 }
 
-.md-content table {
+/* Таблицы — прокрутка внутри себя, чтобы не распирать полосу */
+:is(.md-content, .markdown-body, .material-md) table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
-  margin: 16px 0;
-  width: 100%;
-  font-size: 14px;
-}
-.md-content th, .md-content td {
-  padding: 8px 12px;
+  margin: 1.6em 0;
+  font-family: var(--doc-display);
+  font-size: 14.5px;
+  line-height: 1.45;
   border: 1px solid var(--border);
+  border-radius: 8px;
+}
+:is(.md-content, .markdown-body, .material-md) :is(th, td) {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
   text-align: left;
+  vertical-align: top;
 }
-.md-content th {
+:is(.md-content, .markdown-body, .material-md) th {
   background: var(--surface);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+:is(.md-content, .markdown-body, .material-md) tbody tr:last-child td { border-bottom: none; }
+:is(.md-content, .markdown-body, .material-md) tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+:is(.md-content, .markdown-body, .material-md) td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Чекбоксы задач */
+:is(.md-content, .markdown-body, .material-md) input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--muted);
+  border-radius: 3px;
+  background: transparent;
+  vertical-align: -3px;
+  margin-right: 6px;
+  cursor: default;
+  position: relative;
+  flex-shrink: 0;
+}
+:is(.md-content, .markdown-body, .material-md) input[type="checkbox"]:checked {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+:is(.md-content, .markdown-body, .material-md) input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  width: 4px;
+  height: 9px;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+:is(.md-content, .markdown-body, .material-md) li:has(> input[type="checkbox"]:checked) {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--muted);
+}
+:is(.md-content, .markdown-body, .material-md) li:has(> input[type="checkbox"]:checked) strong {
+  color: var(--muted);
+}
+
+/* ── Библиотека блоков документа (task 698 block 2) ─────── */
+/* Словарь компонентов для собранных страниц (.page.json) и для
+   распознавания паттернов markdown (блок 3). Опирается на токены
+   style.css:1-15 и типографическую шкалу блока 1. */
+
+.doc-page {
+  --doc-gap: 34px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--doc-gap);
+  font-family: var(--doc-body);
+  font-size: 16.5px;
+  line-height: 1.7;
+  color: var(--fg);
+}
+.doc-page > * { margin: 0; }
+
+/* 1. hero — шапка документа */
+.doc-hero { border-bottom: 1px solid var(--border); padding-bottom: 26px; }
+.doc-hero__kicker {
+  font-family: var(--doc-mono); font-size: 12px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--brand); margin-bottom: 14px;
+}
+.doc-hero__title {
+  font-family: var(--doc-display); font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px); line-height: 1.08;
+  letter-spacing: -.025em; text-wrap: balance;
+  /* Тот же вид, что у h1 текстовой проекции (:is(.md-content…) h1):
+     фирменный цвет и линия под заголовком. Две проекции одного документа
+     не должны отличаться на глаз — задача 701 блок 5 раунд 2. */
   color: var(--brand);
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
-.md-content tr:nth-child(even) td { background: var(--surface); }
+.doc-hero__lead { font-size: 18px; color: var(--muted); max-width: var(--doc-measure); }
+.doc-hero__chips { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 20px; }
+.doc-hero__chip { font-family: var(--doc-mono); font-size: 12.5px; color: var(--muted); }
 
-.md-content hr {
-  margin: 24px 0;
+/* 2. section — раздел */
+.doc-section__eyebrow {
+  font-family: var(--doc-mono); font-size: 11.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted);
+  border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 12px;
+}
+.doc-section__title {
+  font-family: var(--doc-display); font-weight: 600;
+  font-size: clamp(22px, 2.6vw, 27px); line-height: 1.2;
+  letter-spacing: -.015em; text-wrap: balance;
+}
+
+/* 3. text — абзацы */
+.doc-text { max-width: var(--doc-measure); display: flex; flex-direction: column; gap: 1em; }
+
+/* 4. cards — карточки фактов */
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.doc-cards__item { background: var(--surface); padding: 22px 24px; }
+.doc-cards__title {
+  display: block; font-family: var(--doc-display); font-weight: 700;
+  font-size: 18px; margin-bottom: 7px;
+}
+.doc-cards__body { font-size: 15px; color: var(--muted); line-height: 1.55; }
+
+/* 5. kpi — числовые показатели */
+.doc-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+.doc-kpi__item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px;
+}
+.doc-kpi__value {
+  font-family: var(--doc-display); font-size: 30px; font-weight: 700;
+  color: var(--brand); line-height: 1.05; font-variant-numeric: tabular-nums;
+}
+.doc-kpi__label {
+  font-family: var(--doc-mono); font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em; margin-top: 6px;
+}
+
+/* 6. criteria — пары «критерий → обоснование» */
+.doc-criteria {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.doc-criteria__item { background: var(--surface); padding: 22px 24px; }
+.doc-criteria__name {
+  display: block; font-family: var(--doc-display); font-weight: 700;
+  font-size: 16.5px; margin-bottom: 7px;
+}
+.doc-criteria__why { font-size: 15px; color: var(--muted); line-height: 1.55; }
+
+/* 7. zones — блоки схемы со связками */
+.doc-zones { display: flex; flex-direction: column; }
+.doc-zone {
+  border: 1px solid var(--border-strong, var(--border));
+  background: var(--surface); box-shadow: var(--shadow);
+}
+.doc-zone__head {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
+  padding: 15px 20px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+}
+.doc-zone__tag {
+  font-family: var(--doc-mono); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--brand);
+}
+.doc-zone__name { font-family: var(--doc-display); font-weight: 600; font-size: 17px; }
+.doc-zone__where { font-family: var(--doc-mono); font-size: 12px; color: var(--muted); margin-left: auto; }
+.doc-zone__body { padding: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+.doc-zone__step {
+  flex: 1 1 150px; border: 1px solid var(--border); border-left: 3px solid var(--brand);
+  background: var(--bg); padding: 13px 15px;
+}
+.doc-zone__step-n {
+  display: block; font-family: var(--doc-mono); font-size: 11px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px;
+}
+.doc-zone__step-title {
+  display: block; font-family: var(--doc-display); font-weight: 600;
+  font-size: 15.5px; line-height: 1.3;
+}
+.doc-zone__step-body { display: block; font-size: 13.5px; color: var(--muted); line-height: 1.45; margin-top: 4px; }
+.doc-zone__foot {
+  display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 20px;
+  border-top: 1px solid var(--border); font-family: var(--doc-mono);
+  font-size: 12.5px; color: var(--success, #22c55e);
+}
+.doc-zones__link { display: flex; gap: 14px; padding: 14px 20px; }
+.doc-zones__bar { width: 2px; align-self: stretch; min-height: 26px; background: var(--border-strong, var(--border)); margin-left: 30px; }
+.doc-zones__link-text { font-family: var(--doc-mono); font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+/* 8. stages — этапы */
+.doc-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.doc-stage {
+  border: 1px solid var(--border); background: var(--surface);
+  display: flex; flex-direction: column;
+}
+.doc-stage__head { padding: 15px 18px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.doc-stage__n {
+  display: block; font-family: var(--doc-mono); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--brand); margin-bottom: 5px;
+}
+.doc-stage__when { font-family: var(--doc-display); font-weight: 600; font-size: 17px; }
+.doc-stage__body { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.doc-stage__label {
+  font-family: var(--doc-mono); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+}
+.doc-stage__value { font-size: 15px; line-height: 1.5; }
+
+/* 9. steps — пронумерованные шаги */
+.doc-steps { counter-reset: docstep; display: flex; flex-direction: column; }
+.doc-steps__item {
+  counter-increment: docstep; display: grid; grid-template-columns: auto 1fr;
+  gap: 16px; padding: 14px 0; border-top: 1px solid var(--border);
+}
+.doc-steps__item::before {
+  content: counter(docstep, decimal-leading-zero);
+  font-family: var(--doc-mono); font-size: 13px; font-weight: 700;
+  color: var(--brand); padding-top: 3px;
+}
+.doc-steps__title { grid-column: 2; font-family: var(--doc-display); font-weight: 600; font-size: 16.5px; margin-bottom: 2px; }
+.doc-steps__body { grid-column: 2; color: var(--fg); opacity: .78; font-size: 15px; line-height: 1.5; }
+
+/* 10. callout — врезка трёх видов */
+.doc-callout {
+  border-left: 3px solid var(--brand); background: rgba(244, 163, 0, .06);
+  padding: 17px 21px; border-radius: 0 8px 8px 0; max-width: var(--doc-measure);
+}
+.doc-callout--warn { border-left-color: var(--warning, #f59e0b); background: rgba(245, 158, 11, .07); }
+.doc-callout--danger { border-left-color: var(--danger, #dc4a4a); background: rgba(220, 74, 74, .07); }
+.doc-callout__label {
+  display: block; font-family: var(--doc-mono); font-size: 11.5px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--brand); margin-bottom: 7px;
+}
+.doc-callout--warn .doc-callout__label { color: var(--warning, #f59e0b); }
+.doc-callout--danger .doc-callout__label { color: var(--danger, #dc4a4a); }
+.doc-callout__body { font-size: 15.5px; line-height: 1.6; }
+
+/* 11. quote — цитата с автором */
+.doc-quote { max-width: var(--doc-measure); border-left: 3px solid var(--border-strong, var(--border)); padding-left: 20px; }
+.doc-quote__text { font-size: 18px; line-height: 1.55; font-style: italic; color: var(--fg); }
+.doc-quote__author { font-family: var(--doc-mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+/* 12. image — картинка с подписью */
+.doc-image { display: flex; flex-direction: column; gap: 9px; }
+.doc-image img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border); }
+.doc-image__caption { font-family: var(--doc-mono); font-size: 12.5px; color: var(--muted); }
+
+/* 13. files — вложения и ссылки */
+.doc-files { display: flex; flex-direction: column; border: 1px solid var(--border); }
+.doc-files__item {
+  display: flex; align-items: baseline; gap: 14px; padding: 13px 18px;
+  border-bottom: 1px solid var(--border); background: var(--surface);
+}
+.doc-files__item:last-child { border-bottom: none; }
+.doc-files__name { font-family: var(--doc-display); font-weight: 600; font-size: 15.5px; }
+.doc-files__meta { font-family: var(--doc-mono); font-size: 12px; color: var(--muted); margin-left: auto; }
+
+/* 14. table — таблица как компонент */
+.doc-table__title { font-family: var(--doc-display); font-weight: 600; font-size: 17px; margin-bottom: 10px; }
+.doc-table__wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+.doc-table__wrap table {
+  display: table;
+  width: 100%;
+  max-width: none;
+  overflow: visible;
   border: none;
-  border-top: 1px solid var(--border);
+  border-radius: 0;
+  margin: 0;
+  border-collapse: collapse;
+  font-family: var(--doc-display);
+  font-size: 14.5px;
+}
+.doc-table__wrap :is(th, td) { padding: 11px 16px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.doc-table__wrap th {
+  background: var(--surface); font-weight: 700; font-size: 12px;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
+.doc-table__wrap tbody tr:last-child td { border-bottom: none; }
+.doc-table__wrap td { font-variant-numeric: tabular-nums; }
+.doc-table__caption { font-family: var(--doc-mono); font-size: 12px; color: var(--muted); margin-top: 9px; }
+
+/* 16. meta — панель метаданных документа (block 3 round 2) */
+.doc-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-top: 22px;
+}
+.doc-meta__item { background: var(--surface); padding: 13px 16px; }
+.doc-meta__label {
+  display: block; font-family: var(--doc-mono); font-size: 10.5px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px;
+}
+.doc-meta__value {
+  display: block; font-family: var(--doc-display); font-weight: 600;
+  font-size: 15px; line-height: 1.35; color: var(--fg);
 }
 
-.md-content img { max-width: 100%; border-radius: 8px; }
+/* 17. cards__list — настоящий список внутри карточки */
+.doc-cards__list { margin: 0; padding: 0; list-style: none; }
+.doc-cards__list li {
+  position: relative; padding: 6px 0 6px 16px;
+  font-size: 15px; line-height: 1.5; color: var(--muted);
+}
+.doc-cards__list li::before {
+  content: ""; position: absolute; left: 0; top: 13px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--brand); opacity: .7;
+}
 
-.md-content strong { color: var(--fg); font-weight: 700; }
-.md-content em { color: var(--muted); }
+/* 18. steps--plain — вариант тезисов без нумерации (определения) */
+.doc-steps--plain { counter-reset: none; }
+.doc-steps--plain .doc-steps__item { grid-template-columns: auto 1fr; }
+.doc-steps--plain .doc-steps__item::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--brand); margin-top: 10px; padding-top: 0;
+}
+
+/* 19. next — закрывающий блок «что дальше» (block 3 round 3) */
+.doc-next {
+  border: 1px solid var(--border-strong, var(--border));
+  border-left: 4px solid var(--brand);
+  background: var(--surface);
+  padding: 24px 28px;
+  box-shadow: var(--shadow);
+}
+.doc-next__label {
+  display: block; font-family: var(--doc-mono); font-size: 11px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--brand); margin-bottom: 12px;
+}
+.doc-next__when {
+  display: block; font-family: var(--doc-display); font-weight: 700;
+  font-size: clamp(20px, 2.4vw, 26px); line-height: 1.2; letter-spacing: -.02em;
+  color: var(--fg); margin-bottom: 10px; text-wrap: balance;
+}
+.doc-next__body { font-size: 15.5px; line-height: 1.6; color: var(--muted); max-width: var(--doc-measure); }
+
+/* 20. switch — переключатель проекций документа (task 701 block 2) */
+.doc-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  margin-bottom: 26px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.doc-switch__btn {
+  font-family: var(--doc-display);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 18px;
+  border-radius: 6px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.doc-switch__btn:hover { color: var(--fg); }
+.doc-switch__btn.is-active {
+  background: var(--surface);
+  color: var(--brand);
+  box-shadow: var(--shadow);
+}
+.doc-switch__btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* 21. stale — пометка об устаревании собранной страницы */
+.doc-stale { margin-bottom: 26px; }
+
+/* 15. divider — разделитель */
+.doc-divider { border: none; border-top: 1px solid var(--border); }
+
+@media (max-width: 640px) {
+  .doc-page { --doc-gap: 26px; }
+  .doc-zone__where { margin-left: 0; flex-basis: 100%; }
+}
 
 /* ── Stats view ─────────────────────────────────────────── */
 
@@ -784,4 +1885,436 @@ button.skill-pill:hover { background: var(--brand); color: var(--bg); }
 }
 @media (max-width: 768px) {
   .skills-analytics-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Tasks sidebar (v1.2 partner portal, v1.4 sticky-bottom + Встреча) ── */
+.tasks-sidebar {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
+}
+.tasks-sidebar-inner {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 4px;
+  overflow-y: auto; flex: 1 1 auto;
+}
+.tasks-sidebar-footer {
+  flex-shrink: 0; padding: 8px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.ts-add-meeting {
+  width: 100%; padding: 8px 12px;
+  background: var(--surface-2); color: var(--brand);
+  border: 1px solid var(--border-strong); border-radius: 6px;
+  cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit;
+  transition: all 0.12s;
+}
+.ts-add-meeting:hover { background: var(--brand); color: var(--bg); border-color: var(--brand); }
+.ts-section-label {
+  font-size: 10px; text-transform: uppercase; color: var(--text-2);
+  padding: 12px 12px 4px; letter-spacing: 0.05em; font-weight: 600;
+}
+.ts-item {
+  background: transparent; border: none; text-align: left;
+  padding: 8px 12px; color: var(--text-1); cursor: pointer;
+  font-size: 13px; font-family: inherit; border-radius: 4px;
+  display: flex; flex-direction: column; gap: 2px;
+  border-left: 3px solid transparent; transition: all 0.12s;
+}
+.ts-item:hover { background: var(--bg-2); }
+.ts-item.active {
+  background: var(--bg-2); border-left-color: var(--brand); color: var(--brand);
+  font-weight: 600;
+}
+.ts-title { font-weight: 500; }
+.ts-meta {
+  font-size: 11px; color: var(--text-2);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ts-count {
+  background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px;
+  font-size: 10px; font-weight: 600; color: var(--text-2);
+  margin-left: auto;
+}
+.ts-item.active .ts-count { background: rgba(244,163,0,0.2); color: var(--brand); }
+
+/* ── Media viewers (task 677 block 3) ─────────────────────────
+   Universal renderers for PDF / images / audio / video / download.
+   Class names emitted by partner.js:renderPdf/Image/Audio/Video/Download
+   and app.js:renderMediaHtml.
+*/
+.media-pdf {
+  width: 100%;
+  min-height: 70vh;
+  border: 0;
+  background: #1a1d2b;
+}
+.media-image {
+  max-width: 100%;
+  max-height: 85vh;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.media-audio {
+  width: 100%;
+  margin-top: 1em;
+  display: block;
+}
+.media-video {
+  max-width: 100%;
+  max-height: 85vh;
+  display: block;
+  margin: 0 auto;
+  background: #000;
+  border-radius: 4px;
+}
+.media-download {
+  padding: 2em;
+  text-align: center;
+  background: var(--bg-2, rgba(255,255,255,0.03));
+  border: 1px dashed var(--border, rgba(255,255,255,0.1));
+  border-radius: 6px;
+  margin: 1em 0;
+}
+.media-download-icon {
+  font-size: 3em;
+  margin-bottom: 0.5em;
+  opacity: 0.7;
+}
+.media-download-name {
+  margin-bottom: 1em;
+  font-size: 15px;
+}
+.media-download-btn {
+  display: inline-block;
+  padding: 0.6em 1.4em;
+  background: var(--brand, #f4a300);
+  color: #04070d;
+  font-weight: 600;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.media-download-btn:hover {
+  background: var(--brand-hover, #ffb733);
+}
+
+/* ── Lightbox (task 677 block 5) ──────────────────────────────
+   Vanilla JS overlay for image gallery navigation.
+   Trigger: click on .media-image → openLightbox() → adds .lightbox-open
+*/
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.lightbox.lightbox-open {
+  display: flex;
+}
+.lightbox-image {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+}
+.lightbox-arrow {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 20%;
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 4em;
+  cursor: pointer;
+  padding: 0 1em;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.lightbox-arrow:hover {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(0,0,0,0.3), transparent);
+}
+.lightbox-arrow-prev {
+  left: 0;
+  justify-content: flex-start;
+}
+.lightbox-arrow-next {
+  right: 0;
+  justify-content: flex-end;
+  background-image: linear-gradient(-90deg, rgba(0,0,0,0.3), transparent);
+}
+.lightbox-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0;
+  color: #fff;
+  font-size: 1.8em;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.lightbox-counter {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 12px;
+  border-radius: 14px;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 768px) {
+  .lightbox-arrow {
+    font-size: 3em;
+    width: 30%;
+    padding: 0 0.5em;
+  }
+  .lightbox-close {
+    width: 48px;
+    height: 48px;
+    font-size: 2em;
+    top: 10px;
+    right: 10px;
+  }
+  .lightbox-counter {
+    font-size: 13px;
+    top: 14px;
+    left: 14px;
+  }
+  .lightbox-image {
+    max-width: 100vw;
+    max-height: 85vh;
+  }
+}
+
+
+/* ========================================================================
+ * settings-toggle + service-card CSS port из Team Portal (block 60068)
+ * Source: radar/team/lib/settings-toggle.css + radar/team/lib/vendor-card.css
+ * Consumer: Personal Flow Settings vendor cards (renderVendorCards)
+ * ======================================================================== */
+
+/**
+ * settings-toggle.css — Team Portal lib primitive: iPhone-style boolean toggle switch.
+ *
+ * Migrated from radar/team/team.css:2475-2494 (block 3001 of task radar-os--476).
+ * Block 5006 (task radar-os--547): saffron variant class for accent semantics
+ * (pin/star/favorite indicators) vs default green (settings on/off).
+ *
+ * Used in: owner_questions_filter (settings tab), notes (Slider is_pinned +
+ * card grid instant pin toggle — saffron variant).
+ *
+ * CSS variables: --line-2 (track background, dark theme line color).
+ * Default active color hardcoded #4caf50 (green) — Apple-style settings UX.
+ *
+ * Public markup contract:
+ *   <label class="settings-toggle">                            (default green)
+ *   <label class="settings-toggle settings-toggle--saffron">   (saffron accent)
+ *     <input type="checkbox" />
+ *     <span class="settings-toggle__track"></span>
+ *   </label>
+ *
+ * Variants:
+ *   .settings-toggle--saffron — brand saffron #F4A300 (Radar OS pin accent).
+ *   Add more here when semantic accents needed (blue/red/etc).
+ */
+
+.settings-toggle { display:inline-flex; align-items:center; cursor:pointer; }
+.settings-toggle input { position:absolute; opacity:0; width:0; height:0; }
+.settings-toggle__track {
+  position:relative; display:inline-block;
+  width:40px; height:22px;
+  background:var(--line-2, #3a3a3a);
+  border-radius:999px;
+  transition:background .2s;
+  flex-shrink:0;
+}
+.settings-toggle__track::after {
+  content:''; position:absolute;
+  top:3px; left:3px;
+  width:16px; height:16px;
+  border-radius:50%;
+  background:#fff;
+  transition:transform .2s;
+}
+.settings-toggle input:checked + .settings-toggle__track { background:#4caf50; }
+.settings-toggle input:checked + .settings-toggle__track::after { transform:translateX(18px); }
+
+/* Saffron variant — brand accent для pin/star/favorite semantics (block 5006). */
+.settings-toggle--saffron input:checked + .settings-toggle__track { background:#F4A300; }
+
+
+/* vendor-card — shared card layout для vendor listings.
+ *
+ * Extracted 2026-08-12 (task 671 block 560) из modes/integrations/styles.css
+ * для reuse в mode integrations panel (Settings tab режимов) + integrations mode
+ * (каталог vendor'ов в Team Portal).
+ *
+ * Contract: .integrations-grid + .service-card (+ __body / __name / __desc /
+ * __footer / __type / __status modifiers). Filter tabs через
+ * `.integrations-grid[data-filter="X"]` — CSS hides non-matching cards.
+ *
+ * Consumers:
+ *   - radar/team/src/modes/integrations/page.js (каталог)
+ *   - radar/team/src/lib/mode-integrations-panel.js (mode Settings panel)
+ */
+
+.integrations-loading {
+  padding: 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.95rem;
+}
+
+.integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.integrations-grid[data-filter="ai"] .service-card:not([data-type="ai"]) { display: none; }
+.integrations-grid[data-filter="crm"] .service-card:not([data-type="crm"]) { display: none; }
+.integrations-grid[data-filter="communications"] .service-card:not([data-type="communications"]) { display: none; }
+.integrations-grid[data-filter="other"] .service-card:not([data-type="other"]) { display: none; }
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.service-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.service-card__body {
+  flex: 1;
+  min-height: 3rem;
+}
+
+.service-card__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 0.35rem;
+}
+
+.service-card__desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
+
+.service-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.service-card__type {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+}
+
+.service-card__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
+}
+
+.service-card__status--connected {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.service-card__status--idle {
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.service-card__status--needs-key {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.service-card__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Block 590: disabled state — vendor не установлен в bus_tenant_connections для тенанта.
+ * Toggle grayed + not-clickable (input[disabled] handles pointer events).
+ * Card остаётся visible, только status badge amber + toggle disabled.
+ */
+.service-card--not-installed .settings-toggle {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.service-card--not-installed .settings-toggle input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
+
+/* ========================================================================
+ * .tab-sync-off — grey-out top-level tabs при toggle-off vendor в Settings.
+ * Block 60069, Personal Flow tree UX consistency per Decision 19.
+ * ======================================================================== */
+.tab-sync-off {
+  opacity: 0.4;
+}
+.tab-sync-off:hover {
+  opacity: 0.7;
+}
+
+/* Страница целиком (task 706 block 102). Фрейм тянется по ширине области
+   чтения, высоту ему задаёт наблюдатель из partner.js — своей прокрутки у
+   страницы быть не должно, читатель крутит одну полосу, а не две. */
+.ep-page-frame {
+  display: block;
+  width: 100%;
+  min-height: 240px;
+  border: 0;
 }

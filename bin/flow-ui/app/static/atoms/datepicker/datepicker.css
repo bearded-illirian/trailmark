@@ -1,0 +1,295 @@
+/*
+ * datepicker.css — Ops UI Library: DatePicker
+ * Uses CSS variables from index.html for automatic dark/light theme support
+ */
+
+/* ── Wrapper ──────────────────────────────────────────────── */
+
+.dp-wrap {
+    position: absolute;
+    z-index: 9000;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    user-select: none;
+}
+
+.dp-wrap.dp-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+
+.dp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dp-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-2);
+    font-size: 16px;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.12s, color 0.12s;
+    flex-shrink: 0;
+}
+.dp-nav-btn:hover {
+    background: var(--sidebar-active);
+    color: var(--text-1);
+}
+
+.dp-title-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 1;
+}
+
+.dp-title-month,
+.dp-title-year {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-1);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.12s;
+}
+.dp-title-month:hover,
+.dp-title-year:hover {
+    background: var(--sidebar-active);
+}
+
+/* ── Body — fixed size, always days ──────────────────────── */
+
+.dp-body {
+    min-height: 264px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Day grid ─────────────────────────────────────────────── */
+
+.dp-grid {
+    padding: 8px;
+    flex: 1;
+}
+
+.dp-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 4px;
+}
+
+.dp-weekday {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-2);
+    padding: 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.dp-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.dp-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-1);
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+    background: transparent;
+}
+.dp-day:hover {
+    background: var(--sidebar-active);
+    color: var(--text-1);
+}
+.dp-day--other-month {
+    color: var(--text-2);
+    opacity: 0.4;
+}
+.dp-day--today {
+    border-color: var(--accent);
+    color: var(--tab-active-text);
+}
+.dp-day--selected {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 700;
+}
+.dp-day--selected:hover {
+    background: var(--accent);
+    opacity: 0.9;
+}
+
+/* ── Popup overlay ────────────────────────────────────────── */
+
+.dp-popup-overlay {
+    position: absolute;
+    z-index: 9010;
+    pointer-events: auto;
+}
+
+.dp-popup-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 12px;
+    cursor: default;
+}
+
+.dp-popup {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dp-popup-overlay--visible .dp-popup {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── Popup nav ────────────────────────────────────────────── */
+
+.dp-popup-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dp-popup-nav-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-1);
+    flex: 1;
+    text-align: center;
+}
+
+/* ── Popup body ───────────────────────────────────────────── */
+
+.dp-popup-body {
+    padding: 8px;
+}
+
+/* ── Month grid (inside popup) ────────────────────────────── */
+
+.dp-months {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.dp-month {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-1);
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.1s;
+}
+.dp-month:hover {
+    background: var(--sidebar-active);
+}
+.dp-month--today {
+    border-color: var(--accent);
+    color: var(--tab-active-text);
+    font-weight: 700;
+}
+.dp-month--selected {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 700;
+}
+.dp-month--selected:hover {
+    opacity: 0.9;
+}
+
+/* ── Year grid (inside popup) ─────────────────────────────── */
+
+.dp-years {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.dp-year {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-1);
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.1s;
+}
+.dp-year:hover {
+    background: var(--sidebar-active);
+}
+.dp-year--today {
+    border-color: var(--accent);
+    color: var(--tab-active-text);
+    font-weight: 700;
+}
+.dp-year--selected {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.dp-year--selected:hover {
+    opacity: 0.9;
+}
+.dp-year--other {
+    opacity: 0.35;
+}

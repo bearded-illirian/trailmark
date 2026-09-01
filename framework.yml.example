@@ -68,3 +68,18 @@ env:
 #
 # See `docs/PROJECTS_GUIDE.md` for the hub-and-spoke pattern that ties this
 # registry to the projects/ folder + skill symlinks.
+
+# ── Defaults ───────────────────────────────────────────────────────────────
+defaults:
+
+  # Which runtime `bin/new-project` wires a new project for when no
+  # `--agent=` flag is given.
+  #
+  #   claude — the only runtime the framework has actually been run on.
+  #            Projects get `.claude/skills` → `aihub/.claude/skills`.
+  #   codex  — experimental. Projects get `.agents/skills` → the generated
+  #            `adapters/codex/.agents/skills` tree. Read
+  #            `adapters/codex/README.md` before choosing it.
+  #
+  # What a runtime has to provide either way: `docs/AGENT_CONTRACT.md`.
+  agent: claude

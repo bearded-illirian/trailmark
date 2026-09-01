@@ -235,3 +235,29 @@ entries:
     source_path: ~/Projects/vschk-flow-ui/
     destination_path: bin/flow-ui/
     last_synced_commit: null
+
+# ── Generated outputs ─────────────────────────────────────────────────────
+# Trees produced by a generator from the entries above. They are committed —
+# the port has to stay browsable, and the bash generator cannot run on every
+# platform (see issue #2) — but they are OUTPUT, never a source.
+#
+# Editing a file inside one of these paths does not survive the next rebuild.
+# Change the skill in aihub/ or the generator itself, then rebuild.
+#
+# Drift is enforced against, not merely discouraged:
+#   - .github/workflows/verify-contract.yml runs --check on push and PR
+#   - bin/sync-to-github.sh refuses to publish a tree that has drifted
+
+outputs:
+
+  - id: codex-adapter
+    path: adapters/codex/.agents/skills/
+    generated_by: bin/build-codex-adapter.sh
+    verify: bash bin/build-codex-adapter.sh --check
+    source: aihub/.claude/skills/ + aihub/.claude/commands/
+    note: |
+      Claude-shaped skills rewritten for Codex — Skill('x') becomes $x,
+      .claude/skills becomes .agents/skills. Bodies are otherwise untouched.
+      Carries files the source has no equivalent for: agents/openai.yaml
+      invocation policies and GENERATED.md.
+

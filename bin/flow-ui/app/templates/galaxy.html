@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galaxy — vschk workspace</title>
+  <link rel="stylesheet" href="/static/galaxy.css">
+</head>
+<body>
+  <div id="loading">loading galaxy…</div>
+  <div id="meta"></div>
+
+  <aside id="filters" class="overlay">
+    <h3>Projects</h3>
+    <input type="search" id="search-input" placeholder="Search…" autocomplete="off">
+    <div id="filter-list"></div>
+  </aside>
+
+  <div id="controls" class="overlay">
+    <button id="btn-reset" title="Zoom to fit whole graph">Fit view</button>
+    <button id="btn-level" title="Toggle detail level">Level 1</button>
+  </div>
+
+  <aside id="sidepanel" class="overlay">
+    <button class="close" id="sp-close" aria-label="Close">×</button>
+    <h2 id="sp-title">—</h2>
+    <div id="sp-body"></div>
+  </aside>
+
+  <div id="graph"></div>
+
+  <script src="https://unpkg.com/force-graph@1"></script>
+  <script src="/static/galaxy.js"></script>
+</body>
+</html>

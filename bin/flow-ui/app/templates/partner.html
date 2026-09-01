@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Partner Portal</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="{{ asset('themes/saffron-graphite.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="{{ asset('style.css') }}">
+  <link rel="stylesheet" href="{{ asset('atoms/datepicker/datepicker.css') }}">
+  <link rel="stylesheet" href="{{ asset('kits/task-engine/task-engine.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="{{ asset('doc-blocks.js') }}"></script>
+  <script src="{{ asset('doc-patterns.js') }}"></script>
+  <script src="{{ asset('atoms/datepicker/datepicker.js') }}"></script>
+  <script src="{{ asset('kits/task-engine/task-engine.js') }}"></script>
+  <script>window.PARTNER_TOKEN = "{{ token }}";</script>
+  <script src="{{ asset('kabinet-page-style.js') }}"></script>
+  <script src="{{ asset('sandbox-frame.js') }}"></script>
+  <script defer src="{{ asset('partner.js') }}"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">flow<span class="dot">·</span>ui</div>
+    <div class="partner-name" id="partner-name" style="margin-left: 20px; opacity: 0.9;">Загрузка…</div>
+    <div class="topbar-actions">
+      <button id="copy-btn" class="print-btn" style="display:none" title="Скопировать текст документа в буфер обмена — чтобы вставить в письмо или свой файл">Скопировать текст</button>
+      <a id="download-btn" class="print-btn" style="display:none" download title="Скачать файл на компьютер">Скачать</a>
+      <button id="print-btn" class="print-btn" onclick="window.print()" style="display:none" title="Открыть окно печати браузера — можно сохранить в PDF или отправить на принтер">Распечатать</button>
+    </div>
+  </header>
+
+  <!-- Навигация узкого экрана: плавающая пилюля + шторка со списком.
+       Нативный <select> убран сознательно (задача 718, блок 20130): он плоский
+       по природе, а дерево двухуровневое, и iOS закрывает свой picker при
+       каждом выборе — до документа выходило четыре касания вместо двух.
+       Форма взята из утверждённой схемы задачи 704, цвета — свои, шафрановые. -->
+  <div id="mobile-nav-bar" style="display:none">
+    <button id="mobile-nav-pill" type="button" aria-haspopup="true" aria-expanded="false"
+            aria-controls="mobile-nav-sheet">
+      <span id="mobile-nav-current" class="mobile-nav-current">Документы</span>
+      <span class="mobile-nav-caret" aria-hidden="true"></span>
+    </button>
+  </div>
+  <div id="mobile-nav-backdrop" hidden></div>
+  <div id="mobile-nav-sheet" role="dialog" aria-modal="true" aria-label="Документы портала" hidden>
+    <div id="mobile-nav-list" class="mobile-nav-list"></div>
+  </div>
+
+  <main class="split">
+    <aside class="left-panel">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="files" role="tab">Файлы</button>
+        <button class="tab" data-tab="tasks" role="tab">Задачи</button>
+      </div>
+      <nav id="breadcrumb" class="breadcrumb"></nav>
+      <div id="tree" class="tree">
+        <div class="muted">Загрузка…</div>
+      </div>
+      <div id="tasks-sidebar" class="tasks-sidebar" style="display:none;"></div>
+    </aside>
+
+    <section class="right-panel">
+      <div id="content" class="content">
+        <!-- Разметка до загрузки дерева. Дальше содержимое ставит partner.js:
+             либо первый документ автоматически, либо подсказку из
+             emptyHintText() — она зависит от ширины экрана, потому что на
+             узком левой панели нет. Здесь нейтральный текст без направления. -->
+        <div class="muted center">Загрузка…</div>
+      </div>
+      <div id="tasks-panel" class="content" style="display:none;"></div>
+    </section>
+  </main>
+
+</body>
+</html>

@@ -19,12 +19,34 @@ set -e
 
 # ── Args ─────────────────────────────────────────────────────────────────
 if [ -z "$1" ]; then
-  echo "Usage: bash bin/new-project <project-id>"
+  echo "Usage: bash bin/new-project <project-id> [--agent=claude|codex]"
   echo "Example: bash bin/new-project my-first-app"
+  echo "         bash bin/new-project my-first-app --agent=codex"
   exit 1
 fi
 
 PROJECT_ID="$1"
+shift
+
+# Which runtime this project is wired for. Default is claude — the only one
+# the framework has actually been run on. See docs/AGENT_CONTRACT.md.
+AGENT="${DEFAULT_AGENT:-claude}"
+for arg in "$@"; do
+  case "$arg" in
+    --agent=*) AGENT="${arg#--agent=}" ;;
+    *) echo "❌ Unknown option: $arg"; exit 1 ;;
+  esac
+done
+
+case "$AGENT" in
+  claude|codex) ;;
+  *)
+    echo "❌ Unknown agent: '$AGENT'"
+    echo "   Supported: claude (default), codex"
+    echo "   An adapter for another runtime starts at docs/AGENT_CONTRACT.md."
+    exit 1
+    ;;
+esac
 
 # ── Validate ID ──────────────────────────────────────────────────────────
 if ! echo "$PROJECT_ID" | grep -qE '^[a-z][a-z0-9-]{0,30}$'; then
@@ -45,13 +67,33 @@ if [ -d "$PROJECT_DIR" ]; then
   exit 1
 fi
 
+# ── Resolve skill tree per agent ────────────────────────────────────────
+# Both symlinks are relative and start from projects/<id>/<dir>/, which is
+# three levels below the workspace root — the depth is the same for either
+# agent, only the source and destination names differ.
+if [ "$AGENT" = "codex" ]; then
+  SKILLS_DIR=".agents"
+  SKILLS_TARGET="../../../adapters/codex/.agents/skills"
+
+  # The Codex tree is generated. Linking a project at a stale tree would work
+  # silently and serve yesterday's skills, so refuse until it is current.
+  if ! bash "$SCRIPT_DIR/build-codex-adapter.sh" --check > /dev/null 2>&1; then
+    echo "❌ Codex adapter tree is missing or stale."
+    echo "   Run: bash bin/build-codex-adapter.sh"
+    exit 1
+  fi
+else
+  SKILLS_DIR=".claude"
+  SKILLS_TARGET="../../../aihub/.claude/skills"
+fi
+
 # ── Create folder + symlink ─────────────────────────────────────────────
-mkdir -p "$PROJECT_DIR/.claude"
-ln -s "../../../aihub/.claude/skills" "$PROJECT_DIR/.claude/skills"
+mkdir -p "$PROJECT_DIR/$SKILLS_DIR"
+ln -s "$SKILLS_TARGET" "$PROJECT_DIR/$SKILLS_DIR/skills"
 
 # ── Verify symlink resolves ─────────────────────────────────────────────
-if [ ! -e "$PROJECT_DIR/.claude/skills" ]; then
-  echo "⚠️  Symlink created but target unreachable — check aihub/.claude/skills exists"
+if [ ! -e "$PROJECT_DIR/$SKILLS_DIR/skills" ]; then
+  echo "⚠️  Symlink created but target unreachable — check $SKILLS_TARGET exists"
 fi
 
 # ── Append entry to aihub/projects.yml ──────────────────────────────────
@@ -85,7 +127,17 @@ fi
 # ── Success + next step ─────────────────────────────────────────────────
 echo "✅ Project registered: $PROJECT_ID"
 echo "   Folder:   $PROJECT_DIR"
-echo "   Symlink:  $PROJECT_DIR/.claude/skills → aihub/.claude/skills"
+echo "   Agent:    $AGENT"
+echo "   Symlink:  $PROJECT_DIR/$SKILLS_DIR/skills → $SKILLS_TARGET"
 echo "   Registry: entry appended to aihub/projects.yml"
 echo ""
-echo "Next: bash bin/sync-from-aihub.sh   # distribute skills to your projects"
+if [ "$AGENT" = "codex" ]; then
+  echo "The Codex skill tree is generated. After editing any skill, rebuild it —"
+  echo "the symlink points at the built tree, not at the source:"
+  echo ""
+  echo "  bash bin/build-codex-adapter.sh"
+  echo ""
+  echo "The adapter is experimental — see adapters/codex/README.md."
+else
+  echo "Next: bash bin/sync-from-aihub.sh   # distribute skills to your projects"
+fi

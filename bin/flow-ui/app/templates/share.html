@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+
+  <!-- Open Graph (Facebook, Telegram, WhatsApp, LinkedIn preview cards) -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ title }}">
+  {% if description %}<meta property="og:description" content="{{ description }}">{% endif %}
+  <meta property="og:url" content="{{ share_url }}">
+  {% if preview_image %}
+  <meta property="og:image" content="{{ preview_image }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="{{ title }}">
+  {% endif %}
+  <meta property="og:site_name" content="flow.vschk.online">
+  <meta property="og:locale" content="ru_RU">
+
+  <!-- Twitter Card (X, iMessage rich preview) -->
+  <meta name="twitter:card" content="{% if preview_image %}summary_large_image{% else %}summary{% endif %}">
+  <meta name="twitter:title" content="{{ title }}">
+  {% if description %}<meta name="twitter:description" content="{{ description }}">{% endif %}
+  {% if preview_image %}<meta name="twitter:image" content="{{ preview_image }}">{% endif %}
+
+  <!-- Fallback description -->
+  {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+
+  <!-- Apple-specific (Notes, iMessage LinkPresentation) — fallback image_src for legacy crawlers -->
+  {% if preview_image %}<link rel="image_src" href="{{ preview_image }}">{% endif %}
+  <meta name="apple-mobile-web-app-title" content="{{ title }}">
+  <link rel="apple-touch-icon" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/themes/saffron-graphite.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    .share-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border, #333);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .share-header .titles h1 { margin: 0 0 4px 0; font-size: 1.4em; cursor: pointer; }
+    .share-header .titles h1:hover { color: var(--brand, #F4A300); }
+    .share-header .titles .desc { opacity: 0.75; font-size: 0.95em; }
+    .share-header .actions { display: flex; gap: 10px; }
+    .share-header .btn {
+      padding: 10px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      border: none;
+      font-size: 0.95em;
+    }
+    .share-header .btn-primary { background: var(--brand, #F4A300); color: #1a1a19; }
+    .share-header .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.9);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .share-header .btn:hover { opacity: 0.9; }
+    /* Share modal (fallback для десктопа где нет Web Share API) */
+    .share-modal-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.55);
+      align-items: center; justify-content: center;
+    }
+    .share-modal-overlay.open { display: flex; }
+    .share-modal {
+      background: #1a1a19; border-radius: 14px; padding: 22px 24px;
+      max-width: 380px; width: 90vw;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    .share-modal h3 { margin: 0 0 4px 0; font-size: 1.1em; }
+    .share-modal .subtitle { opacity: 0.6; font-size: 0.85em; margin-bottom: 18px; }
+    .share-modal .options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .share-modal .opt {
+      display: block; padding: 10px 12px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); text-decoration: none; color: inherit;
+      font-size: 0.9em; text-align: center;
+    }
+    .share-modal .opt:hover { background: rgba(244,163,0,0.15); }
+    .share-modal .copy-row {
+      display: flex; gap: 6px; margin-top: 12px;
+    }
+    .share-modal .copy-row input {
+      flex: 1; padding: 8px 10px; border-radius: 6px;
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.9); font-family: monospace; font-size: 0.8em;
+    }
+    .share-modal .copy-row button {
+      padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer;
+      background: var(--brand, #F4A300); color: #1a1a19; font-weight: 600;
+    }
+    .share-modal .close {
+      margin-top: 14px; width: 100%; padding: 10px;
+      background: transparent; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; color: rgba(255,255,255,0.6); cursor: pointer;
+    }
+    .tree-node { padding: 6px 14px; cursor: pointer; user-select: none; font-size: 0.95em; }
+    .tree-node:hover { background: rgba(255,255,255,0.04); }
+    .tree-node.active { background: rgba(244,163,0,0.12); color: var(--brand, #F4A300); font-weight: 500; }
+    /* Split layout with TOC */
+    .split { display: grid; grid-template-columns: 240px 1fr 240px; height: calc(100vh - 73px); }
+    .left-panel { border-right: 1px solid var(--border, #333); overflow-y: auto; padding: 12px 0; }
+    .right-panel { overflow-y: auto; scroll-behavior: smooth; }
+    .toc-panel { border-left: 1px solid var(--border, #333); overflow-y: auto; padding: 16px 12px; font-size: 0.9em; }
+    .toc-panel h4 { margin: 0 0 12px 4px; opacity: 0.6; text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.05em; }
+    .toc-item { padding: 5px 8px; cursor: pointer; border-radius: 4px; color: rgba(255,255,255,0.85); }
+    .toc-item:hover { color: rgba(255,255,255,1); background: rgba(255,255,255,0.04); }
+    .toc-item.active { color: var(--brand, #F4A300); font-weight: 500; }
+    .toc-item.level-3 { padding-left: 20px; color: rgba(255,255,255,0.7); font-size: 0.9em; }
+    .toc-item.level-3.active { color: var(--brand, #F4A300); }
+    /* Markdown content — saffron link theme */
+    .content-md { padding: 32px 40px; line-height: 1.7; max-width: 820px; margin: 0 auto; }
+    .content-md h1 { margin-top: 0; }
+    .content-hero { max-width: 900px; margin: 0 auto; padding: 24px 40px 0; }
+    .content-hero img { width: 100%; height: auto; border-radius: 10px; display: block; }
+    .content-md h1, .content-md h2, .content-md h3 { scroll-margin-top: 20px; }
+    .content-md h2 { margin-top: 2em; padding-top: 0.5em; border-top: 1px solid rgba(255,255,255,0.06); }
+    .content-md a {
+      color: var(--brand, #F4A300);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(244,163,0,0.4);
+    }
+    .content-md a:hover { border-bottom-style: solid; }
+    .content-md img { max-width: 100%; height: auto; border-radius: 6px; margin: 16px 0; }
+    .content-md pre { background: #1a1a1a; padding: 14px; border-radius: 6px; overflow-x: auto; position: relative; }
+    .content-md code { font-family: monospace; }
+    .code-copy-btn {
+      position: absolute; top: 8px; right: 8px;
+      padding: 4px 10px; font-size: 11px; font-weight: 600;
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
+      cursor: pointer; opacity: 0; transition: opacity 0.15s;
+      font-family: -apple-system, sans-serif;
+    }
+    .content-md pre:hover .code-copy-btn { opacity: 1; }
+    .code-copy-btn:hover { background: rgba(244,163,0,0.2); color: var(--brand, #F4A300); }
+    .code-copy-btn.copied { background: rgba(244,163,0,0.25); color: var(--brand, #F4A300); opacity: 1; }
+    .content-md blockquote {
+      border-left: 3px solid var(--brand, #F4A300);
+      padding: 8px 16px;
+      opacity: 0.9;
+      margin: 16px 0;
+      background: rgba(244,163,0,0.03);
+    }
+    .content-img { padding: 32px; text-align: center; }
+    .content-img img { max-width: 100%; max-height: 80vh; border-radius: 6px; }
+    /* On narrow screens hide TOC */
+    @media (max-width: 1100px) {
+      .split { grid-template-columns: 220px 1fr; }
+      .toc-panel { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="share-header">
+    <div class="titles">
+      <h1 id="share-title" title="Вернуться к началу курса">{{ title }}</h1>
+      {% if description %}<div class="desc">{{ description }}</div>{% endif %}
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary" id="share-btn">Поделиться</button>
+      <a class="btn btn-primary" href="/api/shares/{{ token }}/zip" download>Скачать zip</a>
+    </div>
+  </header>
+
+  <!-- Fallback modal для десктопа где нет navigator.share -->
+  <div class="share-modal-overlay" id="share-modal">
+    <div class="share-modal">
+      <h3>Поделиться курсом</h3>
+      <div class="subtitle">{{ title }}</div>
+      <div class="options">
+        <a class="opt" id="share-tg" target="_blank" rel="noopener noreferrer">Telegram</a>
+        <a class="opt" id="share-wa" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        <a class="opt" id="share-tw" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
+        <a class="opt" id="share-mail" target="_blank" rel="noopener noreferrer">Email</a>
+      </div>
+      <div class="copy-row">
+        <input type="text" id="share-url-input" readonly value="{{ share_url }}">
+        <button id="share-copy-btn">Копировать</button>
+      </div>
+      <button class="close" id="share-close">Закрыть</button>
+    </div>
+  </div>
+
+  <main class="split">
+    <aside class="left-panel">
+      <div id="tree" class="tree">
+        <div class="muted" style="padding: 16px;">Загрузка…</div>
+      </div>
+    </aside>
+
+    <section class="right-panel" id="content-scroll">
+      <div id="content" class="content">
+        <div class="muted center" style="padding: 32px; text-align: center; opacity: 0.6;">
+          Выбери документ слева.
+        </div>
+      </div>
+    </section>
+
+    <aside class="toc-panel" id="toc">
+      <h4>Оглавление</h4>
+      <div id="toc-list" class="muted" style="opacity: 0.5;">пусто</div>
+    </aside>
+  </main>
+
+  <script>
+    const TOKEN = "{{ token }}";
+    const API_BASE = `/api/shares/${TOKEN}`;
+
+    // Human-friendly names for known technical filenames.
+    // For unknown files: strip .md, replace hyphens with spaces, capitalize first letter.
+    const DISPLAY_NAMES = {
+      'course-content-full.md': 'Курс',
+      'ai-coder-prompt.md': 'Промпт для AI-агента',
+      'quick-guide.md': 'Быстрый гид',
+      'access-doc.md': 'Доступы',
+      'final-report.md': 'Итоговый отчёт',
+      'README.md': 'Readme',
+    };
+
+    // Files hidden from sidebar (cover images, meta files) — still accessible via /asset for OG
+    const SIDEBAR_HIDDEN = new Set([
+      'cover.png', 'cover.jpg', 'cover.jpeg', 'cover.webp',
+      'og-image.png', 'og-image.jpg',
+    ]);
+    // Cover file to render as hero at top of content (probe in order)
+    const HERO_COVERS = ['cover.png', 'cover.jpg', 'cover.jpeg', 'cover.webp'];
+
+    function displayName(filename) {
+      if (DISPLAY_NAMES[filename]) return DISPLAY_NAMES[filename];
+      const base = filename.replace(/\.(md|txt|pdf)$/i, '').replace(/[-_]/g, ' ');
+      return base.charAt(0).toUpperCase() + base.slice(1);
+    }
+
+    function isImage(name) {
+      return /\.(png|jpe?g|gif|webp|svg)$/i.test(name);
+    }
+
+    async function loadTree(path = "") {
+      const r = await fetch(`${API_BASE}/tree${path ? `?path=${encodeURIComponent(path)}` : ""}`);
+      if (!r.ok) return [];
+      return await r.json();
+    }
+
+    function rewriteRelativePaths(md) {
+      // ![alt](file.png) or ![alt](./screens/x.png) → API asset URL
+      return md.replace(
+        /!\[([^\]]*)\]\((?!https?:\/\/)(?!\/)(?:\.\/)?([^)]+)\)/g,
+        (m, alt, path) => `![${alt}](${API_BASE}/asset?path=${encodeURIComponent(path)})`
+      );
+    }
+
+    function stripInternalNotes(md) {
+      // Remove internal task/artifact reference lines that leak file paths into public view.
+      // Matches "> 🔗 Task: ...", "> 🔗 Course chapter: ...", "> 🔗 Задача: ..." at the very top.
+      const lines = md.split('\n');
+      let i = 0;
+      while (i < lines.length && (lines[i].startsWith('> 🔗') || lines[i].trim() === '')) {
+        i++;
+      }
+      return lines.slice(i).join('\n');
+    }
+
+    // GitHub-slugger compatible: matches anchors в markdown links [text](#anchor)
+    // Rules: lowercase, keep alnum + cyrillic, punct removed (leaves surrounding spaces),
+    //        each space → single '-' (so '— ' between words leaves '--' in slug).
+    // NB: do NOT collapse multiple '-' — markdown links preserve them.
+    function slugify(text) {
+      return text.toLowerCase()
+        .trim()
+        .replace(/[^a-zа-яё0-9 \-]+/gi, '')
+        .replace(/ /g, '-')
+        .replace(/^-|-$/g, '');
+    }
+
+    function buildTocFromContent(container) {
+      const headings = container.querySelectorAll('h1, h2, h3');
+      if (headings.length === 0) return [];
+      const items = [];
+      const seenIds = {};
+      headings.forEach((h) => {
+        let base = slugify(h.textContent);
+        if (!base) base = 'section';
+        let id = base;
+        // Handle duplicate headings — append counter like github does
+        if (seenIds[base] !== undefined) {
+          seenIds[base] += 1;
+          id = base + '-' + seenIds[base];
+        } else {
+          seenIds[base] = 0;
+        }
+        h.id = id;
+        items.push({
+          id: id,
+          text: h.textContent.trim(),
+          level: parseInt(h.tagName[1], 10),
+          element: h,
+        });
+      });
+      return items;
+    }
+
+    function renderToc(items) {
+      const tocEl = document.getElementById('toc-list');
+      if (items.length === 0) {
+        tocEl.innerHTML = '<div style="opacity: 0.5;">нет разделов</div>';
+        return;
+      }
+      tocEl.innerHTML = items.map(it => `
+        <div class="toc-item level-${it.level}" data-target="${it.id}">${it.text}</div>
+      `).join('');
+      tocEl.querySelectorAll('.toc-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const target = document.getElementById(el.dataset.target);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+
+    function setupScrollSpy(items) {
+      const scrollEl = document.getElementById('content-scroll');
+      const tocPanel = document.getElementById('toc');
+      const tocItems = document.querySelectorAll('.toc-item');
+      let lastActiveId = null;
+      function onScroll() {
+        const scrollTop = scrollEl.scrollTop;
+        let active = items[0];
+        for (const it of items) {
+          const top = it.element.offsetTop;
+          if (top <= scrollTop + 100) active = it;
+          else break;
+        }
+        if (active.id === lastActiveId) return;
+        lastActiveId = active.id;
+        let activeEl = null;
+        tocItems.forEach(el => {
+          const isActive = el.dataset.target === active.id;
+          el.classList.toggle('active', isActive);
+          if (isActive) activeEl = el;
+        });
+        // Auto-scroll TOC panel so active item stays visible
+        if (activeEl) {
+          const panelRect = tocPanel.getBoundingClientRect();
+          const itemRect = activeEl.getBoundingClientRect();
+          const margin = 60;  // keep some breathing room from top/bottom edges
+          if (itemRect.top < panelRect.top + margin) {
+            tocPanel.scrollTop -= (panelRect.top + margin - itemRect.top);
+          } else if (itemRect.bottom > panelRect.bottom - margin) {
+            tocPanel.scrollTop += (itemRect.bottom - panelRect.bottom + margin);
+          }
+        }
+      }
+      scrollEl.addEventListener('scroll', onScroll);
+      onScroll();
+    }
+
+    // External links → new tab. Post-process HTML after marked.parse (safer than custom renderer,
+    // avoids marked v14+ signature quirks that break parseInline).
+    function externalLinksNewTab(html) {
+      return html.replace(
+        /<a\s+href="(https?:\/\/[^"]+)"/gi,
+        (match, href) => {
+          if (href.includes(location.host)) return match;  // same-origin: keep as-is
+          return `<a target="_blank" rel="noopener noreferrer" href="${href}"`;
+        }
+      );
+    }
+
+    async function showFile(path, name) {
+      const contentEl = document.getElementById('content');
+      // Highlight in tree
+      document.querySelectorAll(".tree-node").forEach(n => n.classList.remove("active"));
+      const nodeEl = document.querySelector(`.tree-node[data-path="${path}"]`);
+      if (nodeEl) nodeEl.classList.add("active");
+
+      // Clear TOC
+      document.getElementById('toc-list').innerHTML = '<div style="opacity: 0.5;">загрузка…</div>';
+
+      if (isImage(name)) {
+        contentEl.innerHTML = `<div class="content-img"><img src="${API_BASE}/asset?path=${encodeURIComponent(path)}" alt="${name}"></div>`;
+        document.getElementById('toc-list').innerHTML = '<div style="opacity: 0.5;">нет разделов</div>';
+        return;
+      }
+
+      if (!/\.(md|txt)$/i.test(name)) {
+        contentEl.innerHTML = `<div class="muted center" style="padding: 32px;">Формат не поддерживается для preview. Скачай через кнопку сверху.</div>`;
+        return;
+      }
+
+      try {
+        const r = await fetch(`${API_BASE}/file?path=${encodeURIComponent(path)}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        // Strip internal task-link cruft, rewrite paths, render markdown
+        const cleaned = stripInternalNotes(data.content);
+        const rewritten = rewriteRelativePaths(cleaned);
+        const html = externalLinksNewTab(marked.parse(rewritten));
+        // Hero cover at top (if share has cover.*) — same on every file для consistency
+        const heroCover = window._SHARE_HERO_COVER || '';
+        const heroHtml = heroCover
+          ? `<div class="content-hero"><img src="${API_BASE}/asset?path=${encodeURIComponent(heroCover)}" alt="cover"></div>`
+          : '';
+        contentEl.innerHTML = heroHtml + `<div class="content-md">${html}</div>`;
+        contentEl.querySelectorAll("pre code").forEach(block => hljs.highlightElement(block));
+        // Intercept relative .md links — SPA navigation via showFile instead of browser 404
+        contentEl.querySelectorAll(".content-md a[href]").forEach(a => {
+          const href = a.getAttribute("href");
+          // Match relative .md paths (with optional ./ prefix and optional #anchor)
+          const m = href.match(/^\.?\/?([^\/][^#]*\.md)(#.*)?$/i);
+          if (!m) return;
+          const targetPath = m[1];
+          const anchor = m[2] || '';
+          a.addEventListener("click", (e) => {
+            e.preventDefault();
+            const targetName = targetPath.split('/').pop();
+            showFile(targetPath, targetName).then(() => {
+              if (anchor) {
+                const el = document.getElementById(decodeURIComponent(anchor.slice(1)));
+                if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+              }
+            });
+          });
+        });
+        // Add copy button to every <pre> block
+        contentEl.querySelectorAll(".content-md pre").forEach(pre => {
+          const btn = document.createElement("button");
+          btn.className = "code-copy-btn";
+          btn.textContent = "Копировать";
+          btn.addEventListener("click", async () => {
+            const codeEl = pre.querySelector("code") || pre;
+            try {
+              await navigator.clipboard.writeText(codeEl.textContent);
+              btn.textContent = "Скопировано";
+              btn.classList.add("copied");
+              setTimeout(() => {
+                btn.textContent = "Копировать";
+                btn.classList.remove("copied");
+              }, 1500);
+            } catch (e) {
+              // Fallback for older browsers
+              const range = document.createRange();
+              range.selectNode(codeEl);
+              window.getSelection().removeAllRanges();
+              window.getSelection().addRange(range);
+              document.execCommand("copy");
+              window.getSelection().removeAllRanges();
+              btn.textContent = "Скопировано";
+              setTimeout(() => btn.textContent = "Копировать", 1500);
+            }
+          });
+          pre.appendChild(btn);
+        });
+        // Reset scroll to top
+        document.getElementById('content-scroll').scrollTop = 0;
+        // Build TOC + scroll spy
+        const items = buildTocFromContent(contentEl.querySelector('.content-md'));
+        renderToc(items);
+        if (items.length > 0) setupScrollSpy(items);
+      } catch (e) {
+        contentEl.innerHTML = `<div class="muted center" style="padding: 32px; color: #e77;">Ошибка загрузки: ${e.message}</div>`;
+      }
+    }
+
+    async function renderTree() {
+      const treeEl = document.getElementById("tree");
+      const entries = await loadTree();
+      // Probe для hero cover (used at top of every file render)
+      const entriesByName = new Map(entries.filter(e => !e.is_dir).map(e => [e.name.toLowerCase(), e]));
+      for (const candidate of HERO_COVERS) {
+        if (entriesByName.has(candidate)) {
+          window._SHARE_HERO_COVER = entriesByName.get(candidate).path;
+          break;
+        }
+      }
+      // Hide folders + cover/og-image (used as OG preview + hero, not navigation item)
+      // Sort by display_name so human-friendly order wins over technical filename alphabetization
+      const files = entries.filter(e => !e.is_dir && !SIDEBAR_HIDDEN.has(e.name.toLowerCase()))
+        .sort((a, b) => displayName(a.name).localeCompare(displayName(b.name), 'ru'));
+      if (files.length === 0) {
+        treeEl.innerHTML = `<div class="muted" style="padding: 16px;">Папка пуста.</div>`;
+        return;
+      }
+      const html = files.map(e => `
+        <div class="tree-node" data-path="${e.path}">${displayName(e.name)}</div>
+      `).join("");
+      treeEl.innerHTML = html;
+
+      treeEl.querySelectorAll(".tree-node").forEach(node => {
+        node.addEventListener("click", async () => {
+          const path = node.dataset.path;
+          const name = path.split('/').pop();
+          await showFile(path, name);
+        });
+      });
+
+      // Auto-open first .md
+      const firstMd = files.find(e => /\.md$/i.test(e.name));
+      if (firstMd) {
+        await showFile(firstMd.path, firstMd.name);
+      }
+    }
+
+    renderTree();
+
+    // Click on header title → jump back to first file (course) + scroll to top
+    document.getElementById('share-title').addEventListener('click', () => {
+      const firstNode = document.querySelector('.tree-node');
+      if (firstNode) firstNode.click();
+      document.getElementById('content-scroll').scrollTop = 0;
+    });
+
+    // Share button: try native Web Share API (iOS/Android/some desktop) → fallback to modal
+    const SHARE_URL = "{{ share_url }}";
+    const SHARE_TITLE = "{{ title }}";
+    const SHARE_TEXT = "{{ description or title }}";
+
+    document.getElementById('share-btn').addEventListener('click', async () => {
+      // Native share (iPhone/Android → OS action sheet)
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: SHARE_TITLE, text: SHARE_TEXT, url: SHARE_URL });
+          return;
+        } catch (e) {
+          // User cancelled — fine, no fallback needed
+          if (e.name === 'AbortError') return;
+        }
+      }
+      // Fallback modal (desktop без Web Share API)
+      const modal = document.getElementById('share-modal');
+      const enc = encodeURIComponent;
+      const text = `${SHARE_TITLE} — ${SHARE_URL}`;
+      document.getElementById('share-tg').href = `https://t.me/share/url?url=${enc(SHARE_URL)}&text=${enc(SHARE_TITLE)}`;
+      document.getElementById('share-wa').href = `https://wa.me/?text=${enc(text)}`;
+      document.getElementById('share-tw').href = `https://twitter.com/intent/tweet?url=${enc(SHARE_URL)}&text=${enc(SHARE_TITLE)}`;
+      document.getElementById('share-mail').href = `mailto:?subject=${enc(SHARE_TITLE)}&body=${enc(text)}`;
+      modal.classList.add('open');
+    });
+
+    document.getElementById('share-close').addEventListener('click', () => {
+      document.getElementById('share-modal').classList.remove('open');
+    });
+    document.getElementById('share-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'share-modal') e.target.classList.remove('open');
+    });
+    document.getElementById('share-copy-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('share-copy-btn');
+      try {
+        await navigator.clipboard.writeText(SHARE_URL);
+        btn.textContent = 'Скопировано';
+        setTimeout(() => btn.textContent = 'Копировать', 1500);
+      } catch (e) {
+        const input = document.getElementById('share-url-input');
+        input.select(); document.execCommand('copy');
+        btn.textContent = 'Скопировано';
+        setTimeout(() => btn.textContent = 'Копировать', 1500);
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -215,6 +215,164 @@ const CODE_EXTS = new Set([
   "rb", "go", "rs", "java", "c", "cpp", "h", "swift", "kt", "php",
 ]);
 
+// ── Media renderer (block 677-2) ─────────────────────────────
+const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "svg", "webp", "avif", "bmp", "ico"]);
+const AUDIO_EXTS = new Set(["mp3", "wav", "m4a", "ogg", "oga", "flac", "aac", "opus"]);
+const VIDEO_EXTS = new Set(["mp4", "webm", "mov", "m4v", "avi", "mkv"]);
+
+function getMediaKind(ext) {
+  ext = (ext || "").toLowerCase();
+  if (!ext) return "other";
+  if (ext === "md" || ext === "markdown") return "md";
+  if (ext === "pdf") return "pdf";
+  if (IMAGE_EXTS.has(ext)) return "image";
+  if (AUDIO_EXTS.has(ext)) return "audio";
+  if (VIDEO_EXTS.has(ext)) return "video";
+  if (CODE_EXTS.has(ext)) return "code";
+  return "other";
+}
+function _mediaEscapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function _mediaFmtSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+// ── Lightbox (block 677-5) ───────────────────────────────
+const _lightbox = {
+  overlay: null, imgEl: null, counterEl: null,
+  images: [], currentIdx: 0, touchStartX: null, keyHandler: null, projectId: null,
+};
+
+function _lbBuildOverlay() {
+  if (_lightbox.overlay) return _lightbox.overlay;
+  const ov = document.createElement("div");
+  ov.className = "lightbox";
+  ov.innerHTML = `
+    <div class="lightbox-counter"><span data-idx>1</span> / <span data-total>1</span></div>
+    <button class="lightbox-close" aria-label="Close">×</button>
+    <button class="lightbox-arrow lightbox-arrow-prev" aria-label="Previous">‹</button>
+    <img class="lightbox-image" alt="">
+    <button class="lightbox-arrow lightbox-arrow-next" aria-label="Next">›</button>
+  `;
+  ov.querySelector(".lightbox-close").addEventListener("click", closeLightbox);
+  ov.querySelector(".lightbox-arrow-prev").addEventListener("click", (e) => { e.stopPropagation(); navigateLightbox(-1); });
+  ov.querySelector(".lightbox-arrow-next").addEventListener("click", (e) => { e.stopPropagation(); navigateLightbox(1); });
+  ov.addEventListener("click", (e) => { if (e.target === ov) closeLightbox(); });
+  ov.addEventListener("touchstart", (e) => { _lightbox.touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+  ov.addEventListener("touchend", (e) => {
+    if (_lightbox.touchStartX === null) return;
+    const dx = e.changedTouches[0].screenX - _lightbox.touchStartX;
+    if (Math.abs(dx) > 50) navigateLightbox(dx > 0 ? -1 : 1);
+    _lightbox.touchStartX = null;
+  }, { passive: true });
+  document.body.appendChild(ov);
+  _lightbox.overlay = ov;
+  _lightbox.imgEl = ov.querySelector(".lightbox-image");
+  _lightbox.counterEl = ov.querySelector(".lightbox-counter");
+  return ov;
+}
+
+function _lbAssetUrl(path) {
+  return `/api/projects/${_lightbox.projectId}/asset?path=${encodeURIComponent(path)}`;
+}
+
+function _lbPreload(idx) {
+  if (idx < 0 || idx >= _lightbox.images.length) return;
+  const img = new Image();
+  img.src = _lbAssetUrl(_lightbox.images[idx].name ? (_lightbox.images[idx].path || _lightbox.images[idx].name) : "");
+}
+
+function _lbShow(idx) {
+  if (idx < 0 || idx >= _lightbox.images.length) return;
+  _lightbox.currentIdx = idx;
+  const item = _lightbox.images[idx];
+  const path = item.path || item.name;
+  _lightbox.imgEl.src = _lbAssetUrl(path);
+  _lightbox.imgEl.alt = item.name;
+  _lightbox.counterEl.querySelector("[data-idx]").textContent = String(idx + 1);
+  _lightbox.counterEl.querySelector("[data-total]").textContent = String(_lightbox.images.length);
+  _lbPreload(idx + 1);
+  _lbPreload(idx - 1);
+}
+
+function navigateLightbox(delta) {
+  const n = _lightbox.images.length;
+  if (n <= 1) return;
+  const next = (_lightbox.currentIdx + delta + n) % n;
+  _lbShow(next);
+}
+
+async function openLightbox(path) {
+  const projectId = (window.state && state.project) ? state.project.id : null;
+  if (!projectId) return;
+  _lightbox.projectId = projectId;
+  const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+  try {
+    const url = `/api/projects/${projectId}/images-in-folder?path=${encodeURIComponent(folder)}`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const list = await res.json();
+    if (!Array.isArray(list) || list.length === 0) return;
+    // Endpoint returns [{name, type, size, is_text}] — synthesize path (folder + name).
+    _lightbox.images = list.map(item => ({
+      name: item.name,
+      path: folder ? `${folder}/${item.name}` : item.name,
+      size: item.size,
+    }));
+    const fileName = path.split("/").pop();
+    const idx = _lightbox.images.findIndex(item => item.name === fileName);
+    _lightbox.currentIdx = idx >= 0 ? idx : 0;
+    _lbBuildOverlay();
+    _lightbox.overlay.classList.add("lightbox-open");
+    document.body.style.overflow = "hidden";
+    _lbShow(_lightbox.currentIdx);
+    _lightbox.keyHandler = (e) => {
+      if (e.key === "Escape") closeLightbox();
+      else if (e.key === "ArrowLeft") navigateLightbox(-1);
+      else if (e.key === "ArrowRight") navigateLightbox(1);
+    };
+    document.addEventListener("keydown", _lightbox.keyHandler);
+  } catch (err) {
+    console.warn("Lightbox open failed:", err);
+  }
+}
+
+function closeLightbox() {
+  if (!_lightbox.overlay) return;
+  _lightbox.overlay.classList.remove("lightbox-open");
+  document.body.style.overflow = "";
+  if (_lightbox.keyHandler) {
+    document.removeEventListener("keydown", _lightbox.keyHandler);
+    _lightbox.keyHandler = null;
+  }
+}
+
+function renderMediaHtml(kind, url, name, size, path) {
+  if (kind === "pdf") {
+    return `<iframe class="media-pdf" src="${url}" type="application/pdf"></iframe>`;
+  }
+  if (kind === "image") {
+    const pathAttr = path ? ` data-lb-path="${_mediaEscapeHtml(path)}" onclick="openLightbox(this.dataset.lbPath)" style="cursor:zoom-in"` : "";
+    return `<img class="media-image" src="${url}" alt="${_mediaEscapeHtml(name || "")}"${pathAttr}>`;
+  }
+  if (kind === "audio") {
+    return `<audio class="media-audio" controls src="${url}"></audio>`;
+  }
+  if (kind === "video") {
+    return `<video class="media-video" controls src="${url}"></video>`;
+  }
+  // download fallback
+  const sizeStr = _mediaFmtSize(size);
+  return `<div class="media-download">
+    <div class="media-download-icon">📄</div>
+    <div class="media-download-name"><strong>${_mediaEscapeHtml(name || "file")}</strong>${sizeStr ? ` <span class="muted">— ${sizeStr}</span>` : ""}</div>
+    <a class="media-download-btn" href="${url}" download="${_mediaEscapeHtml(name || "")}">⬇ Скачать</a>
+  </div>`;
+}
+
 function renderContent(text, filename) {
   const ext = (filename || "").split(".").pop().toLowerCase();
   if (ext === "md" || ext === "markdown") {
@@ -273,10 +431,24 @@ async function onFileClick(entry) {
   }
   const path = state.filesPath ? `${state.filesPath}/${entry.name}` : entry.name;
   logAccess(state.project.id, "file", path);
-  if (!entry.is_text) {
-    setContent(`<div class="muted center">Binary file — preview not available.</div>`);
+
+  const ext = entry.name.split(".").pop().toLowerCase();
+  const kind = getMediaKind(ext);
+  const assetUrl = `/api/projects/${state.project.id}/asset?path=${encodeURIComponent(path)}`;
+
+  // Media: render inline via /asset URL, no /file text fetch
+  if (kind === "pdf" || kind === "image" || kind === "audio" || kind === "video") {
+    setContent(renderMediaHtml(kind, assetUrl, entry.name, entry.size, path));
     return;
   }
+
+  // Non-text binary that's not recognized media → download button
+  if (!entry.is_text && kind === "other") {
+    setContent(renderMediaHtml("other", assetUrl, entry.name, entry.size, path));
+    return;
+  }
+
+  // Text/code → existing renderContent flow via /file
   setContent(`<div class="muted center">Loading…</div>`);
   try {
     const data = await api(`/api/projects/${state.project.id}/file?path=${encodeURIComponent(path)}`);
@@ -389,10 +561,23 @@ async function onArtifactClick(a) {
   const path = a.file_path;
   if (!path) return;
   logAccess(state.project.id, "artifact", path);
+
+  const fileName = a.file_name || path.split("/").pop();
+  const ext = fileName.split(".").pop().toLowerCase();
+  const kind = getMediaKind(ext);
+
+  // Media / non-text binary → /artifacts/asset endpoint + inline media renderer
+  if (kind === "pdf" || kind === "image" || kind === "audio" || kind === "video") {
+    const assetUrl = `/api/artifacts/asset?path=${encodeURIComponent(path)}`;
+    setContent(renderMediaHtml(kind, assetUrl, fileName, a.size, path));
+    return;
+  }
+
+  // Text/code → existing /read + renderContent
   setContent(`<div class="muted center">Loading…</div>`);
   try {
     const data = await api(`/api/artifacts/read?path=${encodeURIComponent(path)}`);
-    setContent(renderContent(data.content, a.file_name || path));
+    setContent(renderContent(data.content, fileName));
   } catch (e) {
     setContent(`<div class="muted center">Error: ${e.message}</div>`);
   }
@@ -1112,6 +1297,13 @@ async function renderSkillDetail(name) {
         const item = el("div", {
           class: "skill-example-row",
           on: { click: async () => {
+            const _ext = (ex.file_name || "").split(".").pop().toLowerCase();
+            const _kind = getMediaKind(_ext);
+            if (_kind === "pdf" || _kind === "image" || _kind === "audio" || _kind === "video") {
+              const _url = `/api/artifacts/asset?path=${encodeURIComponent(ex.file_path)}`;
+              setContent(renderMediaHtml(_kind, _url, ex.file_name, null, ex.file_path));
+              return;
+            }
             try {
               const data = await api(`/api/artifacts/read?path=${encodeURIComponent(ex.file_path)}`);
               setContent(renderContent(data.content, ex.file_name));

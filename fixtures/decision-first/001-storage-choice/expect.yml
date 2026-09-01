@@ -1,0 +1,10 @@
+# What must be true after decision-first runs on 001-storage-choice.
+# Either option may be chosen; the fixture checks that the choice is recorded
+# together with its rationale and the alternatives it rejected.
+skill: decision-first
+artifact: "decision-*.md"
+artifact_type: decision
+sections:
+  - "Decision"
+  - "Why"
+  - "Alternatives"

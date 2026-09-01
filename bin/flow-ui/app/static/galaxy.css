@@ -1,0 +1,190 @@
+/* galaxy.css — Full-featured 3D workspace visualization overlay styles.
+ * Consumers: app/templates/galaxy.html + app/static/galaxy.js. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #04070d;
+  color: #edf4fa;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+
+#graph { width: 100vw; height: 100vh; }
+
+/* ── Loading & meta ─────────────────────────────────────────────── */
+
+#loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #F4A300;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 20;
+}
+#loading.error { color: #DC4A4A; }
+
+#meta {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #edf4fa;
+  opacity: 0.35;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* ── Glass-morphism overlay base ────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  background: rgba(10, 15, 25, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(244, 163, 0, 0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #edf4fa;
+  z-index: 5;
+}
+
+/* ── Filters (top-left) ─────────────────────────────────────────── */
+
+#filters {
+  top: 12px;
+  left: 12px;
+  max-width: 220px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+#filters h3 {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #F4A300;
+}
+#filters input[type="search"] {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(244,163,0,0.2);
+  border-radius: 6px;
+  color: #edf4fa;
+  font-size: 12px;
+  font-family: inherit;
+}
+#filters input[type="search"]::placeholder { color: rgba(237,244,250,0.35); }
+#filters input[type="search"]:focus { outline: none; border-color: #F4A300; }
+#filters label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 0;
+  cursor: pointer;
+  user-select: none;
+}
+#filters label:hover { color: #F4A300; }
+#filters .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Controls (top-right) ───────────────────────────────────────── */
+
+#controls {
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  flex-direction: column;
+  align-items: stretch;
+}
+#controls button {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(244,163,0,0.2);
+  color: #edf4fa;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  min-width: 130px;
+}
+#controls button:hover { border-color: #F4A300; background: rgba(244,163,0,0.08); }
+#controls button.active { border-color: #F4A300; color: #F4A300; }
+
+/* ── Side-panel (right slide-in) ────────────────────────────────── */
+
+#sidepanel {
+  top: 60px;
+  right: 12px;
+  width: 320px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  transform: translateX(360px);
+  transition: transform 0.3s ease;
+  z-index: 8;
+}
+#sidepanel.open { transform: translateX(0); }
+#sidepanel .close {
+  float: right;
+  background: none;
+  border: none;
+  color: #edf4fa;
+  opacity: 0.5;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+#sidepanel .close:hover { opacity: 1; color: #F4A300; }
+#sidepanel h2 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #F4A300;
+  word-break: break-word;
+}
+#sidepanel .meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+#sidepanel .meta-row .k { opacity: 0.5; }
+#sidepanel .meta-row .v { color: #edf4fa; text-align: right; word-break: break-all; }
+#sidepanel a.deep {
+  display: block;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(244,163,0,0.12);
+  border: 1px solid #F4A300;
+  border-radius: 6px;
+  color: #F4A300;
+  text-align: center;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+#sidepanel a.deep:hover { background: rgba(244,163,0,0.2); }
+
+/* Legend removed in Block 7 — filters carry color swatches */

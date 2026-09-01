@@ -6,7 +6,9 @@ Authoring standard for every skill in the framework. Any file under
 `bin/verify-contract.sh` checks the contract mechanically.
 
 Reader path: [`CONCEPTS.md`](./CONCEPTS.md) defines what a "skill" is;
-this file describes the shape every skill file must take.
+this file describes the shape every skill file must take;
+[`AGENT_CONTRACT.md`](./AGENT_CONTRACT.md) describes what the runtime
+executing that file must be able to do.
 
 ## Frontmatter
 
@@ -14,8 +16,10 @@ Every skill starts with a YAML frontmatter block delimited by `---`.
 
 **Required fields:**
 
-- `name` — the string used to invoke the skill via `Skill('name')`.
+- `name` — the string the runtime uses to invoke the skill explicitly.
   Must match the folder name (e.g. `core/flow-first/` → `name: flow-first`).
+  The invocation syntax is runtime-specific — `Skill('name')` on Claude Code,
+  `$name` on Codex; see [`AGENT_CONTRACT.md`](./AGENT_CONTRACT.md) capability R2.
 - `description` — multi-line string with three parts:
   1. **Role line** (opening sentence) — one clause describing what the
      skill does.

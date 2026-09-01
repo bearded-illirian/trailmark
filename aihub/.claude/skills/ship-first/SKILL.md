@@ -89,6 +89,24 @@ Get types via `SELECT atom_type FROM task_blocks WHERE task_id='{task_id}' AND b
 
 ## Step B5 — Close block
 
+First verify the block actually produced what its cadence required. On a runtime
+with post-tool hooks this check can be automated; on one without them it is this
+step, and skipping it closes a block whose artifacts were never written — silently,
+because nothing else looks.
+
+```bash
+sqlite3 {routing_db} \
+  "SELECT recommended_cadence,
+          (SELECT group_concat(DISTINCT artifact_type) FROM task_artifacts
+            WHERE task_id='{task_id}' AND block_num='{NM}') AS produced
+     FROM task_blocks WHERE task_id='{task_id}' AND block_num={NM};"
+```
+
+`flow+lib+plan` expects `flow-first`, `library-first`, `plan-first` and `report`;
+`lib+plan` expects the same without `flow-first`; `plan` expects `plan-first` and
+`report`. A missing artifact means the chain was cut — say which one is absent and
+stop, rather than closing the block.
+
 ```bash
 sqlite3 {routing_db} \
   "UPDATE task_blocks SET status='done', commit_hash='{last_commit_hash}', closed_at='{date}'

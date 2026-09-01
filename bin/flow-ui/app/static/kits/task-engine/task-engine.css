@@ -1,0 +1,221 @@
+/*
+ * task-engine.css v1.2.0 · vschk-lab kit
+ * Radius: 4/6/8. Density: row padding 6-10px.
+ * All colors via var(--*) from THEMES_MANIFEST.
+ */
+
+.te-root { color: var(--text); font-family: inherit; font-size: 13px; }
+.te-mode-standalone { padding: 20px; }
+.te-mode-embedded { padding: 12px; }
+
+.te-title { font-size: 20px; color: var(--brand); margin: 0 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+/* Unified toolbar: filter chips (wrap) + add-button anchored right */
+.te-toolbar {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 12px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.te-toolbar-filters { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.te-toolbar-actions { flex-shrink: 0; }
+
+/* legacy — kept for backward compat if consumer css does not resync */
+.te-topbar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.te-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.te-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
+  background: transparent; color: var(--text-muted); border: 1px solid var(--border); cursor: pointer;
+  font-size: 12px; font-family: inherit; font-weight: 500; transition: all 0.12s; }
+.te-chip:hover { border-color: var(--text-muted); color: var(--text); }
+.te-chip.active { background: var(--brand); color: var(--bg); border-color: var(--brand); }
+.te-chip-count { background: rgba(255,255,255,0.15); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.te-chip.active .te-chip-count { background: rgba(0,0,0,0.25); color: var(--bg); }
+
+.te-section { margin-bottom: 14px; }
+.te-section-header {
+  padding: 8px 12px; background: var(--bg-2);
+  border-left: 3px solid var(--brand); border-radius: 4px;
+  font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 4px;
+  cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 6px;
+  transition: background 0.12s;
+}
+.te-section-header:hover { background: var(--surface-elevated, var(--bg-2)); }
+.te-section-meta { color: var(--text-muted); font-weight: 400; font-size: 11px; margin-left: 8px; }
+.te-chevron {
+  display: inline-block; width: 12px; font-size: 10px;
+  color: var(--text-muted); transition: transform 0.12s;
+}
+.te-section-collapsed .te-table-wrap { display: none; }
+.te-section-collapsed .te-section-header { margin-bottom: 0; }
+
+.te-table-wrap { overflow-x: auto; }
+.te-table {
+  width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px;
+  table-layout: fixed;  /* v1.2.4: consistent widths across all section-tables */
+}
+.te-table tbody tr.te-row { border-left: 3px solid var(--text-muted); }
+.te-table tbody td {
+  padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.te-table tbody tr:hover td { background: var(--bg-2); }
+.te-table tbody tr:last-child td { border-bottom: none; }
+
+/* v1.2.4: fixed column widths — все section-tables identical */
+.te-cell-text          { width: auto; white-space: normal; }   /* main flex column, wraps long text */
+.te-cell-assigned_to   { width: 120px; }
+.te-cell-status        { width: 140px; }
+.te-cell-deadline      { width: 110px; }
+.te-cell-comments_count { width: 60px; text-align: center; }
+
+.te-cell[data-editable] { cursor: pointer; }
+.te-cell[data-editable]:hover { background: var(--surface-elevated, var(--bg-2)); }
+.te-cell[data-action] { cursor: pointer; }
+.te-cell-comments { text-align: center; }
+.te-cell-text[data-action]:hover { color: var(--brand); }
+.te-comments-icon { cursor: pointer; color: var(--text-muted); font-size: 12px; }
+.te-comments-icon:hover { color: var(--brand); }
+
+.te-overdue { color: var(--danger); font-weight: 600; }
+
+.te-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; border: 1px solid; }
+.te-empty { color: var(--text-muted); }
+.te-empty-row { text-align: center; padding: 24px; color: var(--text-muted); font-style: italic; }
+.te-error { padding: 12px; background: var(--bg-2); color: var(--danger); border-left: 3px solid var(--danger); border-radius: 4px; }
+.te-muted { color: var(--text-muted); font-style: italic; padding: 10px 0; }
+
+.te-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg-2); color: var(--text); cursor: pointer; font-size: 12px; font-family: inherit; }
+.te-btn:hover { background: var(--surface-elevated, var(--bg-2)); border-color: var(--text-muted); }
+.te-btn-primary { background: var(--brand); color: var(--bg); border-color: var(--brand); font-weight: 600; }
+.te-btn-primary:hover { background: var(--brand-hover); }
+.te-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.te-btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+.te-btn-danger:hover { background: var(--danger); color: var(--bg); }
+
+.te-dropdown { position: absolute; z-index: 1000; background: var(--surface-elevated, var(--bg-2));
+  border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.3));
+  min-width: 140px; padding: 4px 0; }
+.te-dropdown-opt { padding: 6px 12px; cursor: pointer; font-size: 12px; color: var(--text); }
+.te-dropdown-opt:hover { background: var(--bg-2); color: var(--brand); }
+
+/* ── Unified task-detail slider (v1.2) ──────────────────────── */
+.te-slider {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  /* Ширина не зависит от содержимого: иначе живут две раскладки — широкая
+     с метой справа и узкая со всем в столбик (decision-18, пункт 1). */
+  width: min(1100px, 94vw);
+  background: var(--surface-elevated, var(--bg-2));
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 12px rgba(0,0,0,0.4);
+  display: flex; flex-direction: column;
+  z-index: 2000; border-radius: 8px 0 0 8px;
+}
+/* Крестик слева, номер задачи справа. */
+.te-slider-header { padding: 10px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.te-slider-close { background: transparent; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 18px; padding: 0 6px; line-height: 1; order: 0; }
+.te-slider-close:hover { color: var(--danger); }
+.te-slider-num { margin-left: auto; font-size: 12.5px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; }
+
+/* Слева читают, справа управляют. */
+.te-slider-cols { flex: 1; min-height: 0; display: flex; }
+.te-slider-main { flex: 1; min-width: 0; overflow-y: auto; padding: 20px 24px 28px; }
+.te-slider-name { margin: 0 0 18px; font-size: 22px; font-weight: 700;
+  line-height: 1.25; color: var(--text); }
+.te-slider-side {
+  flex: 0 0 360px; min-width: 0; display: flex; flex-direction: column;
+  border-left: 1px solid var(--border); background: var(--bg-1, transparent);
+}
+/* Мета сверху постоянной высоты, лента забирает остаток и прокручивается. */
+.te-slider-side .te-slider-fields { flex-shrink: 0; }
+.te-slider-side .te-slider-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+.te-descr-frame { width: 100%; border: 0; display: block; background: transparent; min-height: 80px; }
+.te-descr-empty { display: flex; flex-direction: column; align-items: flex-start;
+  gap: 12px; padding: 40px 0; }
+.te-btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+.te-btn-ghost:hover { color: var(--brand); border-color: var(--brand); }
+.te-slider-descr {
+  width: 100%; min-height: 140px; margin-top: 8px; resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
+  background: var(--bg-1, transparent); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+}
+.te-slider-descr:focus { outline: none; border-color: var(--brand); }
+
+/* Реплика агента отличается засечкой и меткой. */
+.te-comment-agent { border-left: 2px solid var(--brand); padding-left: 10px; }
+.te-comment-agent .te-comment-meta strong { color: var(--brand); font-weight: 600; }
+.te-comment-badge {
+  margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 10.5px;
+  letter-spacing: .04em; text-transform: uppercase;
+  background: color-mix(in srgb, var(--brand) 18%, transparent); color: var(--brand);
+}
+
+/* На узком экране колонки складываются: описание, управление, комментарии. */
+@media (max-width: 860px) {
+  .te-slider { width: 100vw; border-radius: 0; }
+  .te-slider-cols { flex-direction: column; }
+  .te-slider-main { padding: 16px 16px 20px; }
+  .te-slider-side { flex: 0 0 auto; border-left: 0; border-top: 1px solid var(--border); }
+}
+.te-slider-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.te-slider-title { font-weight: 600; font-size: 14px; color: var(--text); }
+.te-slider-close { background: transparent; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 18px; padding: 0 6px; line-height: 1; }
+.te-slider-close:hover { color: var(--danger); }
+
+.te-slider-fields { padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.te-slider-text {
+  width: 100%; min-height: 60px; resize: vertical;
+  padding: 8px 10px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text);
+  border-radius: 6px; font-size: 13px; font-family: inherit;
+  margin-bottom: 10px; box-sizing: border-box;
+}
+.te-slider-text:focus { outline: none; border-color: var(--brand); }
+.te-field-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px;
+}
+.te-field-row label { color: var(--text-muted); flex-shrink: 0; min-width: 100px; }
+.te-field-row select, .te-field-row input {
+  flex: 1; padding: 5px 8px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text);
+  border-radius: 6px; font-size: 12px; font-family: inherit;
+}
+.te-field-row select:focus, .te-field-row input:focus { outline: none; border-color: var(--brand); }
+.te-field-row input[type="date"] { color-scheme: dark; }  /* native picker в dark theme */
+.te-slider-actions { display: flex; gap: 8px; margin-top: 10px; }
+.te-slider-actions .te-btn { flex: 1; }
+.te-slider-actions .te-btn-danger { flex: 0 0 auto; }
+
+.te-slider-comments-header {
+  padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--border);
+  font-size: 11px; text-transform: uppercase; color: var(--text-muted);
+  letter-spacing: 0.05em; font-weight: 600; flex-shrink: 0;
+}
+.te-slider-body {
+  flex: 1 1 auto; overflow-y: auto; padding: 10px 16px; min-height: 100px;
+}
+.te-slider-empty { text-align: center; padding: 24px; }
+.te-comment { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.te-comment:last-child { border-bottom: none; }
+.te-comment-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.te-comment-text { font-size: 13px; color: var(--text); white-space: pre-wrap; }
+
+.te-slider-form {
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+  background: var(--bg-2);
+}
+.te-slider-input {
+  min-height: 50px; resize: vertical;
+  padding: 8px 10px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text);
+  border-radius: 6px; font-size: 13px; font-family: inherit;
+}
+.te-slider-input:focus { outline: none; border-color: var(--brand); }

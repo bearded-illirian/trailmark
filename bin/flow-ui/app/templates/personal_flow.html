@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personal Flow</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Распознавание паттернов документа (task 698 block 3). Без него markdown
+       показывается обычным текстом: типографика есть, оформления нет.
+       Подключается ДО personal_flow.js, который его зовёт. Block 4. -->
+  <script src="/static/doc-patterns.js"></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+  <script defer src="/static/personal_flow.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">flow<span class="dot">·</span>ui</div>
+    <div class="pf-context" id="pf-context" style="margin-left: 20px; opacity: 0.9;">Загрузка…</div>
+  </header>
+
+  <main class="split">
+    <aside class="left-panel">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="inbox" role="tab">Файлы</button>
+        <button class="tab" data-tab="modes" role="tab">Режимы</button>
+        <button class="tab" data-tab="analytics" role="tab" style="display:none">Аналитика</button>
+        <button class="tab" data-tab="settings" role="tab">Настройки</button>
+      </div>
+      <nav id="breadcrumb" class="breadcrumb"></nav>
+      <div id="tree" class="tree">
+        <div class="muted">Загрузка…</div>
+      </div>
+    </aside>
+
+    <section class="right-panel">
+      <div id="content" class="content">
+        <div class="muted center">Загрузка…</div>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>

@@ -63,11 +63,17 @@ is out of scope currently — patches welcome.
 
 ## Which AI models does it work with?
 
-The shipped skills are written for Claude (they use the `Skill('name')`
-invocation pattern of Claude Code and Claude Agent SDK). The artifact
-contract itself is language-agnostic — any agent that can invoke skills
-by name and read/write markdown can use it. Adapting for other providers
-means renaming the invocation shape; the discipline transfers.
+Claude Code is the runtime the skills were written on and the only one
+they have actually been run on. The artifact contract itself is
+agent-agnostic — any runtime that discovers skills in a directory, invokes
+them by name, and reads and writes markdown can host them. What a runtime
+has to provide is listed in [`docs/AGENT_CONTRACT.md`](./docs/AGENT_CONTRACT.md).
+
+An experimental Codex adapter ships in `adapters/codex/` — generated, not yet
+run on a live install. The port turned out to be a directory move plus two
+mechanical substitutions rather than a rewrite: Codex discovers skills the
+same way, and all 17 skills already satisfy its rules unchanged. See that
+adapter's README for what is verified and what is not.
 
 ## Can I use it without Claude Code?
 

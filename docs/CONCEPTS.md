@@ -38,8 +38,9 @@ time with a commit hash.
 
 A markdown protocol file with a defined trigger, steps, and output format.
 Skills live under `core/`, `protocols/`, and `commands/` and are invoked
-via `Skill('name')` — the agent reads the file and follows its steps
-verbatim, without shortcuts.
+by name — the agent reads the file and follows its steps verbatim, without
+shortcuts. The exact invocation syntax depends on the runtime; see
+[`AGENT_CONTRACT.md`](./AGENT_CONTRACT.md).
 
 > Example: `core/flow-first/SKILL.md` — a protocol that produces a 4×3
 > landscape/problem/solution/result table before any code is written.

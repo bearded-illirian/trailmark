@@ -246,4 +246,4 @@ sqlite3 {routing_db} \
    VALUES ('{slug}', '{N}', 'go-guide', datetime('now'))" 2>/dev/null || true
 ```
 
-If `{slug}` / `{N}` unknown → hook writes empty; `|| true` guards failure.
+If `{slug}` / `{N}` are unknown the row is written with empty values; `|| true` keeps a logging failure from aborting the skill.

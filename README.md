@@ -115,10 +115,11 @@ scale, LangChain / CrewAI fit. This framework fits when you want **discipline
 without a runtime** — every step of every task auditable, but nothing to
 maintain beyond files.
 
-_Note: this framework runs on top of Claude Code (or any agent supporting
-`Skill('name')` invocation). The comparison above is against categories of
-methodology, not against the underlying agent harness — Claude Code is the
-runtime we build on, not a competitor._
+_Note: this framework runs on top of an agent runtime that can discover
+skills and invoke them by name — Claude Code today, with an experimental
+Codex adapter in `adapters/codex/`. The comparison above is against
+categories of methodology, not against the underlying agent harness: the
+runtime is what we build on, not a competitor._
 
 For detailed side-by-side comparisons vs specific frameworks (BMAD-Method,
 Superpowers, and others) → see [docs/COMPARISON.md](docs/COMPARISON.md).
@@ -287,7 +288,7 @@ to `aihub/.claude/skills` and appends an entry to `aihub/projects.yml`.
 
 ```bash
 cd projects/my-first-app
-claude                               # or any agent supporting Skill('name')
+claude                               # or any runtime that invokes skills by name
 /go-start
 /go-fast "add a hello function to greetings.py"
 ```
@@ -388,8 +389,12 @@ tagged — see [Releases](../../releases/tag/v1.0.0).
 
 ### Coming from Codex / Cursor / another agent?
 
-Trailmark currently runs on Claude Code only. If you'd use it on another
-agent, drop a comment on [Discussion #1](https://github.com/bearded-illirian/trailmark/discussions/1)
+Trailmark currently runs on Claude Code only. An **experimental** Codex adapter
+lives in [`adapters/codex/`](./adapters/codex/) — generated and reviewed, never
+yet run on a live install; its README says what is verified and what is not.
+
+If you'd use Trailmark on another agent, drop a comment on
+[Discussion #1](https://github.com/bearded-illirian/trailmark/discussions/1)
 with which platform you're on. **If we hit 10+ signals, I'll prioritise
 the port.**
 

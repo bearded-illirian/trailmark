@@ -12,7 +12,8 @@ map lists the concrete ones.
 
 ### Skill
 
-Short identifier used to invoke the skill (`Skill('flow-first')`).
+Short identifier used to invoke the skill (`Skill('flow-first')` on Claude Code,
+`$flow-first` on Codex — see [`AGENT_CONTRACT.md`](./AGENT_CONTRACT.md)).
 **Derived from:** `name:` field in `SKILL.md` frontmatter.
 
 ### Tier
