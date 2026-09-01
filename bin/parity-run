@@ -22,20 +22,115 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# --verbose is pulled out wherever it appears, so both orderings work:
+#   parity-run --all <dir> --verbose
+#   parity-run --verbose --all <dir>
+# Mode dispatch below looks at $1, and a flag sitting there would hide --all.
+VERBOSE=0
+ARGS=()
+for a in "$@"; do
+  if [ "$a" = "--verbose" ]; then VERBOSE=1; else ARGS+=("$a"); fi
+done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+export PARITY_VERBOSE="$VERBOSE"
+
+usage() {
+  echo "usage: bash bin/parity-run <fixture-dir> <log-dir> [routing-db]"
+  echo "       bash bin/parity-run --all <log-dir> [routing-db]"
+  echo ""
+  echo "  --verbose   on failure, show what the artifact actually contains"
+  echo ""
+  echo "example: bash bin/parity-run fixtures/plan-first/001-add-endpoint tasks/log/2026-01-15-demo-cms--001-post-editor-fix"
+  echo "         bash bin/parity-run --all tasks/log/2026-01-15-demo-cms--001-post-editor-fix"
+  exit 2
+}
+
+# ── --all: every fixture against one run ─────────────────────────────────
+# A single fixture answers "did this skill behave"; --all answers "did the
+# framework behave", which is the question an adapter actually has to pass.
+if [ "${1:-}" = "--all" ]; then
+  ALL_LOG_DIR="${2:-}"
+  ALL_DB="${3:-$ROOT/tasks/routing.db}"
+  [ -n "$ALL_LOG_DIR" ] || usage
+  [ -d "$ALL_LOG_DIR" ] || { echo "❌ log dir not found: $ALL_LOG_DIR"; exit 2; }
+
+  # Collected into an array rather than piped into the loop: a `while read`
+  # on the far side of a pipe runs in a subshell, and every counter it
+  # increments is discarded when that subshell exits.
+  FIXTURES=()
+  while IFS= read -r d; do
+    [ -f "$d/expect.yml" ] && FIXTURES+=("$d")
+  done < <(find "$ROOT/fixtures" -mindepth 2 -maxdepth 2 -type d | sort)
+
+  if [ ${#FIXTURES[@]} -eq 0 ]; then
+    echo "❌ no fixtures found under $ROOT/fixtures"
+    echo "   A fixture is a directory holding input.md and expect.yml."
+    exit 2
+  fi
+
+  echo "════════════════════════════════════════════"
+  echo "parity-run --all   fixtures: ${#FIXTURES[@]}"
+  echo "                   log dir:  $ALL_LOG_DIR"
+  echo "════════════════════════════════════════════"
+
+  PASSED=0
+  FAILED=0
+  RESULTS=()
+
+  for f in "${FIXTURES[@]}"; do
+    name="${f#$ROOT/fixtures/}"
+    sub_flags=()
+    [ "$VERBOSE" -eq 1 ] && sub_flags+=(--verbose)
+    out=$(bash "$SCRIPT_DIR/parity-run" "$f" "$ALL_LOG_DIR" "$ALL_DB" "${sub_flags[@]+"${sub_flags[@]}"}" 2>&1)
+    code=$?
+    # The sub-run ends with its own verdict line, which also starts with a
+    # mark. Counting it would inflate every assertion total by one and print
+    # a bare "parity broken" among the actual failures.
+    body=$(printf '%s\n' "$out" | grep -v 'parity holds\|parity broken')
+    asserts=$(printf '%s\n' "$body" | grep -c '^[✅❌] ' || true)
+    fails=$(printf '%s\n' "$body" | grep -c '^❌ ' || true)
+    if [ $code -eq 0 ]; then
+      PASSED=$((PASSED + 1))
+      RESULTS+=("✅|$name|$asserts|$fails")
+    else
+      FAILED=$((FAILED + 1))
+      RESULTS+=("❌|$name|$asserts|$fails")
+      # Keep the detail of what broke — a summary line alone sends the reader
+      # back to re-run the fixture by hand just to see the reason.
+      printf '%s\n' "$body" | grep '^❌ \|^     ↳' | sed "s|^|   $name: |"
+    fi
+  done
+
+  echo ""
+  printf "%-3s %-44s %10s %8s\n" "" "fixture" "assertions" "failed"
+  for r in "${RESULTS[@]}"; do
+    IFS='|' read -r mark name asserts fails <<< "$r"
+    printf "%-3s %-44s %10s %8s\n" "$mark" "$name" "$asserts" "$fails"
+  done
+
+  echo ""
+  echo "── Summary ──"
+  echo "Fixtures:    ${#FIXTURES[@]}"
+  echo "Passed:      $PASSED"
+  echo "Failed:      $FAILED"
+  [ $FAILED -eq 0 ] && echo "✅ parity holds across all fixtures" \
+                    || echo "❌ parity broken in $FAILED of ${#FIXTURES[@]}"
+  exit $([ $FAILED -eq 0 ] && echo 0 || echo 1)
+fi
+
 FIXTURE="${1:-}"
 LOG_DIR="${2:-}"
 ROUTING_DB="${3:-$ROOT/tasks/routing.db}"
 
 if [ -z "$FIXTURE" ] || [ -z "$LOG_DIR" ]; then
-  echo "usage: bash bin/parity-run <fixture-dir> <log-dir> [routing-db]"
-  echo "example: bash bin/parity-run fixtures/plan-first/001-add-endpoint tasks/log/2026-01-15-demo-cms--001-post-editor-fix"
-  exit 2
+  usage
 fi
 
 [ -f "$FIXTURE/expect.yml" ] || { echo "❌ no expect.yml in $FIXTURE"; exit 2; }
 [ -d "$LOG_DIR" ] || { echo "❌ log dir not found: $LOG_DIR"; exit 2; }
 
-FIXTURE="$FIXTURE" LOG_DIR="$LOG_DIR" ROUTING_DB="$ROUTING_DB" python3 <<'PYEOF'
+FIXTURE="$FIXTURE" LOG_DIR="$LOG_DIR" ROUTING_DB="$ROUTING_DB" \
+PARITY_VERBOSE="$VERBOSE" python3 <<'PYEOF'
 import os, re, glob, sqlite3, sys
 
 fixture = os.environ["FIXTURE"]
@@ -57,30 +152,41 @@ for raw in open(os.path.join(fixture, "expect.yml"), encoding="utf-8"):
         key, value = key.strip(), value.strip().strip('"')
         expect[key] = value if value else []
 
+verbose = os.environ.get("PARITY_VERBOSE") == "1"
+
 results = []
-def check(name, ok, detail=""):
-    results.append((name, ok, detail))
+def check(name, ok, detail="", context=None):
+    # `context` renders only under --verbose and only when the check failed:
+    # a passing check needs no explanation, and an unconditional dump would
+    # bury the one line that matters.
+    results.append((name, ok, detail, context if (verbose and not ok) else None))
 
 # ── artifact_exists ──────────────────────────────────────────────────────
 pattern = expect.get("artifact", "")
 matches = sorted(glob.glob(os.path.join(log_dir, pattern))) if pattern else []
+present = sorted(os.path.basename(f) for f in glob.glob(os.path.join(log_dir, "*")))
+listing = ", ".join(present[:8]) + (f" … and {len(present)-8} more" if len(present) > 8 else "")
 check("artifact_exists", bool(matches),
-      os.path.basename(matches[-1]) if matches else f"no file matching {pattern!r}")
+      os.path.basename(matches[-1]) if matches else f"no file matching {pattern!r}",
+      f"directory holds: {listing or '(empty)'}")
 
 body = ""
 if matches:
     body = open(matches[-1], encoding="utf-8").read()
 
 # ── sections ─────────────────────────────────────────────────────────────
+found_headings = [l.strip() for l in body.splitlines() if l.startswith("#")]
 for section in expect.get("sections", []):
     check(f"section {section!r}", section in body,
-          "present" if section in body else "missing")
+          "present" if section in body else "missing",
+          "headings in artifact: " + (" | ".join(found_headings[:10]) or "(none)"))
 
 # ── gate ─────────────────────────────────────────────────────────────────
 gate = expect.get("gate", "")
 if isinstance(gate, str) and gate:
     check("approval_gate", gate.lower() in body.lower(),
-          "found" if gate.lower() in body.lower() else f"no {gate!r} in artifact")
+          "found" if gate.lower() in body.lower() else f"no {gate!r} in artifact",
+          f"artifact is {len(body)} chars; looked for {gate!r} case-insensitively")
 
 # ── min_table_rows ───────────────────────────────────────────────────────
 if expect.get("min_table_rows"):
@@ -88,7 +194,8 @@ if expect.get("min_table_rows"):
     rows = [l for l in body.splitlines()
             if l.startswith("|") and not re.match(r"^\|[\s|:-]+\|$", l)]
     data_rows = max(len(rows) - 1, 0)          # minus the header row
-    check(f"table has >= {minimum} rows", data_rows >= minimum, f"{data_rows} rows")
+    check(f"table has >= {minimum} rows", data_rows >= minimum, f"{data_rows} rows",
+          "first table lines: " + (" / ".join(r[:60] for r in rows[:4]) or "(no table found)"))
 
 # ── db_row ───────────────────────────────────────────────────────────────
 atype = expect.get("artifact_type", "")
@@ -103,9 +210,15 @@ if atype:
             "SELECT COUNT(*) FROM task_artifacts "
             "WHERE task_id = ? AND artifact_type = ?", (task_id, atype)).fetchone()[0]
         con.close()
+        con2 = sqlite3.connect(f"file:{routing_db}?mode=ro", uri=True)
+        types = [r[0] for r in con2.execute(
+            "SELECT DISTINCT artifact_type FROM task_artifacts WHERE task_id = ?",
+            (task_id,)).fetchall()]
+        con2.close()
         check("db_row", n > 0,
               f"{n} row(s) for artifact_type={atype!r}" if n
-              else f"no row for {task_id!r} / {atype!r}")
+              else f"no row for {task_id!r} / {atype!r}",
+              f"task {task_id!r} has types: " + (", ".join(types) or "(no rows at all)"))
 
 # ── report ───────────────────────────────────────────────────────────────
 print("════════════════════════════════════════════")
@@ -113,9 +226,11 @@ print(f"parity-run  fixture: {fixture}")
 print(f"            log dir: {log_dir}")
 print("════════════════════════════════════════════")
 failed = 0
-for name, ok, detail in results:
+for name, ok, detail, context in results:
     mark = "✅" if ok else "❌"
     print(f"{mark} {name:<34} {detail}")
+    if context:
+        print(f"     ↳ {context}")
     failed += 0 if ok else 1
 print("── Summary ──")
 print(f"Assertions:  {len(results)}")

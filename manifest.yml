@@ -228,6 +228,18 @@ entries:
     destination_path: aihub/.claude/skills/tutorial-check/
     last_synced_commit: null
 
+  - id: parity-check
+    tier: core
+    source_path: skills/parity-check/
+    destination_path: aihub/.claude/skills/parity-check/
+    last_synced_commit: null
+
+  - id: fixture-new
+    tier: core
+    source_path: skills/fixture-new/
+    destination_path: aihub/.claude/skills/fixture-new/
+    last_synced_commit: null
+
   # ── Tools (1 — executable code trees, synced as-is with per-tool excludes) ─
   - id: flow-ui
     tier: tool

@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Manifest: v1.0.0](https://img.shields.io/badge/manifest-v1.0.0-blue.svg)](./manifest.yml)
-[![Skills: 19](https://img.shields.io/badge/skills-19_shipped-brightgreen.svg)](./docs/SKILLS_MAP.md)
+[![Skills: 20](https://img.shields.io/badge/skills-20_shipped-brightgreen.svg)](./docs/SKILLS_MAP.md)
 [![GitHub stars](https://img.shields.io/github/stars/bearded-illirian/trailmark?style=social)](https://github.com/bearded-illirian/trailmark/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/bearded-illirian/trailmark.svg)](https://github.com/bearded-illirian/trailmark/issues)
 
@@ -78,7 +78,7 @@ Chat log → auditable engineering record. **One rule, enforced by protocol.**
 
 ### Skills-first, not agent-heavy
 
-Trailmark ships 19 skills that run in **your main Claude context** — not as isolated subagents that reload 30-40k tokens each invocation. This is a deliberate design choice, not a missing feature:
+Trailmark ships 20 skills that run in **your main agent context** — not as isolated subagents that reload 30-40k tokens each invocation. This is a deliberate design choice, not a missing feature:
 
 - **Cost per task drops 5-10x** — no subagent bloat on trivial work (Tier 3 block ≈ $0.15)
 - **Everything is debuggable** — all tool calls, all edits, all validation checks visible in the chat
@@ -155,7 +155,7 @@ Once initialised, your workspace looks like:
 workspace-root/
 ├── aihub/               # Central skill registry — one source, many consumers
 │   └── .claude/
-│       ├── skills/      # 17 skills (protocol + core)
+│       ├── skills/      # 18 skills (protocol + core)
 │       └── commands/    # 2 slash-commands (/go-start, /go-fast)
 ├── projects/            # Your projects — each symlinks aihub skills
 │   ├── my-app/.claude/skills → ../../aihub/.claude/skills
@@ -370,7 +370,7 @@ No services. No package managers beyond pip for Flow UI.
 
 ## Status
 
-**Current release — 19 skills + 1 tool, manifest v1.0.0.**
+**Current release — 20 skills + 1 tool, manifest v1.0.0.**
 
 The 19 shipped skills (2 slash-commands + 4 protocol skills + 13 core skills)
 are functional and used daily on real production work. The Flow UI is a

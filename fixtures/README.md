@@ -31,6 +31,23 @@ make Claude Code or Codex execute a protocol; that part is yours.
 bash bin/parity-run fixtures/plan-first/001-add-endpoint /path/to/log-dir
 ```
 
+To check every fixture against the same run — the question an adapter actually
+has to answer — use `--all`:
+
+```bash
+bash bin/parity-run --all /path/to/log-dir
+```
+
+It prints a row per fixture and exits non-zero if any of them failed. A run that
+exercised only one skill will legitimately fail the fixtures for the others; read
+the table, not just the exit code.
+
+Add `--verbose` to either form when a failure needs explaining. It shows what the
+artifact actually contains — which headings are there, which files sit in the
+directory, which artifact types the task registered — so a red line is a finding
+rather than the start of a manual investigation. The flag adds lines and changes
+none, so a quiet run stays byte-identical.
+
 The runner reports ✅/❌ per assertion and exits non-zero if any fail.
 
 ## expect.yml

@@ -72,7 +72,7 @@ has to provide is listed in [`docs/AGENT_CONTRACT.md`](./docs/AGENT_CONTRACT.md)
 An experimental Codex adapter ships in `adapters/codex/` — generated, not yet
 run on a live install. The port turned out to be a directory move plus two
 mechanical substitutions rather than a rewrite: Codex discovers skills the
-same way, and all 17 skills already satisfy its rules unchanged. See that
+same way, and every shipped skill already satisfies its rules unchanged. See that
 adapter's README for what is verified and what is not.
 
 ## Can I use it without Claude Code?

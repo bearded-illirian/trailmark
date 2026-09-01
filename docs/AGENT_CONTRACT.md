@@ -129,8 +129,8 @@ entry points, `go-fast` and `go-start`, which historically lived as commands.
 | O3 separate slash commands | yes — `.claude/commands/` | deprecated; custom prompts superseded by skills |
 
 The Codex column is drawn from OpenAI's published documentation and from a
-measurement of Trailmark's own 17 skills against its stated rules — all 17
-already comply without edits. It has **not** yet been confirmed by a live run;
+measurement of Trailmark's own skills against its stated rules — every one
+of them complies without edits. It has **not** yet been confirmed by a live run;
 see the adapter's README for current status.
 
 ## Degradation rules

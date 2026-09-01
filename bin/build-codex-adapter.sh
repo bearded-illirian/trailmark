@@ -20,6 +20,7 @@
 # Usage:
 #   bash bin/build-codex-adapter.sh            # build (writes the tree)
 #   bash bin/build-codex-adapter.sh --check    # verify only, non-zero if stale
+#   bash bin/build-codex-adapter.sh --summary  # what a rebuild would change
 
 set -euo pipefail
 
@@ -31,7 +32,15 @@ SRC_CMD="$ROOT/aihub/.claude/commands"
 DST="$ROOT/adapters/codex/.agents/skills"
 
 CHECK_MODE=0
-[ "${1:-}" = "--check" ] && CHECK_MODE=1
+SUMMARY_MODE=0
+case "${1:-}" in
+  --check)   CHECK_MODE=1 ;;
+  --summary) SUMMARY_MODE=1 ;;
+  "")        ;;
+  *) echo "❌ Unknown option: $1"
+     echo "usage: bash bin/build-codex-adapter.sh [--check | --summary]"
+     exit 2 ;;
+esac
 
 [ -d "$SRC" ] || { echo "❌ source tree missing: $SRC"; exit 1; }
 
@@ -204,6 +213,60 @@ policy:
 YAML
   POLICIES_WRITTEN=$((POLICIES_WRITTEN + 1))
 done
+
+# ── Summary mode: say what a rebuild would change, write nothing ──────────
+# Reads against the destination as it stands right now, so it has to run
+# before the rsync below replaces it. Answers the question `git diff` answers
+# badly here: a 300 KB generated tree diffs into noise, and the useful facts —
+# which skills moved, what appeared, what vanished — drown in it.
+if [ "$SUMMARY_MODE" -eq 1 ]; then
+  if [ ! -d "$DST" ]; then
+    echo "Adapter tree does not exist yet — a build would create $TOTAL_BUILT entries."
+    exit 0
+  fi
+
+  CHANGED=(); ADDED=(); REMOVED=()
+
+  while IFS= read -r f; do
+    rel="${f#$STAGE/}"
+    if [ ! -f "$DST/$rel" ]; then
+      ADDED+=("$rel")
+    elif ! cmp -s "$f" "$DST/$rel"; then
+      CHANGED+=("$rel")
+    fi
+  done < <(find "$STAGE" -type f | sort)
+
+  while IFS= read -r f; do
+    rel="${f#$DST/}"
+    [ -f "$STAGE/$rel" ] || REMOVED+=("$rel")
+  done < <(find "$DST" -type f | sort)
+
+  echo "════════════════════════════════════════════"
+  echo "Codex adapter — what a rebuild would change"
+  echo "════════════════════════════════════════════"
+
+  if [ ${#CHANGED[@]} -eq 0 ] && [ ${#ADDED[@]} -eq 0 ] && [ ${#REMOVED[@]} -eq 0 ]; then
+    echo "  nothing — the tree matches its source"
+  else
+    if [ ${#CHANGED[@]} -gt 0 ]; then
+      echo "  changed (${#CHANGED[@]}):"
+      printf '    %s\n' "${CHANGED[@]:0:10}"
+      [ ${#CHANGED[@]} -gt 10 ] && echo "    … and $((${#CHANGED[@]} - 10)) more"
+    fi
+    # Appearances and disappearances are always few and always worth naming in
+    # full: a vanished skill is the kind of thing a truncated list hides.
+    [ ${#ADDED[@]} -gt 0 ]   && { echo "  appeared (${#ADDED[@]}):";   printf '    %s\n' "${ADDED[@]}"; }
+    [ ${#REMOVED[@]} -gt 0 ] && { echo "  vanished (${#REMOVED[@]}):"; printf '    %s\n' "${REMOVED[@]}"; }
+  fi
+
+  echo ""
+  echo "  skills:    $SKILLS_BUILT"
+  echo "  commands:  $COMMANDS_BUILT"
+  echo "  policies:  $POLICIES_WRITTEN (${EXPLICIT_ONLY[*]})"
+  echo "════════════════════════════════════════════"
+  echo "Nothing was written. Run without --summary to build."
+  exit 0
+fi
 
 # ── Check mode: compare, never write ─────────────────────────────────────
 if [ "$CHECK_MODE" -eq 1 ]; then

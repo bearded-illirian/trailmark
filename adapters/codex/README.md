@@ -13,9 +13,9 @@ was that the formats diverge and every protocol would need rewriting.
 
 They converged instead. Codex now discovers skills the same way Claude Code
 does — a folder per skill, a `SKILL.md`, YAML frontmatter with `name` and
-`description` — and it deprecated custom prompts in favour of skills. All 17
-Trailmark skills already satisfy Codex's stated rules without a single edit to
-their bodies: frontmatter carries exactly the two permitted fields, the longest
+`description` — and it deprecated custom prompts in favour of skills. Every
+Trailmark skill already satisfies Codex's stated rules without a single edit to
+its body: frontmatter carries exactly the two permitted fields, the longest
 skill is 410 lines against a 500-line ceiling, every name is valid.
 
 So this adapter is not a rewrite. It is a directory move plus two mechanical
@@ -25,7 +25,7 @@ substitutions.
 
 ```
 adapters/codex/.agents/skills/
-  {skill}/SKILL.md              # 17 protocol skills
+  {skill}/SKILL.md              # 18 protocol and core skills
   {command}/SKILL.md            # go-fast, go-start — commands shipped as skills
   {some}/agents/openai.yaml     # explicit-only invocation, 3 skills
 ```
@@ -111,9 +111,14 @@ protocol. That part is yours.
 The tree is generated, not hand-maintained. After any change to the skills:
 
 ```bash
-bash bin/build-codex-adapter.sh          # rebuild
-bash bin/build-codex-adapter.sh --check  # verify it is current, write nothing
+bash bin/build-codex-adapter.sh            # rebuild
+bash bin/build-codex-adapter.sh --check    # verify it is current, write nothing
+bash bin/build-codex-adapter.sh --summary  # what a rebuild would change
 ```
+
+`--summary` names the skills that would move, appear or vanish. A generated tree
+of this size diffs into noise, and a vanished skill is exactly the kind of fact
+that noise hides.
 
 Rebuilding is idempotent — the same source produces a byte-identical tree.
 

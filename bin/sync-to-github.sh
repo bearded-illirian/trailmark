@@ -14,7 +14,12 @@
 # Usage:
 #   bash bin/sync-to-github.sh                                  # default commit message with timestamp
 #   bash bin/sync-to-github.sh --message "custom message"       # custom commit message
+#   bash bin/sync-to-github.sh --no-wait                         # publish, do not wait for CI
 #   GH_REPO_SLUG="user/repo" bash bin/sync-to-github.sh          # override target repo
+#
+# After a push the script waits for the workflow run on that exact commit and
+# reports its outcome. The wait never changes the exit code — see wait_for_ci.
+# Ceiling via CI_WAIT_TIMEOUT (seconds, default 420).
 #
 # Recommended commit message style:
 #   - Keep under 60 chars (renders cleanly in GitHub file tree)
@@ -56,9 +61,96 @@ TEMP_DIR="/tmp/framework-mirror-${TS//[:]/}"
 
 # ── Commit message ───────────────────────────────────────────────────────
 MSG="sync $TS"
-if [ "$1" = "--message" ] && [ -n "$2" ]; then
-  MSG="$2"
-fi
+WAIT_CI=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --message) [ -n "${2:-}" ] && { MSG="$2"; shift; } ;;
+    --no-wait) WAIT_CI=0 ;;
+    *)         echo "⚠️  unknown argument: $1 (ignored)" ;;
+  esac
+  shift
+done
+
+# ── CI outcome ───────────────────────────────────────────────────────────────────────
+# The push is irreversible; this wait is not. Nothing below may change the
+# script's exit code — a reader who sees a non-zero status concludes the
+# publish failed and goes fixing something that is already fine. Every branch
+# ends in `return 0`, including the ones that report a red build.
+CI_WAIT_TIMEOUT="${CI_WAIT_TIMEOUT:-420}"
+
+wait_for_ci() {
+  local sha="$1"
+  local waited=0 run_id="" status="" conclusion=""
+  local actions_url="https://github.com/$REPO_SLUG/actions"
+
+  if ! command -v gh > /dev/null 2>&1; then
+    echo "ⓘ gh is not installed — skipping the CI wait."
+    echo "  Watch it here: $actions_url"
+    return 0
+  fi
+  if ! gh auth status > /dev/null 2>&1; then
+    echo "ⓘ gh is not authenticated — skipping the CI wait."
+    echo "  Watch it here: $actions_url"
+    return 0
+  fi
+
+  echo "→ Waiting for CI on $sha ..."
+
+  # Matched by commit sha, never by "the most recent run": somebody else's
+  # push can land between ours and this query, and reporting their result as
+  # ours is worse than reporting nothing at all.
+  while [ "$waited" -lt 90 ]; do
+    run_id=$(gh run list -R "$REPO_SLUG" --commit "$sha" --limit 1 \
+               --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+    [ "$run_id" = "null" ] && run_id=""
+    [ -n "$run_id" ] && break
+    sleep 5
+    waited=$((waited + 5))
+  done
+
+  if [ -z "$run_id" ]; then
+    echo "ⓘ No workflow run registered for $sha after ${waited}s."
+    echo "  Either this repository runs no workflows, or GitHub is slow to queue."
+    echo "  Watch it here: $actions_url"
+    return 0
+  fi
+
+  waited=0
+  while [ "$waited" -lt "$CI_WAIT_TIMEOUT" ]; do
+    status=$(gh run view "$run_id" -R "$REPO_SLUG" --json status \
+               --jq .status 2>/dev/null || true)
+    [ "$status" = "completed" ] && break
+    sleep 10
+    waited=$((waited + 10))
+  done
+
+  if [ "$status" != "completed" ]; then
+    echo "ⓘ CI still running after ${CI_WAIT_TIMEOUT}s — not waiting further."
+    echo "  $actions_url/runs/$run_id"
+    return 0
+  fi
+
+  conclusion=$(gh run view "$run_id" -R "$REPO_SLUG" --json conclusion \
+                 --jq .conclusion 2>/dev/null || true)
+  if [ "$conclusion" = "success" ]; then
+    echo "✅ CI passed — $actions_url/runs/$run_id"
+    return 0
+  fi
+
+  echo "❌ CI finished with: ${conclusion:-unknown}"
+  echo "   $actions_url/runs/$run_id"
+  echo ""
+  # Which step broke, not merely that something did — otherwise the reader
+  # opens the browser anyway and the wait bought nothing.
+  gh run view "$run_id" -R "$REPO_SLUG" --json jobs \
+    --jq '.jobs[] | .name as $j | .steps[]
+          | select(.conclusion != "success" and .conclusion != "skipped")
+          | "   \($j) → \(.name): \(.conclusion)"' 2>/dev/null || true
+  echo ""
+  echo "The push already happened. This is a red build on published code,"
+  echo "not a failed publish — fix forward."
+  return 0
+}
 
 echo "════════════════════════════════════════════"
 echo "Sync-to-github started at $TS"
@@ -99,6 +191,7 @@ git config user.email "${GH_SYNC_EMAIL:-288121890+bearded-illirian@users.noreply
 git config user.name "${GH_SYNC_NAME:-bearded-illirian}"
 
 git add -A
+PUSHED_SHA=""
 if git diff --staged --quiet; then
   echo "✅ No changes to sync (public mirror already up to date)."
 else
@@ -106,11 +199,21 @@ else
   echo "→ Pushing..."
   git push origin main 2>&1 | tail -3
   echo "✅ Push complete."
+  PUSHED_SHA=$(git rev-parse HEAD)
 fi
 
 # ── Cleanup ──────────────────────────────────────────────────────────────
 cd /
 rm -rf "$TEMP_DIR"
+
+# ── Report the CI outcome ────────────────────────────────────────────────────────
+# gh addresses the repository with -R, so it needs no working directory — the
+# call sits after the cleanup on purpose.
+if [ -n "$PUSHED_SHA" ] && [ "$WAIT_CI" = "1" ]; then
+  wait_for_ci "$PUSHED_SHA"
+elif [ -n "$PUSHED_SHA" ]; then
+  echo "ⓘ --no-wait: not waiting for CI. https://github.com/$REPO_SLUG/actions"
+fi
 
 echo "════════════════════════════════════════════"
 echo "Sync-to-github completed."
