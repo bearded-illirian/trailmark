@@ -1,6 +1,6 @@
 # This tree is generated
 
-Every file here is produced by `bin/build-adapter.sh codex` from the skills
+Every file here is produced by `bin/build-adapter.sh cursor` from the skills
 in `aihub/.claude/skills/` and `aihub/.claude/commands/`. Nothing in this folder
 is edited by hand.
 
@@ -15,17 +15,17 @@ the bash generator cannot run — not because it is a source.
 |---|---|
 | What a skill does | `aihub/.claude/skills/{name}/SKILL.md` |
 | An entry point | `aihub/.claude/commands/{name}` |
-| How Codex differs from other runtimes — invocation syntax, paths, invocation policy | the `codex` profile in `bin/build-adapter.sh` |
+| How Cursor differs from other runtimes — invocation syntax, paths, invocation policy | the `cursor` profile in `bin/build-adapter.sh` |
 
 Then rebuild:
 
 ```bash
-bash bin/build-adapter.sh codex
+bash bin/build-adapter.sh cursor
 ```
 
 ## This is enforced, not merely requested
 
-`bash bin/build-adapter.sh codex --check` compares this tree against what
+`bash bin/build-adapter.sh cursor --check` compares this tree against what
 the generator would produce right now. It runs in two places:
 
 - **CI** — `.github/workflows/verify-contract.yml`, on every push and pull request to `main`

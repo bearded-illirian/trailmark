@@ -69,11 +69,12 @@ agent-agnostic — any runtime that discovers skills in a directory, invokes
 them by name, and reads and writes markdown can host them. What a runtime
 has to provide is listed in [`docs/AGENT_CONTRACT.md`](./docs/AGENT_CONTRACT.md).
 
-An experimental Codex adapter ships in `adapters/codex/` — generated, not yet
-run on a live install. The port turned out to be a directory move plus two
-mechanical substitutions rather than a rewrite: Codex discovers skills the
-same way, and every shipped skill already satisfies its rules unchanged. See that
-adapter's README for what is verified and what is not.
+Experimental adapters ship for Codex (`adapters/codex/`) and Cursor
+(`adapters/cursor/`) — generated, neither yet run on a live install. The port
+turned out to be a directory move plus two mechanical substitutions rather than
+a rewrite: both discover skills the same way, and every shipped skill already
+satisfies their rules unchanged. Each adapter's README says what is verified
+and what is not.
 
 ## Can I use it without Claude Code?
 

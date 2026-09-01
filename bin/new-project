@@ -19,7 +19,7 @@ set -e
 
 # ── Args ─────────────────────────────────────────────────────────────────
 if [ -z "$1" ]; then
-  echo "Usage: bash bin/new-project <project-id> [--agent=claude|codex]"
+  echo "Usage: bash bin/new-project <project-id> [--agent=claude|codex|cursor]"
   echo "Example: bash bin/new-project my-first-app"
   echo "         bash bin/new-project my-first-app --agent=codex"
   exit 1
@@ -39,10 +39,10 @@ for arg in "$@"; do
 done
 
 case "$AGENT" in
-  claude|codex) ;;
+  claude|codex|cursor) ;;
   *)
     echo "❌ Unknown agent: '$AGENT'"
-    echo "   Supported: claude (default), codex"
+    echo "   Supported: claude (default), codex, cursor"
     echo "   An adapter for another runtime starts at docs/AGENT_CONTRACT.md."
     exit 1
     ;;
@@ -68,23 +68,37 @@ if [ -d "$PROJECT_DIR" ]; then
 fi
 
 # ── Resolve skill tree per agent ────────────────────────────────────────
-# Both symlinks are relative and start from projects/<id>/<dir>/, which is
-# three levels below the workspace root — the depth is the same for either
+# Every symlink is relative and starts from projects/<id>/<dir>/, which is
+# three levels below the workspace root — the depth is the same for every
 # agent, only the source and destination names differ.
-if [ "$AGENT" = "codex" ]; then
-  SKILLS_DIR=".agents"
-  SKILLS_TARGET="../../../adapters/codex/.agents/skills"
+#
+# claude points at the source tree; the others point at a generated one, and a
+# project linked at a stale tree would work silently while serving yesterday's
+# skills. So the generated ones are checked before the link is made.
+case "$AGENT" in
+  codex)
+    SKILLS_DIR=".agents"
+    SKILLS_TARGET="../../../adapters/codex/.agents/skills"
+    RUNTIME_PROFILE="codex"
+    ;;
+  cursor)
+    SKILLS_DIR=".cursor"
+    SKILLS_TARGET="../../../adapters/cursor/.cursor/skills"
+    RUNTIME_PROFILE="cursor"
+    ;;
+  *)
+    SKILLS_DIR=".claude"
+    SKILLS_TARGET="../../../aihub/.claude/skills"
+    RUNTIME_PROFILE=""
+    ;;
+esac
 
-  # The Codex tree is generated. Linking a project at a stale tree would work
-  # silently and serve yesterday's skills, so refuse until it is current.
-  if ! bash "$SCRIPT_DIR/build-codex-adapter.sh" --check > /dev/null 2>&1; then
-    echo "❌ Codex adapter tree is missing or stale."
-    echo "   Run: bash bin/build-codex-adapter.sh"
+if [ -n "$RUNTIME_PROFILE" ]; then
+  if ! bash "$SCRIPT_DIR/build-adapter.sh" "$RUNTIME_PROFILE" --check > /dev/null 2>&1; then
+    echo "❌ The $AGENT adapter tree is missing or stale."
+    echo "   Run: bash bin/build-adapter.sh $RUNTIME_PROFILE"
     exit 1
   fi
-else
-  SKILLS_DIR=".claude"
-  SKILLS_TARGET="../../../aihub/.claude/skills"
 fi
 
 # ── Create folder + symlink ─────────────────────────────────────────────
@@ -131,13 +145,13 @@ echo "   Agent:    $AGENT"
 echo "   Symlink:  $PROJECT_DIR/$SKILLS_DIR/skills → $SKILLS_TARGET"
 echo "   Registry: entry appended to aihub/projects.yml"
 echo ""
-if [ "$AGENT" = "codex" ]; then
-  echo "The Codex skill tree is generated. After editing any skill, rebuild it —"
+if [ -n "$RUNTIME_PROFILE" ]; then
+  echo "The $AGENT skill tree is generated. After editing any skill, rebuild it —"
   echo "the symlink points at the built tree, not at the source:"
   echo ""
-  echo "  bash bin/build-codex-adapter.sh"
+  echo "  bash bin/build-adapter.sh $RUNTIME_PROFILE"
   echo ""
-  echo "The adapter is experimental — see adapters/codex/README.md."
+  echo "The adapter is experimental — see adapters/$RUNTIME_PROFILE/README.md."
 else
   echo "Next: bash bin/sync-from-aihub.sh   # distribute skills to your projects"
 fi

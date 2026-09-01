@@ -34,8 +34,8 @@ jobs:
       # committed build output drifts unless something checks. A hand edit
       # there would otherwise survive until the next rebuild and then vanish
       # without a trace — the loudest place to catch that is here.
-      - name: Verify Codex adapter tree is current
-        run: bash bin/build-codex-adapter.sh --check
+      - name: Verify every adapter tree is current
+        run: bash bin/build-adapter.sh all --check
 
       - name: Verify manifest.yml is parseable
         run: |

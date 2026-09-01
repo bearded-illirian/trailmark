@@ -114,24 +114,48 @@ entry points, `go-fast` and `go-start`, which historically lived as commands.
 
 ## Capability matrix
 
-| | Claude Code | Codex |
-|---|---|---|
-| R1 skill directory | `.claude/skills/` | `.agents/skills/` (repo, scanned from cwd up to repo root), `$HOME/.agents/skills`, `/etc/codex/skills` |
-| R1 frontmatter | `name`, `description` | `name`, `description` — and **no other fields** |
-| R1 body size | no hard limit | under 500 lines, target under 5k words |
-| R1 name rules | kebab-case | lowercase, digits, hyphens; ≤64 chars; folder name equals `name` |
-| R2 explicit invocation | `Skill('name')` | `$name` |
-| R3 stop-and-wait gate | yes | yes |
-| R4 file read/write | yes | yes |
-| R5 shell execution | yes | yes |
-| O1 post-tool hook | yes — `PostToolUse` | **no** |
-| O2 implicit invocation | yes | yes — by `description` match; can be disabled per skill via `agents/openai.yaml` |
-| O3 separate slash commands | yes — `.claude/commands/` | deprecated; custom prompts superseded by skills |
+| | Claude Code | Codex | Cursor |
+|---|---|---|---|
+| R1 skill directory | `.claude/skills/` | `.agents/skills/` (repo, scanned from cwd up to repo root), `$HOME/.agents/skills`, `/etc/codex/skills` | `.cursor/skills/` and `.agents/skills/` (repo), `~/.cursor/skills`, `~/.agents/skills`; also reads `.claude/skills/` and `.codex/skills/` for compatibility |
+| R1 frontmatter | `name`, `description` | `name`, `description` — and **no other fields** | `name`, `description` required; `paths`, `disable-model-invocation`, `icon`, `color`, `metadata` optional |
+| R1 body size | no hard limit | under 500 lines, target under 5k words | not documented |
+| R1 name rules | kebab-case | lowercase, digits, hyphens; ≤64 chars; folder name equals `name` | lowercase, digits, hyphens; folder name equals `name` |
+| R2 explicit invocation | `Skill('name')` | `$name` | `/name` from the agent chat; `Option+Enter` pins a skill for the session |
+| R2 skill invoking a skill | yes — a tool call | not documented | not documented |
+| R3 stop-and-wait gate | yes | yes | yes |
+| R4 file read/write | yes | yes | yes |
+| R5 shell execution | yes | yes | yes |
+| O1 post-tool hook | yes — `PostToolUse` | **no** | **no** |
+| O2 implicit invocation | yes | yes — by `description` match; disabled per skill via `agents/openai.yaml` | yes — by `description` match; disabled per skill via `disable-model-invocation: true` **in the frontmatter** |
+| O3 separate slash commands | yes — `.claude/commands/` | deprecated; custom prompts superseded by skills | no separate concept — a skill *is* the slash entry |
 
-The Codex column is drawn from OpenAI's published documentation and from a
-measurement of Trailmark's own skills against its stated rules — every one
-of them complies without edits. It has **not** yet been confirmed by a live run;
-see the adapter's README for current status.
+O2 is why there are two generated trees rather than one. Codex accepts exactly
+`name` and `description` in the frontmatter and takes its policy from a sidecar
+file; Cursor takes the policy from a third frontmatter key. No single tree
+satisfies both, so the generator carries a profile per runtime — see
+`bin/build-adapter.sh` and "Adding a runtime" below.
+
+The Codex and Cursor columns are drawn from each vendor's published
+documentation and from a measurement of Trailmark's own skills against the
+stated rules — every skill complies without edits to its body. Cells reading
+"not documented" are exactly that: the vendor does not say, and a plausible
+guess in a reference document is worse than an admission.
+
+**Neither column has been confirmed by a live run.** Both adapters are
+experimental until someone reports otherwise — see each adapter's README.
+
+### Agent Skills is an open standard
+
+The shape above — one folder per skill, a `SKILL.md`, YAML frontmatter with
+`name` and `description` — is not a per-vendor convention that happened to
+converge. It is a published specification, and something over twenty tools
+read it.
+
+What the specification fixes is the *format*. What it does not fix is how a
+human or a skill asks for a skill **by name** — `Skill('x')`, `$x` and `/x` are
+three answers to the same question from three vendors. That syntax is the
+substance of a runtime profile, and it is the reason this framework ships
+adapters at all rather than one tree for everyone.
 
 ## Degradation rules
 
@@ -185,8 +209,30 @@ and between runs of the same runtime.
 
 ## Adding a runtime
 
+The generator is one engine with a profile per runtime. A profile is five
+facts, and adding a runtime means adding those five — not writing a second
+generator:
+
+| Field | What it answers |
+|---|---|
+| destination | where the built tree goes |
+| skills path | what this runtime calls its skills directory |
+| invocation prefix | what turns a skill name into an explicit call |
+| invocation policy | how implicit invocation is forbidden — a sidecar file, or a frontmatter key |
+| marker text | what the generated tree's `GENERATED.md` says |
+
+Steps:
+
 1. Fill a new column in the capability matrix from that runtime's documentation.
 2. For every optional capability it lacks, confirm a degradation rule covers it.
-3. Build the skill tree into the directory that runtime scans — see `bin/` for the existing generators.
+3. Add the profile to `load_profile` in `bin/build-adapter.sh` and put the
+   runtime's name in `RUNTIMES`. Build it: `bash bin/build-adapter.sh <name>`.
 4. Run the parity fixtures and record which acceptance criteria pass.
 5. Mark the adapter experimental until every criterion passes on a live run.
+
+**Two runtimes are shipped, not twenty.** The format is standard and many tools
+read it, but the invocation syntax differs per vendor and only Codex and Cursor
+have been checked against their documentation here. A tree built with a guessed
+invocation prefix would look finished and work nowhere, so the remaining
+runtimes are an invitation rather than a claim: you know your runtime's syntax,
+we do not — add the profile and send a pull request.

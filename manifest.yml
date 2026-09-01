@@ -264,12 +264,30 @@ outputs:
 
   - id: codex-adapter
     path: adapters/codex/.agents/skills/
-    generated_by: bin/build-codex-adapter.sh
-    verify: bash bin/build-codex-adapter.sh --check
+    generated_by: bin/build-adapter.sh codex
+    verify: bash bin/build-adapter.sh codex --check
     source: aihub/.claude/skills/ + aihub/.claude/commands/
     note: |
       Claude-shaped skills rewritten for Codex — Skill('x') becomes $x,
       .claude/skills becomes .agents/skills. Bodies are otherwise untouched.
       Carries files the source has no equivalent for: agents/openai.yaml
       invocation policies and GENERATED.md.
+
+  - id: cursor-adapter
+    path: adapters/cursor/.cursor/skills/
+    generated_by: bin/build-adapter.sh cursor
+    verify: bash bin/build-adapter.sh cursor --check
+    source: aihub/.claude/skills/ + aihub/.claude/commands/
+    note: |
+      The same skills rewritten for Cursor — Skill('x') becomes /x,
+      .claude/skills becomes .cursor/skills. Bodies are otherwise untouched.
+      Implicit invocation is forbidden through a frontmatter key rather than
+      a sidecar file: Cursor reads disable-model-invocation from the skill's
+      own frontmatter, while Codex accepts only name and description there.
+      That difference is why the two runtimes need two trees.
+
+  # Every tree above is checked in one call:
+  #   bash bin/build-adapter.sh all --check
+  # Both CI and bin/sync-to-github.sh use that form — asking per runtime is
+  # how one runtime eventually goes unchecked.
 

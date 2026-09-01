@@ -42,18 +42,30 @@ REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO_SLUG}.git"
 
 # ── Pre-flight: generated trees must match their source ──────────────────
 # Runs before the clone, so a refusal leaves no temp directory behind.
-# The adapter tree is generated; publishing a stale or hand-edited one ships
-# skills that differ from the source they claim to come from.
-if [ -x "$SCRIPT_DIR/build-codex-adapter.sh" ]; then
-  if ! bash "$SCRIPT_DIR/build-codex-adapter.sh" --check > /dev/null 2>&1; then
-    echo "❌ Codex adapter tree is stale or edited by hand — refusing to publish."
-    echo ""
-    bash "$SCRIPT_DIR/build-codex-adapter.sh" --check || true
-    echo ""
-    echo "Rebuild, review the diff, then publish:"
-    echo "  bash bin/build-codex-adapter.sh"
-    exit 1
-  fi
+#
+# The generator is REQUIRED, not optional. It used to be wrapped in
+# `if [ -x … ]`, meaning a rename or a move silently switched the check off
+# and publication carried on reporting success. That is the failure this gate
+# exists to prevent, so its own absence must be loud too.
+#
+# `all` covers every runtime in one call: asking per runtime is how one
+# runtime eventually goes unchecked, and an unchecked tree looks exactly like
+# a tree that passed.
+BUILDER="$SCRIPT_DIR/build-adapter.sh"
+if [ ! -x "$BUILDER" ]; then
+  echo "❌ generator not found or not executable: $BUILDER"
+  echo ""
+  echo "This script publishes generated adapter trees. Without the generator"
+  echo "there is no way to tell whether those trees still match their source,"
+  echo "and publishing them unchecked is exactly what this gate prevents."
+  echo "Restore bin/build-adapter.sh, or publish from a checkout that has it."
+  exit 1
+fi
+if ! bash "$BUILDER" all --check > /dev/null 2>&1; then
+  echo "❌ a generated adapter tree is stale or edited by hand — refusing to publish."
+  echo ""
+  bash "$BUILDER" all --check || true
+  exit 1
 fi
 
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

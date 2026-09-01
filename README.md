@@ -95,6 +95,58 @@ Targeted agents (research, parallel audit, security scan) will be added as **opt
 
 ---
 
+## What this adds to the agent you already have
+
+Fair question before anything else: Claude Code, Codex and Cursor already read
+your repository, write files and run commands. What is a framework for?
+
+Not for the average result — a good agent produces a good result most of the
+time. It is for the **spread**, and for what survives the session. Ask twice
+and you get two shapes; come back in a month and the reasoning is gone, because
+the only record was the chat.
+
+Six things change that. Each is a rule the skills enforce, not a promise:
+
+**A fixed order instead of improvisation.** Understand the landscape → check
+what already exists → plan → execute. Each step ends in a file, not an
+intention, and the next step refuses to start without the previous one's file.
+
+**Reuse before writing.** One step is literally a table: for every piece
+of the work, does something in the repository already do this, and how many new
+lines if not. Writing your own is faster than finding someone else's, so
+without the table it wins by default.
+
+**A stop before anything irreversible.** Publishing, deploying, deleting — the
+skill halts and waits for a human. Not a warning printed as it goes; a stop.
+
+**A cadence, so the discipline stays affordable.** Not every change needs the
+full loop. Three tiers, decided before the work rather than during it. Without
+this a protocol becomes a tax on one-line fixes, and a taxed protocol gets
+skipped.
+
+**An audit trail you can query.** Every artifact registers a row in a SQLite
+file. That makes "which blocks are missing an artifact their cadence required"
+an actual query — one that has returned real gaps, in this repository, at
+closing time.
+
+**Lessons accumulate where the work happens.** Each mistake worth keeping is
+written into the relevant skill as a named anti-pattern. The next run reads it
+before repeating it — including a run in a fresh session that remembers nothing.
+
+### What it costs
+
+On a one-line fix, all of this is absurd. That is exactly why the cadence
+exists, and why a hot-fix path skips the loop entirely. Applying the full
+protocol everywhere is a way to make people stop applying it anywhere.
+
+### What it is not
+
+It is not a replacement for the agent — nothing here works without one. It does
+not make the model reason better; the reasoning is the agent's. And it is not
+autonomy: the gates exist so a human stays in the loop where it matters.
+
+---
+
 ## How this compares
 
 | Axis | Prescriptive documentation-first frameworks | Executable orchestrators (LangChain, CrewAI) | Editor-embedded rules (e.g. Cursor rules) | **This framework** |
@@ -116,10 +168,12 @@ without a runtime** — every step of every task auditable, but nothing to
 maintain beyond files.
 
 _Note: this framework runs on top of an agent runtime that can discover
-skills and invoke them by name — Claude Code today, with an experimental
-Codex adapter in `adapters/codex/`. The comparison above is against
-categories of methodology, not against the underlying agent harness: the
-runtime is what we build on, not a competitor._
+skills and invoke them by name — Claude Code today, with experimental adapters
+for Codex (`adapters/codex/`) and Cursor (`adapters/cursor/`). The comparison
+above is against categories of methodology, not against the underlying agent
+harness: the runtime is what we build on, not a competitor. For what the
+framework adds on top of that runtime, see
+[What this adds to the agent you already have](#what-this-adds-to-the-agent-you-already-have)._
 
 For detailed side-by-side comparisons vs specific frameworks (BMAD-Method,
 Superpowers, and others) → see [docs/COMPARISON.md](docs/COMPARISON.md).
@@ -389,14 +443,21 @@ tagged — see [Releases](../../releases/tag/v1.0.0).
 
 ### Coming from Codex / Cursor / another agent?
 
-Trailmark currently runs on Claude Code only. An **experimental** Codex adapter
-lives in [`adapters/codex/`](./adapters/codex/) — generated and reviewed, never
-yet run on a live install; its README says what is verified and what is not.
+Trailmark has been *run* on Claude Code only. Two **experimental** adapters
+ship alongside it — [`adapters/codex/`](./adapters/codex/) and
+[`adapters/cursor/`](./adapters/cursor/) — generated and reviewed, neither yet
+run on a live install. Each adapter's README says what is verified and what is
+not.
 
-If you'd use Trailmark on another agent, drop a comment on
-[Discussion #1](https://github.com/bearded-illirian/trailmark/discussions/1)
-with which platform you're on. **If we hit 10+ signals, I'll prioritise
-the port.**
+Adding a third is a profile in `bin/build-adapter.sh`, not a second generator:
+five fields say where the tree goes, how a skill is invoked by name, what the
+skills directory is called, how implicit invocation is forbidden, and what the
+tree's marker says. The steps are in
+[`docs/AGENT_CONTRACT.md`](./docs/AGENT_CONTRACT.md).
+
+If you run either adapter, say how it went on
+[Discussion #1](https://github.com/bearded-illirian/trailmark/discussions/1) —
+a report from a live install is worth more here than another platform request.
 
 ---
 

@@ -108,13 +108,20 @@ protocol. That part is yours.
 
 ## Rebuilding
 
-The tree is generated, not hand-maintained. After any change to the skills:
+The tree is generated, not hand-maintained. One generator serves every runtime;
+Codex is one profile in it, and the runtime name is the first argument:
 
 ```bash
-bash bin/build-codex-adapter.sh            # rebuild
-bash bin/build-codex-adapter.sh --check    # verify it is current, write nothing
-bash bin/build-codex-adapter.sh --summary  # what a rebuild would change
+bash bin/build-adapter.sh codex            # rebuild
+bash bin/build-adapter.sh codex --check    # verify it is current, write nothing
+bash bin/build-adapter.sh codex --summary  # what a rebuild would change
+bash bin/build-adapter.sh all --check      # every runtime at once — what CI runs
 ```
+
+A profile is five facts: where the tree goes, how a skill is invoked by name,
+what the skills directory is called, how implicit invocation is forbidden, and
+what the generated-tree marker says. Adding a runtime is a profile, not a second
+script — see [`docs/AGENT_CONTRACT.md`](../../docs/AGENT_CONTRACT.md).
 
 `--summary` names the skills that would move, appear or vanish. A generated tree
 of this size diffs into noise, and a vanished skill is exactly the kind of fact
