@@ -256,6 +256,47 @@ entries:
     destination_path: bin/flow-ui/
     last_synced_commit: null
 
+# ── Publish allowlist ─────────────────────────────────────────────────────
+# What bin/sync-to-github.sh is allowed to publish, by top-level path.
+#
+# This is a WHITELIST on purpose. The exclude lists above are blacklists, and a
+# blacklist protects only against what its author remembered on the day it was
+# written: three directories that appeared in the live Flow UI tree after July
+# rode the next sync straight into the public mirror, silently, because nobody
+# went back to the list. A whitelist inverts the default — something new is not
+# published until someone says so.
+#
+# The gate compares this list against the actual tree and refuses in BOTH
+# directions:
+#   - a path in the tree that is not listed  → something new would be published
+#   - a path listed that is not in the tree  → the list has drifted from reality
+# The second is not a leak, but left unchecked it turns into a quiet deletion:
+# rsync --delete removes from the mirror whatever the list stops covering.
+#
+# Top level only. A leak arrives as a directory, and a 285-line file list is one
+# nobody maintains.
+publish_allowlist:
+  - .github
+  - .gitignore
+  - adapters
+  - aihub
+  - bin
+  - CHANGELOG.md
+  - CODE_OF_CONDUCT.md
+  - CONTRIBUTING.md
+  - docs
+  - FAQ.md
+  - FAQ.ru.md
+  - fixtures
+  - framework.yml.example
+  - LICENSE
+  - manifest.yml
+  - projects
+  - README.md
+  - README.ru.md
+  - SECURITY.md
+  - tasks
+
 # ── Generated outputs ─────────────────────────────────────────────────────
 # Trees produced by a generator from the entries above. They are committed —
 # the port has to stay browsable, and the bash generator cannot run on every

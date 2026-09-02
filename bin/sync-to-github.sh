@@ -51,6 +51,69 @@ REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO_SLUG}.git"
 # `all` covers every runtime in one call: asking per runtime is how one
 # runtime eventually goes unchecked, and an unchecked tree looks exactly like
 # a tree that passed.
+# ── Publish allowlist ────────────────────────────────────────────────────
+# manifest.yml says what may be published, by top-level path. This function
+# compares that list against the tree about to be published and refuses in
+# both directions.
+#
+# One direction is the leak: a directory appears in the working tree — because
+# a synced tool brought its own content along — and rides the next publish out.
+# That happened on 2026-09-01. The other direction is the quiet loss: a
+# framework path drops out of the list, rsync --delete removes it from the
+# mirror, and nobody notices until someone looks for a file that used to exist.
+check_publish_allowlist() {
+  local listed present missing_from_tree unlisted
+  listed=$(MANIFEST="$SOURCE_DIR/manifest.yml" python3 -c '
+import os, sys, yaml
+try:
+    d = yaml.safe_load(open(os.environ["MANIFEST"], encoding="utf-8")) or {}
+except Exception as e:
+    print("PARSE_ERROR", e, file=sys.stderr); sys.exit(1)
+for p in d.get("publish_allowlist") or []:
+    print(p)
+') || { echo "❌ cannot read publish_allowlist from manifest.yml"; exit 1; }
+
+  if [ -z "$listed" ]; then
+    echo "❌ manifest.yml has no publish_allowlist — refusing to publish."
+    echo ""
+    echo "Without it this script publishes whatever happens to sit in the working"
+    echo "tree, which is how client documents reached the public mirror."
+    echo "Add the section and list the paths that belong here."
+    exit 1
+  fi
+
+  # What the rsync below would carry: top-level entries minus what it excludes
+  # anyway. Kept in step with the --exclude flags by hand — a mismatch here
+  # surfaces as a false refusal, never as a silent publish.
+  present=$(cd "$SOURCE_DIR" && ls -A \
+    | grep -v -x -e ".git" -e ".sync-log" -e ".DS_Store" -e "framework.yml" -e "AUDIT.md" \
+    | sort)
+
+  unlisted=$(comm -23 <(printf "%s\n" "$present") <(printf "%s\n" "$listed" | sort))
+  missing_from_tree=$(comm -13 <(printf "%s\n" "$present") <(printf "%s\n" "$listed" | sort))
+
+  if [ -n "$unlisted" ]; then
+    echo "❌ paths in the tree that publish_allowlist does not cover — refusing to publish:"
+    printf "     %s\n" $unlisted
+    echo ""
+    echo "Either it belongs in the public mirror — add it to publish_allowlist in"
+    echo "manifest.yml — or it does not, and it should not sit in framework-public."
+    echo "If a synced tool brought it along, exclude it in sync_rules as well, and"
+    echo "delete it by hand: rsync --delete does not remove what an exclude protects."
+    exit 1
+  fi
+
+  if [ -n "$missing_from_tree" ]; then
+    echo "❌ publish_allowlist lists paths that are not in the tree — refusing to publish:"
+    printf "     %s\n" $missing_from_tree
+    echo ""
+    echo "The list has drifted from reality. Publishing now would strip them from"
+    echo "the mirror — rsync --delete removes on the far side what is missing here."
+    echo "Restore the paths, or drop them from publish_allowlist deliberately."
+    exit 1
+  fi
+}
+
 BUILDER="$SCRIPT_DIR/build-adapter.sh"
 if [ ! -x "$BUILDER" ]; then
   echo "❌ generator not found or not executable: $BUILDER"
@@ -61,6 +124,8 @@ if [ ! -x "$BUILDER" ]; then
   echo "Restore bin/build-adapter.sh, or publish from a checkout that has it."
   exit 1
 fi
+check_publish_allowlist
+
 if ! bash "$BUILDER" all --check > /dev/null 2>&1; then
   echo "❌ a generated adapter tree is stale or edited by hand — refusing to publish."
   echo ""
