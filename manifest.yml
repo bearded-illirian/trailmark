@@ -108,6 +108,14 @@ sync_rules:
     - "*.key"
     - "*.bak-*"
     - ".DS_Store"
+    # Content and runtime state of the live app — never part of the framework.
+    # These appeared in the working tree AFTER this list was written (partner-content
+    # 22 Jul, data 31 Jul, external-shares 5 Aug) and rode the next sync into the
+    # public mirror. A blacklist only protects against what its author thought of;
+    # bin/sync-to-github.sh carries the whitelist that catches the rest.
+    - partner-content
+    - external-shares
+    - data/external_shares.db
 
 entries:
 
